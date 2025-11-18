@@ -121,4 +121,36 @@ class HiveTypeIds {
   static const ratingScale = 5;
   static const viewPreference = 6;
   static const bagStatus = 7;
+  static const equipmentSetup = 8;
 }
+
+// Common equipment types
+const List<String> grinderTypes = [
+  'Burr (Conical)',
+  'Burr (Flat)',
+  'Hand Grinder',
+  'Blade',
+];
+
+const List<String> waterTypes = [
+  'Filtered Tap',
+  'Bottled',
+  'Reverse Osmosis',
+  'Third Wave Water',
+  'Tap Water',
+  'Spring Water',
+];
+
+const List<String> filterTypes = [
+  'Paper (Bleached)',
+  'Paper (Unbleached)',
+  'Metal',
+  'Cloth',
+];
+
+const List<String> kettleTypes = [
+  'Gooseneck Electric',
+  'Gooseneck Stovetop',
+  'Standard Electric',
+  'Standard Stovetop',
+];

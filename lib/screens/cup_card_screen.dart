@@ -8,11 +8,13 @@ import '../models/cup.dart';
 import '../providers/bags_provider.dart';
 import '../providers/cups_provider.dart';
 import '../providers/user_provider.dart';
+import '../providers/equipment_provider.dart';
 import '../services/photo_service.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
 import '../utils/theme.dart';
 import '../widgets/rating_input.dart';
+import 'equipment_form_screen.dart';
 
 class CupCardScreen extends ConsumerStatefulWidget {
   final String? bagId;
@@ -53,6 +55,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   final _tastingNotesController = TextEditingController();
 
   String? _selectedBrewType;
+  String? _selectedEquipmentId;
   double? _rating;
   List<String> _selectedFlavorTags = [];
   List<String> _photoPaths = [];
@@ -70,6 +73,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       final cup = ref.read(cupProvider(widget.cupId!));
       if (cup != null) {
         _selectedBrewType = cup.brewType;
+        _selectedEquipmentId = cup.equipmentSetupId;
         _grindLevelController.text = cup.grindLevel ?? '';
         _waterTempController.text = cup.waterTempCelsius?.toString() ?? '';
         _gramsUsedController.text = cup.gramsUsed?.toString() ?? '';
@@ -113,6 +117,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   Widget build(BuildContext context) {
     final ratingScale = ref.watch(ratingScaleProvider);
     final allBrewTypes = ref.watch(allBrewTypesProvider);
+    final allEquipment = ref.watch(equipmentProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -197,6 +202,54 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   onChanged: (value) =>
                       setState(() => _selectedBrewType = value),
                   validator: (value) => value == null ? 'Required' : null,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedEquipmentId,
+                        decoration: const InputDecoration(
+                          labelText: 'Equipment Setup',
+                          hintText: 'Optional',
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('None'),
+                          ),
+                          ...allEquipment.map((setup) => DropdownMenuItem(
+                                value: setup.id,
+                                child: Text(setup.name),
+                              )),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _selectedEquipmentId = value),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      tooltip: 'Add Equipment Setup',
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EquipmentFormScreen(),
+                          ),
+                        );
+                        if (result == true) {
+                          // Refresh the equipment list and select the newly created one
+                          final newEquipment = ref.read(equipmentProvider);
+                          if (newEquipment.isNotEmpty) {
+                            setState(() {
+                              _selectedEquipmentId = newEquipment.first.id;
+                            });
+                          }
+                        }
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -484,6 +537,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       flavorTags: _selectedFlavorTags,
       photoPaths: _photoPaths,
       isBest: _isBest,
+      equipmentSetupId: _selectedEquipmentId,
     );
 
     // Update rating

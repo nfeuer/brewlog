@@ -86,6 +86,14 @@ class Cup extends HiveObject {
   @HiveField(23)
   String? customTitle;
 
+  // Equipment setup used for this brew
+  @HiveField(24)
+  String? equipmentSetupId;
+
+  // Notes for adapting recipe to different equipment
+  @HiveField(25)
+  String? adaptationNotes;
+
   Cup({
     required this.id,
     required this.bagId,
@@ -111,6 +119,8 @@ class Cup extends HiveObject {
     DateTime? createdAt,
     DateTime? updatedAt,
     this.customTitle,
+    this.equipmentSetupId,
+    this.adaptationNotes,
   })  : flavorTags = flavorTags ?? [],
         photoPaths = photoPaths ?? [],
         createdAt = createdAt ?? DateTime.now(),
@@ -213,6 +223,8 @@ class Cup extends HiveObject {
       'sharedByUserId': sharedByUserId,
       'sharedByUsername': sharedByUsername,
       'customTitle': customTitle,
+      'equipmentSetupId': equipmentSetupId,
+      'adaptationNotes': adaptationNotes,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -242,6 +254,8 @@ class Cup extends HiveObject {
       sharedByUserId: json['sharedByUserId'] as String?,
       sharedByUsername: json['sharedByUsername'] as String?,
       customTitle: json['customTitle'] as String?,
+      equipmentSetupId: json['equipmentSetupId'] as String?,
+      adaptationNotes: json['adaptationNotes'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -265,6 +279,8 @@ class Cup extends HiveObject {
     bool? isBest,
     int? shareCount,
     String? customTitle,
+    String? equipmentSetupId,
+    String? adaptationNotes,
   }) {
     final cup = Cup(
       id: id,
@@ -288,6 +304,8 @@ class Cup extends HiveObject {
       sharedByUserId: sharedByUserId,
       sharedByUsername: sharedByUsername,
       customTitle: customTitle ?? this.customTitle,
+      equipmentSetupId: equipmentSetupId ?? this.equipmentSetupId,
+      adaptationNotes: adaptationNotes ?? this.adaptationNotes,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );
@@ -323,6 +341,8 @@ class Cup extends HiveObject {
       sharedByUserId: userId,
       sharedByUsername: sharerUsername,
       customTitle: customTitle,
+      equipmentSetupId: equipmentSetupId, // Include equipment info in shares
+      adaptationNotes: adaptationNotes,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

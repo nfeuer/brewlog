@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_provider.dart';
+import '../providers/equipment_provider.dart';
 import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
+import 'equipment_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -12,6 +14,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(userProfileProvider);
     final stats = ref.watch(userStatsProvider);
+    final hasEquipment = ref.watch(hasEquipmentProvider);
 
     if (user == null) {
       return const Scaffold(
@@ -182,6 +185,19 @@ class ProfileScreen extends ConsumerWidget {
                   subtitle: Text(_getViewPreferenceName(user.viewPreference)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showViewPreferenceDialog(context, ref, user.viewPreference),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.coffee_maker),
+                  title: const Text('My Equipment'),
+                  subtitle: Text(hasEquipment ? 'Manage brewing equipment' : 'Add equipment setups'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const EquipmentScreen()),
+                    );
+                  },
                 ),
               ],
             ),

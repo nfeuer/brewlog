@@ -4,6 +4,7 @@ import '../models/user_profile.dart';
 import '../models/coffee_bag.dart';
 import '../models/cup.dart';
 import '../models/shared_cup.dart';
+import '../models/equipment_setup.dart';
 import '../utils/constants.dart';
 
 /// Local database service using Hive for offline-first storage
@@ -13,6 +14,7 @@ class DatabaseService {
   static const String _bagsBoxName = 'bags';
   static const String _cupsBoxName = 'cups';
   static const String _sharedCupsBoxName = 'shared_cups';
+  static const String _equipmentBoxName = 'equipment';
 
   final _uuid = const Uuid();
 
@@ -22,6 +24,7 @@ class DatabaseService {
   late Box _bagsBox;
   late Box _cupsBox;
   late Box _sharedCupsBox;
+  late Box _equipmentBox;
 
   // Singleton pattern
   static final DatabaseService _instance = DatabaseService._internal();
@@ -47,6 +50,7 @@ class DatabaseService {
     _bagsBox = await Hive.openBox(_bagsBoxName);
     _cupsBox = await Hive.openBox(_cupsBoxName);
     _sharedCupsBox = await Hive.openBox(_sharedCupsBoxName);
+    _equipmentBox = await Hive.openBox(_equipmentBoxName);
 
     // Create default user if doesn't exist
     if (_userBox.isEmpty) {
@@ -358,6 +362,109 @@ class DatabaseService {
   }
 
   // ============================================================================
+  // EQUIPMENT SETUP OPERATIONS
+  // ============================================================================
+
+  /// Get all equipment setups for current user
+  List<EquipmentSetup> getAllEquipment() {
+    final user = getCurrentUser();
+    if (user == null) return [];
+
+    return _equipmentBox.values
+        .cast<EquipmentSetup>()
+        .where((equipment) => equipment.userId == user.id)
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  }
+
+  /// Get equipment setup by ID
+  EquipmentSetup? getEquipment(String equipmentId) {
+    return _equipmentBox.get(equipmentId) as EquipmentSetup?;
+  }
+
+  /// Get default equipment setup for user
+  EquipmentSetup? getDefaultEquipment() {
+    final user = getCurrentUser();
+    if (user == null) return null;
+
+    try {
+      return _equipmentBox.values
+          .cast<EquipmentSetup>()
+          .firstWhere(
+            (equipment) => equipment.userId == user.id && equipment.isDefault,
+          );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Create new equipment setup
+  Future<String> createEquipment(EquipmentSetup equipment) async {
+    // If this is the first equipment, make it default
+    if (_equipmentBox.isEmpty) {
+      equipment.isDefault = true;
+    }
+
+    // If marking as default, unmark all others
+    if (equipment.isDefault) {
+      await _unmarkAllEquipmentAsDefault(equipment.userId);
+    }
+
+    await _equipmentBox.put(equipment.id, equipment);
+    return equipment.id;
+  }
+
+  /// Update existing equipment setup
+  Future<void> updateEquipment(EquipmentSetup equipment) async {
+    // If marking as default, unmark all others
+    if (equipment.isDefault) {
+      await _unmarkAllEquipmentAsDefault(equipment.userId);
+    }
+
+    equipment.touch();
+    await _equipmentBox.put(equipment.id, equipment);
+  }
+
+  /// Delete equipment setup
+  Future<void> deleteEquipment(String equipmentId) async {
+    final equipment = getEquipment(equipmentId);
+    if (equipment == null) return;
+
+    await _equipmentBox.delete(equipmentId);
+
+    // If this was the default, make another one default
+    if (equipment.isDefault) {
+      final remaining = getAllEquipment();
+      if (remaining.isNotEmpty) {
+        remaining.first.isDefault = true;
+        await updateEquipment(remaining.first);
+      }
+    }
+  }
+
+  /// Set equipment as default
+  Future<void> setEquipmentAsDefault(String equipmentId) async {
+    final equipment = getEquipment(equipmentId);
+    if (equipment == null) return;
+
+    await _unmarkAllEquipmentAsDefault(equipment.userId);
+    equipment.isDefault = true;
+    await updateEquipment(equipment);
+  }
+
+  /// Unmark all equipment as default for a user
+  Future<void> _unmarkAllEquipmentAsDefault(String userId) async {
+    final allEquipment = _equipmentBox.values
+        .cast<EquipmentSetup>()
+        .where((e) => e.userId == userId && e.isDefault);
+
+    for (final equipment in allEquipment) {
+      equipment.isDefault = false;
+      await _equipmentBox.put(equipment.id, equipment);
+    }
+  }
+
+  // ============================================================================
   // UTILITY METHODS
   // ============================================================================
 
@@ -370,6 +477,7 @@ class DatabaseService {
     await _bagsBox.clear();
     await _cupsBox.clear();
     await _sharedCupsBox.clear();
+    await _equipmentBox.clear();
     await _createDefaultUser();
   }
 
@@ -380,6 +488,7 @@ class DatabaseService {
       'bags': _bagsBox.length,
       'cups': _cupsBox.length,
       'sharedCups': _sharedCupsBox.length,
+      'equipment': _equipmentBox.length,
     };
   }
 
@@ -389,6 +498,7 @@ class DatabaseService {
     await _bagsBox.close();
     await _cupsBox.close();
     await _sharedCupsBox.close();
+    await _equipmentBox.close();
   }
 }
 
