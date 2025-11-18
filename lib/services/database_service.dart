@@ -16,11 +16,12 @@ class DatabaseService {
 
   final _uuid = const Uuid();
 
-  // Hive boxes
-  late Box<UserProfile> _userBox;
-  late Box<CoffeeBag> _bagsBox;
-  late Box<Cup> _cupsBox;
-  late Box<SharedCup> _sharedCupsBox;
+  // Hive boxes - using dynamic boxes until adapters are generated
+  // After running build_runner, change these to typed boxes for better performance
+  late Box _userBox;
+  late Box _bagsBox;
+  late Box _cupsBox;
+  late Box _sharedCupsBox;
 
   // Singleton pattern
   static final DatabaseService _instance = DatabaseService._internal();
@@ -39,12 +40,13 @@ class DatabaseService {
     // Hive.registerAdapter(CupAdapter());
     // Hive.registerAdapter(SharedCupAdapter());
 
-    // For now, we'll use dynamic boxes until adapters are generated
-    // In production, use typed boxes for better performance
-    _userBox = await Hive.openBox<UserProfile>(_userBoxName);
-    _bagsBox = await Hive.openBox<CoffeeBag>(_bagsBoxName);
-    _cupsBox = await Hive.openBox<Cup>(_cupsBoxName);
-    _sharedCupsBox = await Hive.openBox<SharedCup>(_sharedCupsBoxName);
+    // Using dynamic boxes until adapters are generated
+    // After running build_runner and registering adapters, change to typed boxes:
+    // _userBox = await Hive.openBox<UserProfile>(_userBoxName);
+    _userBox = await Hive.openBox(_userBoxName);
+    _bagsBox = await Hive.openBox(_bagsBoxName);
+    _cupsBox = await Hive.openBox(_cupsBoxName);
+    _sharedCupsBox = await Hive.openBox(_sharedCupsBoxName);
 
     // Create default user if doesn't exist
     if (_userBox.isEmpty) {
@@ -71,7 +73,7 @@ class DatabaseService {
 
   /// Get current user profile
   UserProfile? getCurrentUser() {
-    return _userBox.get('current_user');
+    return _userBox.get('current_user') as UserProfile?;
   }
 
   /// Update user profile
@@ -99,6 +101,7 @@ class DatabaseService {
     if (user == null) return [];
 
     return _bagsBox.values
+        .cast<CoffeeBag>()
         .where((bag) => bag.userId == user.id)
         .toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -106,7 +109,7 @@ class DatabaseService {
 
   /// Get bag by ID
   CoffeeBag? getBag(String bagId) {
-    return _bagsBox.get(bagId);
+    return _bagsBox.get(bagId) as CoffeeBag?;
   }
 
   /// Create new bag
@@ -182,6 +185,7 @@ class DatabaseService {
   /// Get all cups for a bag
   List<Cup> getCupsForBag(String bagId) {
     return _cupsBox.values
+        .cast<Cup>()
         .where((cup) => cup.bagId == bagId)
         .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -189,7 +193,7 @@ class DatabaseService {
 
   /// Get cup by ID
   Cup? getCup(String cupId) {
-    return _cupsBox.get(cupId);
+    return _cupsBox.get(cupId) as Cup?;
   }
 
   /// Create new cup
@@ -327,6 +331,7 @@ class DatabaseService {
     if (user == null) return [];
 
     return _sharedCupsBox.values
+        .cast<SharedCup>()
         .where((shared) => shared.receivedByUserId == user.id)
         .toList()
       ..sort((a, b) => b.sharedAt.compareTo(a.sharedAt));
