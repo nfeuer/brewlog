@@ -33,7 +33,8 @@ class FirebaseService {
 
   // Firebase instances
   FirebaseAuth? _auth;
-  FirebaseFirestore? _firestore;
+  // ignore: unused_field
+  FirebaseFirestore? _firestore; // Used in commented TODO sections, will be active when Firebase is configured
 
   bool _isInitialized = false;
 

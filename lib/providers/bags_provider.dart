@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/coffee_bag.dart';
 import '../services/database_service.dart';
+import '../utils/constants.dart';
 import 'user_provider.dart';
 
 /// Provider for all coffee bags

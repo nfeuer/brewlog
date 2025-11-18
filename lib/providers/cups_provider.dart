@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/cup.dart';
+import '../models/coffee_bag.dart';
 import '../services/database_service.dart';
 import 'user_provider.dart';
 import 'bags_provider.dart';

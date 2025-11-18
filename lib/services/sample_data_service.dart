@@ -1,5 +1,4 @@
 import 'package:uuid/uuid.dart';
-import '../models/user_profile.dart';
 import '../models/coffee_bag.dart';
 import '../models/cup.dart';
 import '../utils/constants.dart';

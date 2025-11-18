@@ -42,7 +42,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonTheme(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primaryBrown,
         foregroundColor: Colors.white,
       ),

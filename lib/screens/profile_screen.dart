@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_provider.dart';
-import '../providers/cups_provider.dart';
 import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
