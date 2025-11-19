@@ -52,6 +52,8 @@ class BagDetailScreen extends ConsumerWidget {
                 await _markAsFinished(context, ref, bag);
               } else if (value == 'reopen') {
                 await _markAsActive(context, ref, bag);
+              } else if (value == 'delete') {
+                await _deleteBag(context, ref, bag);
               }
             },
             itemBuilder: (context) => [
@@ -77,6 +79,16 @@ class BagDetailScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete Bag', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -369,6 +381,24 @@ Future<void> _markAsActive(BuildContext context, WidgetRef ref, CoffeeBag bag) a
   await ref.read(bagsProvider.notifier).markAsActive(bag.id);
   if (context.mounted) {
     showSuccess(context, 'Bag reopened');
+  }
+}
+
+Future<void> _deleteBag(BuildContext context, WidgetRef ref, CoffeeBag bag) async {
+  final confirmed = await showConfirmDialog(
+    context,
+    title: 'Delete Bag',
+    message: 'Are you sure you want to delete "${bag.displayTitle}"?\n\nThis will permanently delete the bag and all ${bag.totalCups} cup(s) associated with it. This action cannot be undone.',
+    confirmText: 'Delete',
+    isDangerous: true,
+  );
+
+  if (confirmed) {
+    await ref.read(bagsProvider.notifier).deleteBag(bag.id);
+    if (context.mounted) {
+      Navigator.pop(context); // Go back to previous screen
+      showSuccess(context, 'Bag deleted');
+    }
   }
 }
 
