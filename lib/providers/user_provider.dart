@@ -47,6 +47,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       viewPreferenceIndex: state!.viewPreferenceIndex,
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -69,6 +70,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       viewPreferenceIndex: state!.viewPreferenceIndex,
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -91,6 +93,30 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       viewPreferenceIndex: pref.index,
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Update cup field visibility preferences
+  Future<void> updateCupFieldVisibility(Map<String, bool> visibility) async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: visibility,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -114,6 +140,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
         viewPreferenceIndex: state!.viewPreferenceIndex,
         stats: state!.stats,
         customBrewTypes: [...state!.customBrewTypes, brewType],
+        cupFieldVisibility: state!.cupFieldVisibility,
         createdAt: state!.createdAt,
         updatedAt: DateTime.now(),
       );
@@ -137,6 +164,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       viewPreferenceIndex: state!.viewPreferenceIndex,
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -178,4 +206,20 @@ final viewPreferenceProvider = Provider<ViewPreference>((ref) {
 final allBrewTypesProvider = Provider<List<String>>((ref) {
   final user = ref.watch(userProfileProvider);
   return user?.allBrewTypes ?? defaultBrewTypes;
+});
+
+/// Provider for cup field visibility preferences
+/// Returns merged visibility map (user preferences + defaults)
+final cupFieldVisibilityProvider = Provider<Map<String, bool>>((ref) {
+  final user = ref.watch(userProfileProvider);
+
+  // Start with defaults
+  final visibility = Map<String, bool>.from(defaultFieldVisibility);
+
+  // Merge with user preferences if they exist
+  if (user?.cupFieldVisibility != null) {
+    visibility.addAll(user!.cupFieldVisibility!);
+  }
+
+  return visibility;
 });

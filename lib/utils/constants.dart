@@ -83,6 +83,7 @@ const Map<String, bool> defaultFieldVisibility = {
 
   // Brew Parameters
   'brewType': true,
+  'equipment': true,
   'grindLevel': true,
   'waterTemp': true,
   'gramsUsed': true,
@@ -96,9 +97,49 @@ const Map<String, bool> defaultFieldVisibility = {
   'tastingNotes': true,
   'flavorTags': true,
 
-  // Photos
+  // Photos & Extras
   'photos': true,
+  'bestRecipe': false,
 };
+
+// Cup field definitions for visibility settings dialog
+class CupFieldDefinition {
+  final String key;
+  final String displayName;
+  final String section;
+
+  const CupFieldDefinition({
+    required this.key,
+    required this.displayName,
+    required this.section,
+  });
+}
+
+const List<CupFieldDefinition> cupFields = [
+  // Coffee Bag Info section
+  CupFieldDefinition(key: 'farmer', displayName: 'Farmer', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'variety', displayName: 'Variety', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'elevation', displayName: 'Elevation', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'beanAroma', displayName: 'Bean Aroma', section: 'Coffee Info'),
+
+  // Brew Parameters section
+  CupFieldDefinition(key: 'equipment', displayName: 'Equipment Setup', section: 'Brew Parameters'),
+  CupFieldDefinition(key: 'grindLevel', displayName: 'Grind Level', section: 'Brew Parameters'),
+  CupFieldDefinition(key: 'waterTemp', displayName: 'Water Temperature', section: 'Brew Parameters'),
+  CupFieldDefinition(key: 'gramsUsed', displayName: 'Grams Used', section: 'Brew Parameters'),
+  CupFieldDefinition(key: 'finalVolume', displayName: 'Final Volume', section: 'Brew Parameters'),
+  CupFieldDefinition(key: 'brewTime', displayName: 'Brew Time', section: 'Brew Parameters'),
+  CupFieldDefinition(key: 'bloomTime', displayName: 'Bloom Time', section: 'Brew Parameters'),
+
+  // Rating & Tasting section
+  CupFieldDefinition(key: 'rating', displayName: 'Rating', section: 'Rating & Tasting'),
+  CupFieldDefinition(key: 'tastingNotes', displayName: 'Tasting Notes', section: 'Rating & Tasting'),
+  CupFieldDefinition(key: 'flavorTags', displayName: 'Flavor Tags', section: 'Rating & Tasting'),
+
+  // Photos & Extras section
+  CupFieldDefinition(key: 'photos', displayName: 'Photos', section: 'Photos & Extras'),
+  CupFieldDefinition(key: 'bestRecipe', displayName: 'Mark as Best Recipe', section: 'Photos & Extras'),
+];
 
 // App theme colors
 class AppColors {

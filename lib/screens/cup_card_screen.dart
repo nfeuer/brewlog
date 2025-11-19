@@ -122,6 +122,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     final ratingScale = ref.watch(ratingScaleProvider);
     final allBrewTypes = ref.watch(allBrewTypesProvider);
     final allEquipment = ref.watch(equipmentProvider);
+    final fieldVisibility = ref.watch(cupFieldVisibilityProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -131,6 +132,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                 ? 'Edit Cup'
                 : 'New Cup'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.visibility),
+            tooltip: 'Configure visible fields',
+            onPressed: () => _showFieldVisibilityDialog(context),
+          ),
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: _saveCup,
@@ -164,27 +170,35 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   validator: (value) =>
                       value?.isEmpty == true ? 'Required' : null,
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _farmerController,
-                  decoration: const InputDecoration(labelText: 'Farmer'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _varietyController,
-                  decoration: const InputDecoration(labelText: 'Variety'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _elevationController,
-                  decoration: const InputDecoration(labelText: 'Elevation'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _beanAromaController,
-                  decoration: const InputDecoration(labelText: 'Bean Aroma'),
-                  maxLines: 2,
-                ),
+                if (fieldVisibility['farmer'] == true) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _farmerController,
+                    decoration: const InputDecoration(labelText: 'Farmer'),
+                  ),
+                ],
+                if (fieldVisibility['variety'] == true) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _varietyController,
+                    decoration: const InputDecoration(labelText: 'Variety'),
+                  ),
+                ],
+                if (fieldVisibility['elevation'] == true) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _elevationController,
+                    decoration: const InputDecoration(labelText: 'Elevation'),
+                  ),
+                ],
+                if (fieldVisibility['beanAroma'] == true) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _beanAromaController,
+                    decoration: const InputDecoration(labelText: 'Bean Aroma'),
+                    maxLines: 2,
+                  ),
+                ],
               ],
             ),
 
@@ -207,198 +221,227 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       setState(() => _selectedBrewType = value),
                   validator: (value) => value == null ? 'Required' : null,
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedEquipmentId,
-                        decoration: const InputDecoration(
-                          labelText: 'Equipment Setup',
-                          hintText: 'Optional',
+                if (fieldVisibility['equipment'] == true) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedEquipmentId,
+                          decoration: const InputDecoration(
+                            labelText: 'Equipment Setup',
+                            hintText: 'Optional',
+                          ),
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('None'),
+                            ),
+                            ...allEquipment.map((setup) => DropdownMenuItem(
+                                  value: setup.id,
+                                  child: Text(setup.name),
+                                )),
+                          ],
+                          onChanged: (value) =>
+                              setState(() => _selectedEquipmentId = value),
                         ),
-                        items: [
-                          const DropdownMenuItem(
-                            value: null,
-                            child: Text('None'),
-                          ),
-                          ...allEquipment.map((setup) => DropdownMenuItem(
-                                value: setup.id,
-                                child: Text(setup.name),
-                              )),
-                        ],
-                        onChanged: (value) =>
-                            setState(() => _selectedEquipmentId = value),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline),
-                      tooltip: 'Add Equipment Setup',
-                      onPressed: () async {
-                        final user = ref.read(userProfileProvider);
-                        if (user == null) return;
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline),
+                        tooltip: 'Add Equipment Setup',
+                        onPressed: () async {
+                          final user = ref.read(userProfileProvider);
+                          if (user == null) return;
 
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EquipmentFormScreen(userId: user.id),
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EquipmentFormScreen(userId: user.id),
+                            ),
+                          );
+                          if (result == true) {
+                            // Refresh the equipment list and select the newly created one
+                            final newEquipment = ref.read(equipmentProvider);
+                            if (newEquipment.isNotEmpty) {
+                              setState(() {
+                                _selectedEquipmentId = newEquipment.first.id;
+                              });
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+                if (fieldVisibility['grindLevel'] == true) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _grindLevelController,
+                    decoration: const InputDecoration(labelText: 'Grind Level'),
+                  ),
+                ],
+                if (fieldVisibility['waterTemp'] == true) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _waterTempController,
+                    decoration:
+                        const InputDecoration(labelText: 'Water Temp (°C)'),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+                if (fieldVisibility['gramsUsed'] == true ||
+                    fieldVisibility['finalVolume'] == true) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      if (fieldVisibility['gramsUsed'] == true)
+                        Expanded(
+                          child: TextFormField(
+                            controller: _gramsUsedController,
+                            decoration:
+                                const InputDecoration(labelText: 'Grams Used'),
+                            keyboardType: TextInputType.number,
                           ),
-                        );
-                        if (result == true) {
-                          // Refresh the equipment list and select the newly created one
-                          final newEquipment = ref.read(equipmentProvider);
-                          if (newEquipment.isNotEmpty) {
+                        ),
+                      if (fieldVisibility['gramsUsed'] == true &&
+                          fieldVisibility['finalVolume'] == true)
+                        const SizedBox(width: 12),
+                      if (fieldVisibility['finalVolume'] == true)
+                        Expanded(
+                          child: TextFormField(
+                            controller: _finalVolumeController,
+                            decoration:
+                                const InputDecoration(labelText: 'Final Volume (ml)'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+                if (fieldVisibility['brewTime'] == true ||
+                    fieldVisibility['bloomTime'] == true) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      if (fieldVisibility['brewTime'] == true)
+                        Expanded(
+                          child: TextFormField(
+                            controller: _brewTimeController,
+                            decoration: const InputDecoration(
+                                labelText: 'Brew Time (sec)'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      if (fieldVisibility['brewTime'] == true &&
+                          fieldVisibility['bloomTime'] == true)
+                        const SizedBox(width: 12),
+                      if (fieldVisibility['bloomTime'] == true)
+                        Expanded(
+                          child: TextFormField(
+                            controller: _bloomTimeController,
+                            decoration: const InputDecoration(
+                                labelText: 'Bloom Time (sec)'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+
+            if (fieldVisibility['rating'] == true) ...[
+              const SizedBox(height: 24),
+              // Rating Section
+              _buildSection(
+                'Rating',
+                [
+                  Center(
+                    child: RatingInput(
+                      scale: ratingScale,
+                      value: _rating,
+                      onChanged: (value) => setState(() => _rating = value),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
+            if (fieldVisibility['tastingNotes'] == true ||
+                fieldVisibility['flavorTags'] == true) ...[
+              const SizedBox(height: 24),
+              // Tasting Notes Section
+              _buildSection(
+                'Tasting Notes',
+                [
+                  if (fieldVisibility['tastingNotes'] == true)
+                    TextFormField(
+                      controller: _tastingNotesController,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes',
+                        hintText: 'Describe the taste, aroma, and experience...',
+                      ),
+                      maxLines: 4,
+                    ),
+                  if (fieldVisibility['flavorTags'] == true) ...[
+                    if (fieldVisibility['tastingNotes'] == true)
+                      const SizedBox(height: 16),
+                    Text('Flavor Tags', style: AppTextStyles.sectionHeader),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: defaultFlavorTags.map((tag) {
+                        final isSelected = _selectedFlavorTags.contains(tag);
+                        return FilterChip(
+                          label: Text(tag),
+                          selected: isSelected,
+                          onSelected: (selected) {
                             setState(() {
-                              _selectedEquipmentId = newEquipment.first.id;
+                              if (selected) {
+                                _selectedFlavorTags.add(tag);
+                              } else {
+                                _selectedFlavorTags.remove(tag);
+                              }
                             });
-                          }
-                        }
-                      },
+                          },
+                        );
+                      }).toList(),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _grindLevelController,
-                  decoration: const InputDecoration(labelText: 'Grind Level'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _waterTempController,
-                  decoration:
-                      const InputDecoration(labelText: 'Water Temp (°C)'),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _gramsUsedController,
-                        decoration:
-                            const InputDecoration(labelText: 'Grams Used'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _finalVolumeController,
-                        decoration:
-                            const InputDecoration(labelText: 'Final Volume (ml)'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _brewTimeController,
-                        decoration: const InputDecoration(
-                            labelText: 'Brew Time (sec)'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _bloomTimeController,
-                        decoration: const InputDecoration(
-                            labelText: 'Bloom Time (sec)'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
 
-            const SizedBox(height: 24),
-
-            // Rating Section
-            _buildSection(
-              'Rating',
-              [
-                Center(
-                  child: RatingInput(
-                    scale: ratingScale,
-                    value: _rating,
-                    onChanged: (value) => setState(() => _rating = value),
+            if (fieldVisibility['photos'] == true) ...[
+              const SizedBox(height: 24),
+              // Photos Section
+              _buildSection(
+                'Photos',
+                [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ..._photoPaths.map((path) => _buildPhotoThumbnail(path)),
+                      _buildAddPhotoButton(),
+                    ],
                   ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Tasting Notes Section
-            _buildSection(
-              'Tasting Notes',
-              [
-                TextFormField(
-                  controller: _tastingNotesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes',
-                    hintText: 'Describe the taste, aroma, and experience...',
-                  ),
-                  maxLines: 4,
-                ),
-                const SizedBox(height: 16),
-                Text('Flavor Tags', style: AppTextStyles.sectionHeader),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: defaultFlavorTags.map((tag) {
-                    final isSelected = _selectedFlavorTags.contains(tag);
-                    return FilterChip(
-                      label: Text(tag),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedFlavorTags.add(tag);
-                          } else {
-                            _selectedFlavorTags.remove(tag);
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Photos Section
-            _buildSection(
-              'Photos',
-              [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ..._photoPaths.map((path) => _buildPhotoThumbnail(path)),
-                    _buildAddPhotoButton(),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: 24),
 
             // Best Recipe Toggle
-            CheckboxListTile(
-              title: const Text('Mark as Best Recipe'),
-              subtitle: const Text('This will be your reference cup for this bag'),
-              value: _isBest,
-              onChanged: (value) => setState(() => _isBest = value ?? false),
-            ),
+            if (fieldVisibility['bestRecipe'] == true)
+              CheckboxListTile(
+                title: const Text('Mark as Best Recipe'),
+                subtitle: const Text('This will be your reference cup for this bag'),
+                value: _isBest,
+                onChanged: (value) => setState(() => _isBest = value ?? false),
+              ),
 
             const SizedBox(height: 24),
 
@@ -512,6 +555,79 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     if (path != null) {
       setState(() => _photoPaths.add(path!));
     }
+  }
+
+  void _showFieldVisibilityDialog(BuildContext context) async {
+    final currentVisibility = ref.read(cupFieldVisibilityProvider);
+    final tempVisibility = Map<String, bool>.from(currentVisibility);
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          // Group fields by section
+          final fieldsBySection = <String, List<CupFieldDefinition>>{};
+          for (final field in cupFields) {
+            fieldsBySection.putIfAbsent(field.section, () => []);
+            fieldsBySection[field.section]!.add(field);
+          }
+
+          return AlertDialog(
+            title: const Text('Configure Visible Fields'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children: fieldsBySection.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 8),
+                        child: Text(
+                          entry.key,
+                          style: AppTextStyles.sectionHeader,
+                        ),
+                      ),
+                      ...entry.value.map((field) {
+                        return CheckboxListTile(
+                          title: Text(field.displayName),
+                          value: tempVisibility[field.key] ?? true,
+                          onChanged: (value) {
+                            setDialogState(() {
+                              tempVisibility[field.key] = value ?? true;
+                            });
+                          },
+                        );
+                      }),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  // Save preferences
+                  await ref
+                      .read(userProfileProvider.notifier)
+                      .updateCupFieldVisibility(tempVisibility);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    showSuccess(context, 'Field visibility updated');
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   void _saveCup() async {

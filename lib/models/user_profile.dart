@@ -102,6 +102,10 @@ class UserProfile extends HiveObject {
   @HiveField(11)
   List<String> customBrewTypes;
 
+  // Cup field visibility preferences
+  @HiveField(12)
+  Map<String, bool>? cupFieldVisibility;
+
   UserProfile({
     required this.id,
     this.username,
@@ -115,6 +119,7 @@ class UserProfile extends HiveObject {
     DateTime? createdAt,
     DateTime? updatedAt,
     List<String>? customBrewTypes,
+    this.cupFieldVisibility,
   })  : defaultVisibleFields = defaultVisibleFields ?? [],
         stats = stats ?? UserStats(),
         createdAt = createdAt ?? DateTime.now(),
@@ -157,6 +162,7 @@ class UserProfile extends HiveObject {
         'totalBagsPurchased': stats.totalBagsPurchased,
       },
       'customBrewTypes': customBrewTypes,
+      'cupFieldVisibility': cupFieldVisibility,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -184,6 +190,9 @@ class UserProfile extends HiveObject {
         totalBagsPurchased: json['stats']?['totalBagsPurchased'] ?? 0,
       ),
       customBrewTypes: List<String>.from(json['customBrewTypes'] ?? []),
+      cupFieldVisibility: json['cupFieldVisibility'] != null
+          ? Map<String, bool>.from(json['cupFieldVisibility'])
+          : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
