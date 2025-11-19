@@ -10,6 +10,7 @@ import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
 import '../widgets/cup_summary_card.dart';
+import '../widgets/photo_viewer.dart';
 import 'bag_form_screen.dart';
 import 'cup_card_screen.dart';
 
@@ -97,9 +98,22 @@ class BagDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header with photo (clickable to edit)
+            // Header with photo (tap to zoom, long press to edit)
             GestureDetector(
-              onTap: () => _changeBagPhoto(context, ref, bag),
+              onTap: () {
+                // Tap to zoom if photo exists
+                if (bag.labelPhotoPath != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SinglePhotoViewer(
+                        photoPath: bag.labelPhotoPath!,
+                      ),
+                    ),
+                  );
+                }
+              },
+              onLongPress: () => _changeBagPhoto(context, ref, bag),
               child: Stack(
                 children: [
                   if (bag.labelPhotoPath != null) ...[

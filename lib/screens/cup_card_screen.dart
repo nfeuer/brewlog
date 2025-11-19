@@ -14,6 +14,7 @@ import '../utils/constants.dart';
 import '../utils/helpers.dart';
 import '../utils/theme.dart';
 import '../widgets/rating_input.dart';
+import '../widgets/photo_viewer.dart';
 import 'equipment_form_screen.dart';
 
 class CupCardScreen extends ConsumerStatefulWidget {
@@ -625,30 +626,44 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   }
 
   Widget _buildPhotoThumbnail(String path) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.file(
-            File(path),
-            width: 80,
-            height: 80,
-            fit: BoxFit.cover,
-          ),
-        ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white, size: 18),
-            onPressed: () => setState(() => _photoPaths.remove(path)),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.black54,
-              padding: EdgeInsets.zero,
+    final index = _photoPaths.indexOf(path);
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PhotoViewer(
+              photoPaths: _photoPaths,
+              initialIndex: index,
             ),
           ),
-        ),
-      ],
+        );
+      },
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              File(path),
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 18),
+              onPressed: () => setState(() => _photoPaths.remove(path)),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black54,
+                padding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
