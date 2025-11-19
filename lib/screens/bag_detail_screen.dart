@@ -1,12 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/coffee_bag.dart';
 import '../providers/bags_provider.dart';
 import '../providers/cups_provider.dart';
 import '../providers/user_provider.dart';
+import '../services/photo_service.dart';
+import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
 import '../widgets/cup_summary_card.dart';
+import 'bag_form_screen.dart';
 import 'cup_card_screen.dart';
 
 class BagDetailScreen extends ConsumerWidget {
@@ -34,8 +38,46 @@ class BagDetailScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              // TODO: Edit bag info
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BagFormScreen(bag: bag),
+                ),
+              );
             },
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'finish') {
+                await _markAsFinished(context, ref, bag);
+              } else if (value == 'reopen') {
+                await _markAsActive(context, ref, bag);
+              }
+            },
+            itemBuilder: (context) => [
+              if (bag.status == BagStatus.active)
+                const PopupMenuItem(
+                  value: 'finish',
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline),
+                      SizedBox(width: 8),
+                      Text('Mark as Finished'),
+                    ],
+                  ),
+                )
+              else
+                const PopupMenuItem(
+                  value: 'reopen',
+                  child: Row(
+                    children: [
+                      Icon(Icons.refresh),
+                      SizedBox(width: 8),
+                      Text('Reopen Bag'),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -43,23 +85,44 @@ class BagDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header with photo
-            if (bag.labelPhotoPath != null) ...[
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Image.file(
-                  File(bag.labelPhotoPath!),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return _buildPlaceholderImage();
-                  },
-                ),
+            // Header with photo (clickable to edit)
+            GestureDetector(
+              onTap: () => _changeBagPhoto(context, ref, bag),
+              child: Stack(
+                children: [
+                  if (bag.labelPhotoPath != null) ...[
+                    AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Image.file(
+                        File(bag.labelPhotoPath!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildPlaceholderImage();
+                        },
+                      ),
+                    ),
+                  ] else
+                    AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: _buildPlaceholderImage(),
+                    ),
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Icon(Icons.edit, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ] else
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: _buildPlaceholderImage(),
-              ),
+            ),
 
             Padding(
               padding: AppStyles.screenPadding,
@@ -275,6 +338,90 @@ class BagDetailScreen extends ConsumerWidget {
     await cupsNotifier.copyCup(cupId);
     if (context.mounted) {
       showSuccess(context, 'Cup copied!');
+    }
+  }
+}
+
+Future<void> _markAsFinished(BuildContext context, WidgetRef ref, CoffeeBag bag) async {
+  final confirmed = await showConfirmDialog(
+    context,
+    title: 'Mark as Finished',
+    message: 'Mark "${bag.displayTitle}" as finished? You can reopen it later if needed.',
+    confirmText: 'Mark Finished',
+  );
+
+  if (confirmed) {
+    await ref.read(bagsProvider.notifier).markAsFinished(bag.id);
+    if (context.mounted) {
+      showSuccess(context, 'Bag marked as finished');
+    }
+  }
+}
+
+Future<void> _markAsActive(BuildContext context, WidgetRef ref, CoffeeBag bag) async {
+  await ref.read(bagsProvider.notifier).markAsActive(bag.id);
+  if (context.mounted) {
+    showSuccess(context, 'Bag reopened');
+  }
+}
+
+Future<void> _changeBagPhoto(BuildContext context, WidgetRef ref, CoffeeBag bag) async {
+  final photoService = PhotoService();
+
+  final source = await showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Change Photo'),
+      content: const Text('Choose photo source'),
+      actions: [
+        TextButton.icon(
+          onPressed: () => Navigator.pop(context, 'camera'),
+          icon: const Icon(Icons.camera_alt),
+          label: const Text('Camera'),
+        ),
+        TextButton.icon(
+          onPressed: () => Navigator.pop(context, 'gallery'),
+          icon: const Icon(Icons.photo_library),
+          label: const Text('Gallery'),
+        ),
+        if (bag.labelPhotoPath != null)
+          TextButton.icon(
+            onPressed: () => Navigator.pop(context, 'remove'),
+            icon: const Icon(Icons.delete),
+            label: const Text('Remove'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
+    ),
+  );
+
+  if (source == null) return;
+
+  String? newPhotoPath;
+
+  if (source == 'remove') {
+    newPhotoPath = null;
+  } else if (source == 'camera') {
+    newPhotoPath = await photoService.takePhoto();
+    if (newPhotoPath == null) return; // User cancelled
+  } else {
+    newPhotoPath = await photoService.pickPhoto();
+    if (newPhotoPath == null) return; // User cancelled
+  }
+
+  // Update bag with new photo
+  final updatedBag = bag.copyWith(labelPhotoPath: newPhotoPath);
+  await ref.read(bagsProvider.notifier).updateBag(updatedBag);
+
+  if (context.mounted) {
+    if (source == 'remove') {
+      showSuccess(context, 'Photo removed');
+    } else {
+      showSuccess(context, 'Photo updated');
     }
   }
 }

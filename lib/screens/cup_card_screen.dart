@@ -72,6 +72,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       // Load existing cup
       final cup = ref.read(cupProvider(widget.cupId!));
       if (cup != null) {
+        // Get user's current rating scale to load the rating in correct scale
+        final ratingScale = ref.read(ratingScaleProvider);
+
         _selectedBrewType = cup.brewType;
         _selectedEquipmentId = cup.equipmentSetupId;
         _grindLevelController.text = cup.grindLevel ?? '';
@@ -80,7 +83,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _finalVolumeController.text = cup.finalVolumeMl?.toString() ?? '';
         _brewTimeController.text = cup.brewTimeSeconds?.toString() ?? '';
         _bloomTimeController.text = cup.bloomTimeSeconds?.toString() ?? '';
-        _rating = cup.score1to5;
+        // Load rating in user's current preferred scale
+        _rating = cup.getRating(ratingScale);
         _tastingNotesController.text = cup.tastingNotes ?? '';
         _selectedFlavorTags = List.from(cup.flavorTags);
         _photoPaths = List.from(cup.photoPaths);
@@ -471,9 +475,42 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   }
 
   void _addPhoto() async {
-    final path = await _photoService.pickPhoto();
+    // Show dialog to choose between camera and gallery
+    final source = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Photo'),
+        content: const Text('Choose photo source'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.pop(context, 'camera'),
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Camera'),
+          ),
+          TextButton.icon(
+            onPressed: () => Navigator.pop(context, 'gallery'),
+            icon: const Icon(Icons.photo_library),
+            label: const Text('Gallery'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null) return;
+
+    String? path;
+    if (source == 'camera') {
+      path = await _photoService.takePhoto();
+    } else {
+      path = await _photoService.pickPhoto();
+    }
+
     if (path != null) {
-      setState(() => _photoPaths.add(path));
+      setState(() => _photoPaths.add(path!));
     }
   }
 
