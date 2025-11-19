@@ -33,6 +33,7 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
   final _beanAromaController = TextEditingController();
   final _priceController = TextEditingController();
   final _bagSizeController = TextEditingController();
+  final _restDaysController = TextEditingController();
 
   String? _labelPhotoPath;
   DateTime? _datePurchased;
@@ -58,6 +59,7 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
     _beanAromaController.text = bag.beanAroma ?? '';
     _priceController.text = bag.price?.toString() ?? '';
     _bagSizeController.text = bag.bagSizeGrams?.toString() ?? '';
+    _restDaysController.text = bag.recommendedRestDays?.toString() ?? '';
     _labelPhotoPath = bag.labelPhotoPath;
     _datePurchased = bag.datePurchased;
     _roastDate = bag.roastDate;
@@ -192,6 +194,16 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
                   'Open Date',
                   _openDate,
                   (date) => setState(() => _openDate = date),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _restDaysController,
+                  decoration: const InputDecoration(
+                    labelText: 'Recommended Rest Time',
+                    suffixText: 'days',
+                    hintText: 'Days to rest after roasting',
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
               ],
             ),
@@ -372,6 +384,7 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
       datePurchased: _datePurchased,
       roastDate: _roastDate,
       openDate: _openDate,
+      recommendedRestDays: _restDaysController.text.isEmpty ? null : int.tryParse(_restDaysController.text),
       bagStatusIndex: widget.bag?.bagStatusIndex ?? BagStatus.active.index,
       totalCups: widget.bag?.totalCups ?? 0,
       avgScore: widget.bag?.avgScore,
@@ -409,6 +422,7 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
     _beanAromaController.dispose();
     _priceController.dispose();
     _bagSizeController.dispose();
+    _restDaysController.dispose();
     super.dispose();
   }
 }

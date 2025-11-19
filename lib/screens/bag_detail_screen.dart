@@ -335,9 +335,16 @@ class BagDetailScreen extends ConsumerWidget {
 
   void _copyCup(BuildContext context, WidgetRef ref, String cupId) async {
     final cupsNotifier = ref.read(cupsNotifierProvider);
-    await cupsNotifier.copyCup(cupId);
+    final newCupId = await cupsNotifier.copyCup(cupId);
     if (context.mounted) {
       showSuccess(context, 'Cup copied!');
+      // Navigate to the new cup for editing
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CupCardScreen(cupId: newCupId),
+        ),
+      );
     }
   }
 }

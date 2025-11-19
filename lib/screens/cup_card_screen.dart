@@ -526,9 +526,22 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
 
     final uuid = const Uuid();
 
-    // Create or update bag
-    String finalBagId = widget.bagId ?? '';
-    if (widget.isNewBag || widget.bagId == null) {
+    // Determine bag ID
+    String finalBagId;
+
+    if (widget.cupId != null) {
+      // Editing existing cup - get bag ID from the cup
+      final existingCup = ref.read(cupProvider(widget.cupId!));
+      if (existingCup == null) {
+        if (mounted) showError(context, 'Cup not found');
+        return;
+      }
+      finalBagId = existingCup.bagId;
+    } else if (widget.bagId != null) {
+      // Creating new cup for existing bag
+      finalBagId = widget.bagId!;
+    } else if (widget.isNewBag) {
+      // Creating new bag with first cup
       finalBagId = uuid.v4();
       final bag = CoffeeBag(
         id: finalBagId,
@@ -546,6 +559,10 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       );
 
       await ref.read(bagsProvider.notifier).createBag(bag);
+    } else {
+      // Should not happen
+      if (mounted) showError(context, 'Invalid state');
+      return;
     }
 
     // Create or update cup

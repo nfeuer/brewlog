@@ -79,6 +79,9 @@ class CoffeeBag extends HiveObject {
   @HiveField(22)
   Map<String, bool>? fieldVisibility;
 
+  @HiveField(23)
+  int? recommendedRestDays; // Days to rest after roasting
+
   CoffeeBag({
     required this.id,
     required this.userId,
@@ -96,6 +99,7 @@ class CoffeeBag extends HiveObject {
     this.roastDate,
     this.openDate,
     this.finishedDate,
+    this.recommendedRestDays,
     this.bagStatusIndex = 0, // Default to active
     this.totalCups = 0,
     this.avgScore,
@@ -151,6 +155,7 @@ class CoffeeBag extends HiveObject {
       'roastDate': roastDate?.toIso8601String(),
       'openDate': openDate?.toIso8601String(),
       'finishedDate': finishedDate?.toIso8601String(),
+      'recommendedRestDays': recommendedRestDays,
       'status': status.name,
       'totalCups': totalCups,
       'avgScore': avgScore,
@@ -187,6 +192,7 @@ class CoffeeBag extends HiveObject {
       finishedDate: json['finishedDate'] != null
           ? DateTime.parse(json['finishedDate'] as String)
           : null,
+      recommendedRestDays: json['recommendedRestDays'] as int?,
       bagStatusIndex:
           BagStatus.values.indexWhere((e) => e.name == json['status']),
       totalCups: json['totalCups'] as int? ?? 0,
@@ -216,6 +222,7 @@ class CoffeeBag extends HiveObject {
     DateTime? roastDate,
     DateTime? openDate,
     DateTime? finishedDate,
+    int? recommendedRestDays,
     BagStatus? status,
     int? totalCups,
     double? avgScore,
@@ -239,6 +246,7 @@ class CoffeeBag extends HiveObject {
       roastDate: roastDate ?? this.roastDate,
       openDate: openDate ?? this.openDate,
       finishedDate: finishedDate ?? this.finishedDate,
+      recommendedRestDays: recommendedRestDays ?? this.recommendedRestDays,
       bagStatusIndex: status?.index ?? bagStatusIndex,
       totalCups: totalCups ?? this.totalCups,
       avgScore: avgScore ?? this.avgScore,
