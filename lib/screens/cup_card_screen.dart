@@ -44,6 +44,14 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   final _varietyController = TextEditingController();
   final _elevationController = TextEditingController();
   final _beanAromaController = TextEditingController();
+  final _priceController = TextEditingController();
+  final _bagSizeController = TextEditingController();
+  final _restDaysController = TextEditingController();
+
+  // Bag date fields
+  DateTime? _datePurchased;
+  DateTime? _roastDate;
+  DateTime? _openDate;
 
   // Cup info controllers
   final _grindLevelController = TextEditingController();
@@ -100,6 +108,12 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
           _varietyController.text = bag.variety ?? '';
           _elevationController.text = bag.elevation ?? '';
           _beanAromaController.text = bag.beanAroma ?? '';
+          _priceController.text = bag.price?.toString() ?? '';
+          _bagSizeController.text = bag.bagSizeGrams?.toString() ?? '';
+          _restDaysController.text = bag.recommendedRestDays?.toString() ?? '';
+          _datePurchased = bag.datePurchased;
+          _roastDate = bag.roastDate;
+          _openDate = bag.openDate;
         }
       }
     } else if (widget.bagId != null) {
@@ -113,6 +127,12 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _varietyController.text = bag.variety ?? '';
         _elevationController.text = bag.elevation ?? '';
         _beanAromaController.text = bag.beanAroma ?? '';
+        _priceController.text = bag.price?.toString() ?? '';
+        _bagSizeController.text = bag.bagSizeGrams?.toString() ?? '';
+        _restDaysController.text = bag.recommendedRestDays?.toString() ?? '';
+        _datePurchased = bag.datePurchased;
+        _roastDate = bag.roastDate;
+        _openDate = bag.openDate;
       }
     }
   }
@@ -197,6 +217,136 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     controller: _beanAromaController,
                     decoration: const InputDecoration(labelText: 'Bean Aroma'),
                     maxLines: 2,
+                  ),
+                ],
+                // Additional bag fields (only shown when creating new bag)
+                if (widget.isNewBag) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _priceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Price',
+                      prefixText: '\$',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _bagSizeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Bag Size',
+                      suffixText: 'g',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _restDaysController,
+                    decoration: const InputDecoration(
+                      labelText: 'Recommended Rest Days',
+                      suffixText: 'days',
+                      hintText: 'Days to rest after roasting',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _datePurchased ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() => _datePurchased = date);
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Date Purchased',
+                        suffixIcon: _datePurchased != null
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () => setState(() => _datePurchased = null),
+                              )
+                            : null,
+                      ),
+                      child: Text(
+                        _datePurchased != null
+                            ? '${_datePurchased!.year}-${_datePurchased!.month.toString().padLeft(2, '0')}-${_datePurchased!.day.toString().padLeft(2, '0')}'
+                            : 'Select date',
+                        style: _datePurchased != null
+                            ? null
+                            : TextStyle(color: Theme.of(context).hintColor),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _roastDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() => _roastDate = date);
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Roast Date',
+                        suffixIcon: _roastDate != null
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () => setState(() => _roastDate = null),
+                              )
+                            : null,
+                      ),
+                      child: Text(
+                        _roastDate != null
+                            ? '${_roastDate!.year}-${_roastDate!.month.toString().padLeft(2, '0')}-${_roastDate!.day.toString().padLeft(2, '0')}'
+                            : 'Select date',
+                        style: _roastDate != null
+                            ? null
+                            : TextStyle(color: Theme.of(context).hintColor),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _openDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() => _openDate = date);
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Open Date',
+                        suffixIcon: _openDate != null
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () => setState(() => _openDate = null),
+                              )
+                            : null,
+                      ),
+                      child: Text(
+                        _openDate != null
+                            ? '${_openDate!.year}-${_openDate!.month.toString().padLeft(2, '0')}-${_openDate!.day.toString().padLeft(2, '0')}'
+                            : 'Select date',
+                        style: _openDate != null
+                            ? null
+                            : TextStyle(color: Theme.of(context).hintColor),
+                      ),
+                    ),
                   ),
                 ],
               ],
@@ -671,7 +821,12 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         variety: _varietyController.text.isEmpty ? null : _varietyController.text,
         elevation: _elevationController.text.isEmpty ? null : _elevationController.text,
         beanAroma: _beanAromaController.text.isEmpty ? null : _beanAromaController.text,
-        openDate: DateTime.now(),
+        price: _priceController.text.isEmpty ? null : double.tryParse(_priceController.text),
+        bagSizeGrams: _bagSizeController.text.isEmpty ? null : double.tryParse(_bagSizeController.text),
+        recommendedRestDays: _restDaysController.text.isEmpty ? null : int.tryParse(_restDaysController.text),
+        datePurchased: _datePurchased,
+        roastDate: _roastDate,
+        openDate: _openDate ?? DateTime.now(),
       );
 
       await ref.read(bagsProvider.notifier).createBag(bag);
@@ -761,6 +916,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     _varietyController.dispose();
     _elevationController.dispose();
     _beanAromaController.dispose();
+    _priceController.dispose();
+    _bagSizeController.dispose();
+    _restDaysController.dispose();
     _grindLevelController.dispose();
     _waterTempController.dispose();
     _gramsUsedController.dispose();
