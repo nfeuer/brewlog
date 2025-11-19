@@ -9,12 +9,18 @@ import 'bags_provider.dart';
 final cupsForBagProvider =
     Provider.family<List<Cup>, String>((ref, bagId) {
   final db = ref.watch(databaseServiceProvider);
+  // Watch bags provider to trigger refresh when bags are updated
+  // (bags are updated whenever cups are created/updated/deleted)
+  ref.watch(bagsProvider);
   return db.getCupsForBag(bagId);
 });
 
 /// Provider for a single cup by ID
 final cupProvider = Provider.family<Cup?, String>((ref, cupId) {
   final db = ref.watch(databaseServiceProvider);
+  // Watch bags provider to trigger refresh when bags are updated
+  // (bags are updated whenever cups are created/updated/deleted)
+  ref.watch(bagsProvider);
   return db.getCup(cupId);
 });
 
