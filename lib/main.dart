@@ -29,15 +29,6 @@ void main() async {
   final db = DatabaseService();
   await db.initialize();
 
-  // Generate sample data if database is empty
-  final sampleDataService = SampleDataService();
-  final hasSampleData = await sampleDataService.hasSampleData();
-  if (!hasSampleData) {
-    print('Generating sample data for testing...');
-    await sampleDataService.generateSampleData();
-    print('Sample data generated!');
-  }
-
   // Try to initialize Firebase (optional)
   final firebaseService = FirebaseService();
   final firebaseAvailable = await firebaseService.initialize();
@@ -53,6 +44,24 @@ void main() async {
       child: BrewLogApp(),
     ),
   );
+
+  // Generate sample data in the background (non-blocking)
+  _generateSampleDataIfNeeded();
+}
+
+/// Generate sample data in the background without blocking app startup
+Future<void> _generateSampleDataIfNeeded() async {
+  try {
+    final sampleDataService = SampleDataService();
+    final hasSampleData = await sampleDataService.hasSampleData();
+    if (!hasSampleData) {
+      print('Generating sample data for testing...');
+      await sampleDataService.generateSampleData();
+      print('Sample data generated!');
+    }
+  } catch (e) {
+    print('Error generating sample data: $e');
+  }
 }
 
 class BrewLogApp extends StatelessWidget {
