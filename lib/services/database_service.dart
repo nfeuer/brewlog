@@ -75,7 +75,8 @@ class DatabaseService {
       ratingScaleIndex: RatingScale.oneToFive.index,
       viewPreferenceIndex: ViewPreference.grid.index,
     );
-    await _userBox.put('current_user', user);
+    // Store as JSON until adapters are generated
+    await _userBox.put('current_user', user.toJson());
   }
 
   // ============================================================================
@@ -84,13 +85,16 @@ class DatabaseService {
 
   /// Get current user profile
   UserProfile? getCurrentUser() {
-    return _userBox.get('current_user') as UserProfile?;
+    final json = _userBox.get('current_user');
+    if (json == null) return null;
+    return UserProfile.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
   /// Update user profile
   Future<void> updateUser(UserProfile user) async {
     user.touch();
-    await _userBox.put('current_user', user);
+    // Store as JSON until adapters are generated
+    await _userBox.put('current_user', user.toJson());
   }
 
   /// Update user stats
@@ -112,7 +116,7 @@ class DatabaseService {
     if (user == null) return [];
 
     return _bagsBox.values
-        .cast<CoffeeBag>()
+        .map((json) => CoffeeBag.fromJson(Map<String, dynamic>.from(json as Map)))
         .where((bag) => bag.userId == user.id)
         .toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -120,12 +124,15 @@ class DatabaseService {
 
   /// Get bag by ID
   CoffeeBag? getBag(String bagId) {
-    return _bagsBox.get(bagId) as CoffeeBag?;
+    final json = _bagsBox.get(bagId);
+    if (json == null) return null;
+    return CoffeeBag.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
   /// Create new bag
   Future<String> createBag(CoffeeBag bag) async {
-    await _bagsBox.put(bag.id, bag);
+    // Store as JSON until adapters are generated
+    await _bagsBox.put(bag.id, bag.toJson());
 
     // Update user stats
     final user = getCurrentUser();
@@ -140,7 +147,8 @@ class DatabaseService {
   /// Update existing bag
   Future<void> updateBag(CoffeeBag bag) async {
     bag.touch();
-    await _bagsBox.put(bag.id, bag);
+    // Store as JSON until adapters are generated
+    await _bagsBox.put(bag.id, bag.toJson());
   }
 
   /// Delete bag and all its cups
@@ -196,7 +204,7 @@ class DatabaseService {
   /// Get all cups for a bag
   List<Cup> getCupsForBag(String bagId) {
     return _cupsBox.values
-        .cast<Cup>()
+        .map((json) => Cup.fromJson(Map<String, dynamic>.from(json as Map)))
         .where((cup) => cup.bagId == bagId)
         .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -204,12 +212,15 @@ class DatabaseService {
 
   /// Get cup by ID
   Cup? getCup(String cupId) {
-    return _cupsBox.get(cupId) as Cup?;
+    final json = _cupsBox.get(cupId);
+    if (json == null) return null;
+    return Cup.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
   /// Create new cup
   Future<String> createCup(Cup cup) async {
-    await _cupsBox.put(cup.id, cup);
+    // Store as JSON until adapters are generated
+    await _cupsBox.put(cup.id, cup.toJson());
 
     // Update user stats
     final user = getCurrentUser();
@@ -233,7 +244,8 @@ class DatabaseService {
     final oldCup = getCup(cup.id);
 
     cup.touch();
-    await _cupsBox.put(cup.id, cup);
+    // Store as JSON until adapters are generated
+    await _cupsBox.put(cup.id, cup.toJson());
 
     // Update user stats if brew parameters changed
     if (oldCup != null) {
@@ -323,7 +335,8 @@ class DatabaseService {
     for (final c in allCups) {
       if (c.isBest && c.id != cupId) {
         c.isBest = false;
-        await _cupsBox.put(c.id, c);
+        // Store as JSON until adapters are generated
+        await _cupsBox.put(c.id, c.toJson());
       }
     }
 
@@ -342,7 +355,7 @@ class DatabaseService {
     if (user == null) return [];
 
     return _sharedCupsBox.values
-        .cast<SharedCup>()
+        .map((json) => SharedCup.fromJson(Map<String, dynamic>.from(json as Map)))
         .where((shared) => shared.receivedByUserId == user.id)
         .toList()
       ..sort((a, b) => b.sharedAt.compareTo(a.sharedAt));
@@ -350,7 +363,8 @@ class DatabaseService {
 
   /// Add shared cup from QR code
   Future<String> addSharedCup(SharedCup sharedCup) async {
-    await _sharedCupsBox.put(sharedCup.id, sharedCup);
+    // Store as JSON until adapters are generated
+    await _sharedCupsBox.put(sharedCup.id, sharedCup.toJson());
     return sharedCup.id;
   }
 
@@ -378,7 +392,7 @@ class DatabaseService {
     if (user == null) return [];
 
     return _equipmentBox.values
-        .cast<EquipmentSetup>()
+        .map((json) => EquipmentSetup.fromJson(Map<String, dynamic>.from(json as Map)))
         .where((equipment) => equipment.userId == user.id)
         .toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -386,7 +400,9 @@ class DatabaseService {
 
   /// Get equipment setup by ID
   EquipmentSetup? getEquipment(String equipmentId) {
-    return _equipmentBox.get(equipmentId) as EquipmentSetup?;
+    final json = _equipmentBox.get(equipmentId);
+    if (json == null) return null;
+    return EquipmentSetup.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
   /// Get default equipment setup for user
@@ -396,7 +412,7 @@ class DatabaseService {
 
     try {
       return _equipmentBox.values
-          .cast<EquipmentSetup>()
+          .map((json) => EquipmentSetup.fromJson(Map<String, dynamic>.from(json as Map)))
           .firstWhere(
             (equipment) => equipment.userId == user.id && equipment.isDefault,
           );
@@ -417,7 +433,8 @@ class DatabaseService {
       await _unmarkAllEquipmentAsDefault(equipment.userId);
     }
 
-    await _equipmentBox.put(equipment.id, equipment);
+    // Store as JSON until adapters are generated
+    await _equipmentBox.put(equipment.id, equipment.toJson());
     return equipment.id;
   }
 
@@ -429,7 +446,8 @@ class DatabaseService {
     }
 
     equipment.touch();
-    await _equipmentBox.put(equipment.id, equipment);
+    // Store as JSON until adapters are generated
+    await _equipmentBox.put(equipment.id, equipment.toJson());
   }
 
   /// Delete equipment setup
@@ -462,12 +480,13 @@ class DatabaseService {
   /// Unmark all equipment as default for a user
   Future<void> _unmarkAllEquipmentAsDefault(String userId) async {
     final allEquipment = _equipmentBox.values
-        .cast<EquipmentSetup>()
+        .map((json) => EquipmentSetup.fromJson(Map<String, dynamic>.from(json as Map)))
         .where((e) => e.userId == userId && e.isDefault);
 
     for (final equipment in allEquipment) {
       equipment.isDefault = false;
-      await _equipmentBox.put(equipment.id, equipment);
+      // Store as JSON until adapters are generated
+      await _equipmentBox.put(equipment.id, equipment.toJson());
     }
   }
 
