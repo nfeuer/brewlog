@@ -55,8 +55,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  assets:
-    - assets/images/
+  # Uncomment when adding images to the project
+  # assets:
+  #   - assets/images/
 
   # fonts:
   #   - family: Schyler

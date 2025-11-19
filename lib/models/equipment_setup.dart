@@ -1,7 +1,8 @@
 import 'package:hive/hive.dart';
 import '../utils/constants.dart';
 
-part 'equipment_setup.g.dart';
+// Part directive commented out until build_runner is executed
+// part 'equipment_setup.g.dart';
 
 @HiveType(typeId: HiveTypeIds.equipmentSetup)
 class EquipmentSetup extends HiveObject {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import '../models/equipment_setup.dart';
 import '../providers/equipment_provider.dart';
 import '../providers/user_provider.dart';

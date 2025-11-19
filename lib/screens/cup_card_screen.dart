@@ -232,10 +232,13 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       icon: const Icon(Icons.add_circle_outline),
                       tooltip: 'Add Equipment Setup',
                       onPressed: () async {
+                        final user = ref.read(userProfileProvider);
+                        if (user == null) return;
+
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const EquipmentFormScreen(),
+                            builder: (context) => EquipmentFormScreen(userId: user.id),
                           ),
                         );
                         if (result == true) {
