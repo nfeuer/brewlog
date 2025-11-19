@@ -63,8 +63,37 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   final _bloomTimeController = TextEditingController();
   final _tastingNotesController = TextEditingController();
 
+  // Advanced brewing parameter controllers
+  final _preInfusionTimeController = TextEditingController();
+  final _pressureBarsController = TextEditingController();
+  final _yieldGramsController = TextEditingController();
+  final _bloomAmountController = TextEditingController();
+  final _pourScheduleController = TextEditingController();
+  final _tdsController = TextEditingController();
+  final _extractionYieldController = TextEditingController();
+
+  // Environmental condition controllers
+  final _roomTempController = TextEditingController();
+  final _humidityController = TextEditingController();
+  final _altitudeController = TextEditingController();
+
+  // SCA cupping score controllers
+  final _cuppingFragranceController = TextEditingController();
+  final _cuppingAromaController = TextEditingController();
+  final _cuppingFlavorController = TextEditingController();
+  final _cuppingAftertasteController = TextEditingController();
+  final _cuppingAcidityController = TextEditingController();
+  final _cuppingBodyController = TextEditingController();
+  final _cuppingBalanceController = TextEditingController();
+  final _cuppingSweetnessController = TextEditingController();
+  final _cuppingCleanCupController = TextEditingController();
+  final _cuppingUniformityController = TextEditingController();
+  final _cuppingOverallController = TextEditingController();
+  final _cuppingDefectsController = TextEditingController();
+
   String? _selectedBrewType;
   String? _selectedEquipmentId;
+  String? _timeOfDay;
   double? _rating;
   List<String> _selectedFlavorTags = [];
   List<String> _photoPaths = [];
@@ -92,6 +121,36 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _finalVolumeController.text = cup.finalVolumeMl?.toString() ?? '';
         _brewTimeController.text = cup.brewTimeSeconds?.toString() ?? '';
         _bloomTimeController.text = cup.bloomTimeSeconds?.toString() ?? '';
+
+        // Load advanced brewing parameters
+        _preInfusionTimeController.text = cup.preInfusionTimeSeconds?.toString() ?? '';
+        _pressureBarsController.text = cup.pressureBars?.toString() ?? '';
+        _yieldGramsController.text = cup.yieldGrams?.toString() ?? '';
+        _bloomAmountController.text = cup.bloomAmountGrams?.toString() ?? '';
+        _pourScheduleController.text = cup.pourSchedule ?? '';
+        _tdsController.text = cup.tds?.toString() ?? '';
+        _extractionYieldController.text = cup.extractionYield?.toString() ?? '';
+
+        // Load environmental conditions
+        _roomTempController.text = cup.roomTempCelsius?.toString() ?? '';
+        _humidityController.text = cup.humidity?.toString() ?? '';
+        _altitudeController.text = cup.altitudeMeters?.toString() ?? '';
+        _timeOfDay = cup.timeOfDay;
+
+        // Load SCA cupping scores
+        _cuppingFragranceController.text = cup.cuppingFragrance?.toString() ?? '';
+        _cuppingAromaController.text = cup.cuppingAroma?.toString() ?? '';
+        _cuppingFlavorController.text = cup.cuppingFlavor?.toString() ?? '';
+        _cuppingAftertasteController.text = cup.cuppingAftertaste?.toString() ?? '';
+        _cuppingAcidityController.text = cup.cuppingAcidity?.toString() ?? '';
+        _cuppingBodyController.text = cup.cuppingBody?.toString() ?? '';
+        _cuppingBalanceController.text = cup.cuppingBalance?.toString() ?? '';
+        _cuppingSweetnessController.text = cup.cuppingSweetness?.toString() ?? '';
+        _cuppingCleanCupController.text = cup.cuppingCleanCup?.toString() ?? '';
+        _cuppingUniformityController.text = cup.cuppingUniformity?.toString() ?? '';
+        _cuppingOverallController.text = cup.cuppingOverall?.toString() ?? '';
+        _cuppingDefectsController.text = cup.cuppingDefects ?? '';
+
         // Load rating in user's current preferred scale
         _rating = cup.getRating(ratingScale);
         _tastingNotesController.text = cup.tastingNotes ?? '';
@@ -502,6 +561,303 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               ],
             ),
 
+            // Advanced Brewing Parameters Section (brew-type specific)
+            if (_shouldShowAdvancedBrewingParams()) ...[
+              const SizedBox(height: 24),
+              _buildSection(
+                'Advanced Brewing Parameters',
+                [
+                  // Espresso-specific fields
+                  if (_isEspressoBrew()) ...[
+                    if (fieldVisibility['preInfusionTime'] == true) ...[
+                      TextFormField(
+                        controller: _preInfusionTimeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Pre-Infusion Time',
+                          suffixText: 'sec',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (fieldVisibility['pressureBars'] == true) ...[
+                      TextFormField(
+                        controller: _pressureBarsController,
+                        decoration: const InputDecoration(
+                          labelText: 'Pressure',
+                          suffixText: 'bars',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (fieldVisibility['yieldGrams'] == true) ...[
+                      TextFormField(
+                        controller: _yieldGramsController,
+                        decoration: const InputDecoration(
+                          labelText: 'Yield',
+                          suffixText: 'g',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                  // Pour over-specific fields
+                  if (_isPourOverBrew()) ...[
+                    if (fieldVisibility['bloomAmount'] == true) ...[
+                      TextFormField(
+                        controller: _bloomAmountController,
+                        decoration: const InputDecoration(
+                          labelText: 'Bloom Water Amount',
+                          suffixText: 'g',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (fieldVisibility['pourSchedule'] == true) ...[
+                      TextFormField(
+                        controller: _pourScheduleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Pour Schedule',
+                          hintText: 'e.g., 0:00-50g, 0:45-100g, 1:30-final',
+                        ),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                  // TDS and Extraction (for all brew types, hidden by default)
+                  if (fieldVisibility['tds'] == true) ...[
+                    TextFormField(
+                      controller: _tdsController,
+                      decoration: const InputDecoration(
+                        labelText: 'TDS',
+                        suffixText: '%',
+                        hintText: 'Requires refractometer',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['extractionYield'] == true) ...[
+                    TextFormField(
+                      controller: _extractionYieldController,
+                      decoration: const InputDecoration(
+                        labelText: 'Extraction Yield',
+                        suffixText: '%',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+
+            // Environmental Conditions Section
+            if (_shouldShowEnvironmentalConditions()) ...[
+              const SizedBox(height: 24),
+              _buildSection(
+                'Environmental Conditions',
+                [
+                  if (fieldVisibility['roomTemp'] == true) ...[
+                    TextFormField(
+                      controller: _roomTempController,
+                      decoration: const InputDecoration(
+                        labelText: 'Room Temperature',
+                        suffixText: '°C',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['humidity'] == true) ...[
+                    TextFormField(
+                      controller: _humidityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Humidity',
+                        suffixText: '%',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['altitude'] == true) ...[
+                    TextFormField(
+                      controller: _altitudeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Altitude',
+                        suffixText: 'm',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['timeOfDay'] == true) ...[
+                    DropdownButtonFormField<String>(
+                      value: _timeOfDay,
+                      decoration: const InputDecoration(labelText: 'Time of Day'),
+                      items: [
+                        const DropdownMenuItem(value: null, child: Text('Not specified')),
+                        ...timesOfDay.map((time) => DropdownMenuItem(
+                              value: time,
+                              child: Text(time),
+                            )),
+                      ],
+                      onChanged: (value) => setState(() => _timeOfDay = value),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+
+            // SCA Cupping Scores Section
+            if (_shouldShowCuppingScores()) ...[
+              const SizedBox(height: 24),
+              _buildSection(
+                'SCA Cupping Scores',
+                [
+                  const Text(
+                    'Score each attribute from 0-10',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+                  if (fieldVisibility['cuppingFragrance'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingFragranceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Fragrance/Aroma (Dry)',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingAroma'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingAromaController,
+                      decoration: const InputDecoration(
+                        labelText: 'Aroma (Wet)',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingFlavor'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingFlavorController,
+                      decoration: const InputDecoration(
+                        labelText: 'Flavor',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingAftertaste'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingAftertasteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Aftertaste',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingAcidity'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingAcidityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Acidity',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingBody'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingBodyController,
+                      decoration: const InputDecoration(
+                        labelText: 'Body',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingBalance'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingBalanceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Balance',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingSweetness'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingSweetnessController,
+                      decoration: const InputDecoration(
+                        labelText: 'Sweetness',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingCleanCup'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingCleanCupController,
+                      decoration: const InputDecoration(
+                        labelText: 'Clean Cup',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingUniformity'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingUniformityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Uniformity',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingOverall'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingOverallController,
+                      decoration: const InputDecoration(
+                        labelText: 'Overall',
+                        hintText: '0-10',
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (fieldVisibility['cuppingDefects'] == true) ...[
+                    TextFormField(
+                      controller: _cuppingDefectsController,
+                      decoration: const InputDecoration(
+                        labelText: 'Defects Notes',
+                        hintText: 'Describe any defects found',
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ],
+              ),
+            ],
+
             if (fieldVisibility['rating'] == true) ...[
               const SizedBox(height: 24),
               // Rating Section
@@ -612,6 +968,54 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         ),
       ),
     );
+  }
+
+  // Helper methods for conditional field display
+  bool _isEspressoBrew() {
+    return _selectedBrewType?.toLowerCase() == 'espresso';
+  }
+
+  bool _isPourOverBrew() {
+    final brewType = _selectedBrewType?.toLowerCase() ?? '';
+    return brewType.contains('pour') ||
+        brewType.contains('v60') ||
+        brewType.contains('chemex') ||
+        brewType.contains('kalita');
+  }
+
+  bool _shouldShowAdvancedBrewingParams() {
+    final fieldVisibility = ref.watch(cupFieldVisibilityProvider);
+    return fieldVisibility['preInfusionTime'] == true ||
+        fieldVisibility['pressureBars'] == true ||
+        fieldVisibility['yieldGrams'] == true ||
+        fieldVisibility['bloomAmount'] == true ||
+        fieldVisibility['pourSchedule'] == true ||
+        fieldVisibility['tds'] == true ||
+        fieldVisibility['extractionYield'] == true;
+  }
+
+  bool _shouldShowEnvironmentalConditions() {
+    final fieldVisibility = ref.watch(cupFieldVisibilityProvider);
+    return fieldVisibility['roomTemp'] == true ||
+        fieldVisibility['humidity'] == true ||
+        fieldVisibility['altitude'] == true ||
+        fieldVisibility['timeOfDay'] == true;
+  }
+
+  bool _shouldShowCuppingScores() {
+    final fieldVisibility = ref.watch(cupFieldVisibilityProvider);
+    return fieldVisibility['cuppingFragrance'] == true ||
+        fieldVisibility['cuppingAroma'] == true ||
+        fieldVisibility['cuppingFlavor'] == true ||
+        fieldVisibility['cuppingAftertaste'] == true ||
+        fieldVisibility['cuppingAcidity'] == true ||
+        fieldVisibility['cuppingBody'] == true ||
+        fieldVisibility['cuppingBalance'] == true ||
+        fieldVisibility['cuppingSweetness'] == true ||
+        fieldVisibility['cuppingCleanCup'] == true ||
+        fieldVisibility['cuppingUniformity'] == true ||
+        fieldVisibility['cuppingOverall'] == true ||
+        fieldVisibility['cuppingDefects'] == true;
   }
 
   Widget _buildSection(String title, List<Widget> children) {
@@ -874,6 +1278,76 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       bloomTimeSeconds: _bloomTimeController.text.isEmpty
           ? null
           : int.tryParse(_bloomTimeController.text),
+      // Advanced brewing parameters
+      preInfusionTimeSeconds: _preInfusionTimeController.text.isEmpty
+          ? null
+          : int.tryParse(_preInfusionTimeController.text),
+      pressureBars: _pressureBarsController.text.isEmpty
+          ? null
+          : double.tryParse(_pressureBarsController.text),
+      yieldGrams: _yieldGramsController.text.isEmpty
+          ? null
+          : double.tryParse(_yieldGramsController.text),
+      bloomAmountGrams: _bloomAmountController.text.isEmpty
+          ? null
+          : double.tryParse(_bloomAmountController.text),
+      pourSchedule: _pourScheduleController.text.isEmpty
+          ? null
+          : _pourScheduleController.text,
+      tds: _tdsController.text.isEmpty
+          ? null
+          : double.tryParse(_tdsController.text),
+      extractionYield: _extractionYieldController.text.isEmpty
+          ? null
+          : double.tryParse(_extractionYieldController.text),
+      // Environmental conditions
+      roomTempCelsius: _roomTempController.text.isEmpty
+          ? null
+          : double.tryParse(_roomTempController.text),
+      humidity: _humidityController.text.isEmpty
+          ? null
+          : double.tryParse(_humidityController.text),
+      altitudeMeters: _altitudeController.text.isEmpty
+          ? null
+          : int.tryParse(_altitudeController.text),
+      timeOfDay: _timeOfDay,
+      // SCA cupping scores
+      cuppingFragrance: _cuppingFragranceController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingFragranceController.text),
+      cuppingAroma: _cuppingAromaController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingAromaController.text),
+      cuppingFlavor: _cuppingFlavorController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingFlavorController.text),
+      cuppingAftertaste: _cuppingAftertasteController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingAftertasteController.text),
+      cuppingAcidity: _cuppingAcidityController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingAcidityController.text),
+      cuppingBody: _cuppingBodyController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingBodyController.text),
+      cuppingBalance: _cuppingBalanceController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingBalanceController.text),
+      cuppingSweetness: _cuppingSweetnessController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingSweetnessController.text),
+      cuppingCleanCup: _cuppingCleanCupController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingCleanCupController.text),
+      cuppingUniformity: _cuppingUniformityController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingUniformityController.text),
+      cuppingOverall: _cuppingOverallController.text.isEmpty
+          ? null
+          : double.tryParse(_cuppingOverallController.text),
+      cuppingDefects: _cuppingDefectsController.text.isEmpty
+          ? null
+          : _cuppingDefectsController.text,
       tastingNotes: _tastingNotesController.text.isEmpty
           ? null
           : _tastingNotesController.text,
@@ -941,6 +1415,35 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     _brewTimeController.dispose();
     _bloomTimeController.dispose();
     _tastingNotesController.dispose();
+
+    // Dispose advanced brewing parameter controllers
+    _preInfusionTimeController.dispose();
+    _pressureBarsController.dispose();
+    _yieldGramsController.dispose();
+    _bloomAmountController.dispose();
+    _pourScheduleController.dispose();
+    _tdsController.dispose();
+    _extractionYieldController.dispose();
+
+    // Dispose environmental condition controllers
+    _roomTempController.dispose();
+    _humidityController.dispose();
+    _altitudeController.dispose();
+
+    // Dispose SCA cupping score controllers
+    _cuppingFragranceController.dispose();
+    _cuppingAromaController.dispose();
+    _cuppingFlavorController.dispose();
+    _cuppingAftertasteController.dispose();
+    _cuppingAcidityController.dispose();
+    _cuppingBodyController.dispose();
+    _cuppingBalanceController.dispose();
+    _cuppingSweetnessController.dispose();
+    _cuppingCleanCupController.dispose();
+    _cuppingUniformityController.dispose();
+    _cuppingOverallController.dispose();
+    _cuppingDefectsController.dispose();
+
     super.dispose();
   }
 }

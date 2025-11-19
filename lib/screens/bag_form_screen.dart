@@ -35,10 +35,21 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
   final _bagSizeController = TextEditingController();
   final _restDaysController = TextEditingController();
 
+  // New bean detail controllers
+  final _regionController = TextEditingController();
+  final _roastProfileController = TextEditingController();
+
   String? _labelPhotoPath;
   DateTime? _datePurchased;
   DateTime? _roastDate;
   DateTime? _openDate;
+  DateTime? _harvestDate;
+
+  // New bean detail fields
+  String? _processingMethod;
+  String? _roastLevel;
+  String? _beanSize;
+  List<String> _certifications = [];
 
   @override
   void initState() {
@@ -64,6 +75,15 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
     _datePurchased = bag.datePurchased;
     _roastDate = bag.roastDate;
     _openDate = bag.openDate;
+
+    // Load new bean detail fields
+    _regionController.text = bag.region ?? '';
+    _roastProfileController.text = bag.roastProfile ?? '';
+    _harvestDate = bag.harvestDate;
+    _processingMethod = bag.processingMethod;
+    _roastLevel = bag.roastLevel;
+    _beanSize = bag.beanSize;
+    _certifications = bag.certifications ?? [];
   }
 
   @override
@@ -128,6 +148,27 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
                   decoration: const InputDecoration(labelText: 'Farmer'),
                 ),
                 const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _processingMethod,
+                  decoration: const InputDecoration(labelText: 'Processing Method'),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Not specified')),
+                    ...processingMethods.map((method) => DropdownMenuItem(
+                          value: method,
+                          child: Text(method),
+                        )),
+                  ],
+                  onChanged: (value) => setState(() => _processingMethod = value),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _regionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Region',
+                    hintText: 'e.g., Yirgacheffe, Ethiopia',
+                  ),
+                ),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: _varietyController,
                   decoration: const InputDecoration(labelText: 'Variety'),
@@ -135,7 +176,23 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _elevationController,
-                  decoration: const InputDecoration(labelText: 'Elevation'),
+                  decoration: const InputDecoration(
+                    labelText: 'Elevation',
+                    hintText: 'e.g., 1800m',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _beanSize,
+                  decoration: const InputDecoration(labelText: 'Bean Size'),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Not specified')),
+                    ...beanSizes.map((size) => DropdownMenuItem(
+                          value: size,
+                          child: Text(size),
+                        )),
+                  ],
+                  onChanged: (value) => setState(() => _beanSize = value),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -143,6 +200,36 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
                   decoration: const InputDecoration(labelText: 'Bean Aroma'),
                   maxLines: 2,
                 ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _roastLevel,
+                  decoration: const InputDecoration(labelText: 'Roast Level'),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Not specified')),
+                    ...roastLevels.map((level) => DropdownMenuItem(
+                          value: level,
+                          child: Text(level),
+                        )),
+                  ],
+                  onChanged: (value) => setState(() => _roastLevel = value),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _roastProfileController,
+                  decoration: const InputDecoration(
+                    labelText: 'Roast Profile',
+                    hintText: 'Development time, notes, etc.',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                _buildDateField(
+                  'Harvest Date',
+                  _harvestDate,
+                  (date) => setState(() => _harvestDate = date),
+                ),
+                const SizedBox(height: 12),
+                _buildCertificationsField(),
               ],
             ),
 
@@ -309,6 +396,36 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
     );
   }
 
+  Widget _buildCertificationsField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Certifications', style: AppTextStyles.label),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: coffeeCertifications.map((cert) {
+            final isSelected = _certifications.contains(cert);
+            return FilterChip(
+              label: Text(cert),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _certifications.add(cert);
+                  } else {
+                    _certifications.remove(cert);
+                  }
+                });
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   void _changePhoto() async {
     final source = await showDialog<String>(
       context: context,
@@ -385,6 +502,14 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
       roastDate: _roastDate,
       openDate: _openDate,
       recommendedRestDays: _restDaysController.text.isEmpty ? null : int.tryParse(_restDaysController.text),
+      // New bean detail fields
+      processingMethod: _processingMethod,
+      region: _regionController.text.isEmpty ? null : _regionController.text,
+      harvestDate: _harvestDate,
+      roastLevel: _roastLevel,
+      roastProfile: _roastProfileController.text.isEmpty ? null : _roastProfileController.text,
+      beanSize: _beanSize,
+      certifications: _certifications.isEmpty ? null : _certifications,
       bagStatusIndex: widget.bag?.bagStatusIndex ?? BagStatus.active.index,
       totalCups: widget.bag?.totalCups ?? 0,
       avgScore: widget.bag?.avgScore,
@@ -423,6 +548,8 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
     _priceController.dispose();
     _bagSizeController.dispose();
     _restDaysController.dispose();
+    _regionController.dispose();
+    _roastProfileController.dispose();
     super.dispose();
   }
 }
