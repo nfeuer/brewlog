@@ -80,6 +80,13 @@ const Map<String, bool> defaultFieldVisibility = {
   'variety': true,
   'elevation': false,
   'beanAroma': true,
+  'processingMethod': false,
+  'region': false,
+  'harvestDate': false,
+  'roastLevel': false,
+  'roastProfile': false,
+  'beanSize': false,
+  'certifications': false,
 
   // Brew Parameters
   'brewType': true,
@@ -91,6 +98,36 @@ const Map<String, bool> defaultFieldVisibility = {
   'ratio': true,
   'brewTime': false,
   'bloomTime': false,
+
+  // Advanced Brewing Parameters (brew-type specific, hidden by default)
+  'preInfusionTime': false,
+  'pressureBars': false,
+  'yieldGrams': false,
+  'bloomAmount': false,
+  'pourSchedule': false,
+  'tds': false,
+  'extractionYield': false,
+
+  // Environmental Conditions (hidden by default)
+  'roomTemp': false,
+  'humidity': false,
+  'altitude': false,
+  'timeOfDay': false,
+
+  // SCA Cupping Scores (hidden by default)
+  'cuppingFragrance': false,
+  'cuppingAroma': false,
+  'cuppingFlavor': false,
+  'cuppingAftertaste': false,
+  'cuppingAcidity': false,
+  'cuppingBody': false,
+  'cuppingBalance': false,
+  'cuppingSweetness': false,
+  'cuppingCleanCup': false,
+  'cuppingUniformity': false,
+  'cuppingOverall': false,
+  'cuppingTotal': false,
+  'cuppingDefects': false,
 
   // Rating & Tasting
   'rating': true,
@@ -121,6 +158,13 @@ const List<CupFieldDefinition> cupFields = [
   CupFieldDefinition(key: 'variety', displayName: 'Variety', section: 'Coffee Info'),
   CupFieldDefinition(key: 'elevation', displayName: 'Elevation', section: 'Coffee Info'),
   CupFieldDefinition(key: 'beanAroma', displayName: 'Bean Aroma', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'processingMethod', displayName: 'Processing Method', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'region', displayName: 'Region', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'harvestDate', displayName: 'Harvest Date', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'roastLevel', displayName: 'Roast Level', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'roastProfile', displayName: 'Roast Profile', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'beanSize', displayName: 'Bean Size', section: 'Coffee Info'),
+  CupFieldDefinition(key: 'certifications', displayName: 'Certifications', section: 'Coffee Info'),
 
   // Brew Parameters section
   CupFieldDefinition(key: 'equipment', displayName: 'Equipment Setup', section: 'Brew Parameters'),
@@ -130,6 +174,36 @@ const List<CupFieldDefinition> cupFields = [
   CupFieldDefinition(key: 'finalVolume', displayName: 'Final Volume', section: 'Brew Parameters'),
   CupFieldDefinition(key: 'brewTime', displayName: 'Brew Time', section: 'Brew Parameters'),
   CupFieldDefinition(key: 'bloomTime', displayName: 'Bloom Time', section: 'Brew Parameters'),
+
+  // Advanced Brewing Parameters section (brew-type specific)
+  CupFieldDefinition(key: 'preInfusionTime', displayName: 'Pre-Infusion Time', section: 'Advanced Brewing'),
+  CupFieldDefinition(key: 'pressureBars', displayName: 'Pressure (bars)', section: 'Advanced Brewing'),
+  CupFieldDefinition(key: 'yieldGrams', displayName: 'Yield (grams)', section: 'Advanced Brewing'),
+  CupFieldDefinition(key: 'bloomAmount', displayName: 'Bloom Amount (grams)', section: 'Advanced Brewing'),
+  CupFieldDefinition(key: 'pourSchedule', displayName: 'Pour Schedule', section: 'Advanced Brewing'),
+  CupFieldDefinition(key: 'tds', displayName: 'TDS', section: 'Advanced Brewing'),
+  CupFieldDefinition(key: 'extractionYield', displayName: 'Extraction Yield (%)', section: 'Advanced Brewing'),
+
+  // Environmental Conditions section
+  CupFieldDefinition(key: 'roomTemp', displayName: 'Room Temperature', section: 'Environmental'),
+  CupFieldDefinition(key: 'humidity', displayName: 'Humidity', section: 'Environmental'),
+  CupFieldDefinition(key: 'altitude', displayName: 'Altitude', section: 'Environmental'),
+  CupFieldDefinition(key: 'timeOfDay', displayName: 'Time of Day', section: 'Environmental'),
+
+  // SCA Cupping Scores section
+  CupFieldDefinition(key: 'cuppingFragrance', displayName: 'Fragrance/Aroma (Dry)', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingAroma', displayName: 'Aroma (Wet)', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingFlavor', displayName: 'Flavor', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingAftertaste', displayName: 'Aftertaste', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingAcidity', displayName: 'Acidity', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingBody', displayName: 'Body', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingBalance', displayName: 'Balance', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingSweetness', displayName: 'Sweetness', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingCleanCup', displayName: 'Clean Cup', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingUniformity', displayName: 'Uniformity', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingOverall', displayName: 'Overall', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingTotal', displayName: 'Total Score', section: 'SCA Cupping'),
+  CupFieldDefinition(key: 'cuppingDefects', displayName: 'Defects Notes', section: 'SCA Cupping'),
 
   // Rating & Tasting section
   CupFieldDefinition(key: 'rating', displayName: 'Rating', section: 'Rating & Tasting'),
@@ -194,4 +268,65 @@ const List<String> kettleTypes = [
   'Gooseneck Stovetop',
   'Standard Electric',
   'Standard Stovetop',
+];
+
+// Processing methods for coffee beans
+const List<String> processingMethods = [
+  'Washed',
+  'Natural',
+  'Honey',
+  'Semi-Washed',
+  'Wet Hulled',
+  'Anaerobic',
+  'Carbonic Maceration',
+  'Double Fermentation',
+];
+
+// Roast levels
+const List<String> roastLevels = [
+  'Light',
+  'Light-Medium',
+  'Medium',
+  'Medium-Dark',
+  'Dark',
+  'French',
+  'Italian',
+];
+
+// Time of day options
+const List<String> timesOfDay = [
+  'Morning',
+  'Afternoon',
+  'Evening',
+  'Night',
+];
+
+// Common bean screen sizes
+const List<String> beanSizes = [
+  '10',
+  '12',
+  '13',
+  '14',
+  '15',
+  '16',
+  '17',
+  '18',
+  '19',
+  '20',
+  '14/16',
+  '15/16',
+  '16/17',
+  '17/18',
+  '18/19',
+];
+
+// Coffee certifications
+const List<String> coffeeCertifications = [
+  'Organic',
+  'Fair Trade',
+  'Rainforest Alliance',
+  'Bird Friendly',
+  'Direct Trade',
+  'UTZ Certified',
+  'Cup of Excellence',
 ];
