@@ -82,6 +82,28 @@ class CoffeeBag extends HiveObject {
   @HiveField(23)
   int? recommendedRestDays; // Days to rest after roasting
 
+  // Additional Bean Details
+  @HiveField(24)
+  String? processingMethod; // e.g., Washed, Natural, Honey, Anaerobic
+
+  @HiveField(25)
+  String? region; // Region/country/farm location
+
+  @HiveField(26)
+  DateTime? harvestDate; // When the coffee was harvested
+
+  @HiveField(27)
+  String? roastLevel; // Light, Medium, Dark, or numeric (e.g., "2/5")
+
+  @HiveField(28)
+  String? roastProfile; // Roast profile notes (development time, etc.)
+
+  @HiveField(29)
+  String? beanSize; // Screen size (e.g., "17/18")
+
+  @HiveField(30)
+  List<String>? certifications; // Organic, Fair Trade, etc.
+
   CoffeeBag({
     required this.id,
     required this.userId,
@@ -100,6 +122,13 @@ class CoffeeBag extends HiveObject {
     this.openDate,
     this.finishedDate,
     this.recommendedRestDays,
+    this.processingMethod,
+    this.region,
+    this.harvestDate,
+    this.roastLevel,
+    this.roastProfile,
+    this.beanSize,
+    this.certifications,
     this.bagStatusIndex = 0, // Default to active
     this.totalCups = 0,
     this.avgScore,
@@ -156,6 +185,13 @@ class CoffeeBag extends HiveObject {
       'openDate': openDate?.toIso8601String(),
       'finishedDate': finishedDate?.toIso8601String(),
       'recommendedRestDays': recommendedRestDays,
+      'processingMethod': processingMethod,
+      'region': region,
+      'harvestDate': harvestDate?.toIso8601String(),
+      'roastLevel': roastLevel,
+      'roastProfile': roastProfile,
+      'beanSize': beanSize,
+      'certifications': certifications,
       'status': status.name,
       'totalCups': totalCups,
       'avgScore': avgScore,
@@ -193,6 +229,17 @@ class CoffeeBag extends HiveObject {
           ? DateTime.parse(json['finishedDate'] as String)
           : null,
       recommendedRestDays: json['recommendedRestDays'] as int?,
+      processingMethod: json['processingMethod'] as String?,
+      region: json['region'] as String?,
+      harvestDate: json['harvestDate'] != null
+          ? DateTime.parse(json['harvestDate'] as String)
+          : null,
+      roastLevel: json['roastLevel'] as String?,
+      roastProfile: json['roastProfile'] as String?,
+      beanSize: json['beanSize'] as String?,
+      certifications: json['certifications'] != null
+          ? List<String>.from(json['certifications'])
+          : null,
       bagStatusIndex:
           BagStatus.values.indexWhere((e) => e.name == json['status']),
       totalCups: json['totalCups'] as int? ?? 0,
@@ -223,6 +270,13 @@ class CoffeeBag extends HiveObject {
     DateTime? openDate,
     DateTime? finishedDate,
     int? recommendedRestDays,
+    String? processingMethod,
+    String? region,
+    DateTime? harvestDate,
+    String? roastLevel,
+    String? roastProfile,
+    String? beanSize,
+    List<String>? certifications,
     BagStatus? status,
     int? totalCups,
     double? avgScore,
@@ -247,6 +301,13 @@ class CoffeeBag extends HiveObject {
       openDate: openDate ?? this.openDate,
       finishedDate: finishedDate ?? this.finishedDate,
       recommendedRestDays: recommendedRestDays ?? this.recommendedRestDays,
+      processingMethod: processingMethod ?? this.processingMethod,
+      region: region ?? this.region,
+      harvestDate: harvestDate ?? this.harvestDate,
+      roastLevel: roastLevel ?? this.roastLevel,
+      roastProfile: roastProfile ?? this.roastProfile,
+      beanSize: beanSize ?? this.beanSize,
+      certifications: certifications ?? this.certifications,
       bagStatusIndex: status?.index ?? bagStatusIndex,
       totalCups: totalCups ?? this.totalCups,
       avgScore: avgScore ?? this.avgScore,

@@ -94,6 +94,81 @@ class Cup extends HiveObject {
   @HiveField(25)
   String? adaptationNotes;
 
+  // Advanced Brewing Parameters (brew-type specific)
+  @HiveField(26)
+  int? preInfusionTimeSeconds; // Espresso: pre-infusion duration
+
+  @HiveField(27)
+  double? pressureBars; // Espresso: brew pressure
+
+  @HiveField(28)
+  double? yieldGrams; // Espresso: output weight
+
+  @HiveField(29)
+  double? bloomAmountGrams; // Pour over: bloom water amount
+
+  @HiveField(30)
+  String? pourSchedule; // Pour over: pour timing notes
+
+  @HiveField(31)
+  double? tds; // Total Dissolved Solids (requires refractometer)
+
+  @HiveField(32)
+  double? extractionYield; // Extraction yield percentage
+
+  // Environmental Conditions
+  @HiveField(33)
+  double? roomTempCelsius; // Room temperature during brewing
+
+  @HiveField(34)
+  double? humidity; // Relative humidity percentage
+
+  @HiveField(35)
+  int? altitudeMeters; // Altitude of brewing location
+
+  @HiveField(36)
+  String? timeOfDay; // Time of day (morning, afternoon, evening, night)
+
+  // SCA Cupping Scores (all optional, each 0-10 scale)
+  @HiveField(37)
+  double? cuppingFragrance; // Dry aroma
+
+  @HiveField(38)
+  double? cuppingAroma; // Wet aroma
+
+  @HiveField(39)
+  double? cuppingFlavor; // Overall flavor
+
+  @HiveField(40)
+  double? cuppingAftertaste; // Lingering flavors
+
+  @HiveField(41)
+  double? cuppingAcidity; // Acidity quality/intensity
+
+  @HiveField(42)
+  double? cuppingBody; // Mouthfeel/texture
+
+  @HiveField(43)
+  double? cuppingBalance; // How components work together
+
+  @HiveField(44)
+  double? cuppingSweetness; // Natural sweetness
+
+  @HiveField(45)
+  double? cuppingCleanCup; // Lack of defects
+
+  @HiveField(46)
+  double? cuppingUniformity; // Consistency
+
+  @HiveField(47)
+  double? cuppingOverall; // Holistic impression
+
+  @HiveField(48)
+  double? cuppingTotal; // Total SCA score (0-100, auto-calculated)
+
+  @HiveField(49)
+  String? cuppingDefects; // Notes on any defects
+
   Cup({
     required this.id,
     required this.bagId,
@@ -121,12 +196,38 @@ class Cup extends HiveObject {
     this.customTitle,
     this.equipmentSetupId,
     this.adaptationNotes,
+    this.preInfusionTimeSeconds,
+    this.pressureBars,
+    this.yieldGrams,
+    this.bloomAmountGrams,
+    this.pourSchedule,
+    this.tds,
+    this.extractionYield,
+    this.roomTempCelsius,
+    this.humidity,
+    this.altitudeMeters,
+    this.timeOfDay,
+    this.cuppingFragrance,
+    this.cuppingAroma,
+    this.cuppingFlavor,
+    this.cuppingAftertaste,
+    this.cuppingAcidity,
+    this.cuppingBody,
+    this.cuppingBalance,
+    this.cuppingSweetness,
+    this.cuppingCleanCup,
+    this.cuppingUniformity,
+    this.cuppingOverall,
+    this.cuppingTotal,
+    this.cuppingDefects,
   })  : flavorTags = flavorTags ?? [],
         photoPaths = photoPaths ?? [],
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now() {
     // Auto-calculate ratio if both grams and volume are provided
     _updateRatio();
+    // Auto-calculate cupping total if individual scores are provided
+    _updateCuppingTotal();
   }
 
   // Update timestamp helper
@@ -140,6 +241,33 @@ class Cup extends HiveObject {
       ratio = finalVolumeMl! / gramsUsed!;
     } else {
       ratio = null;
+    }
+  }
+
+  // Auto-calculate SCA cupping total score (sum of all cupping scores)
+  void _updateCuppingTotal() {
+    final scores = [
+      cuppingFragrance,
+      cuppingAroma,
+      cuppingFlavor,
+      cuppingAftertaste,
+      cuppingAcidity,
+      cuppingBody,
+      cuppingBalance,
+      cuppingSweetness,
+      cuppingCleanCup,
+      cuppingUniformity,
+      cuppingOverall,
+    ];
+
+    // Only calculate if at least one score is provided
+    final validScores = scores.where((s) => s != null).toList();
+    if (validScores.isNotEmpty) {
+      // SCA scoring: each category 0-10, total = sum of all (max 110, but typically reported as 0-100)
+      // We'll use simple sum for now
+      cuppingTotal = validScores.fold(0.0, (sum, score) => sum + score!);
+    } else {
+      cuppingTotal = null;
     }
   }
 
@@ -225,6 +353,30 @@ class Cup extends HiveObject {
       'customTitle': customTitle,
       'equipmentSetupId': equipmentSetupId,
       'adaptationNotes': adaptationNotes,
+      'preInfusionTimeSeconds': preInfusionTimeSeconds,
+      'pressureBars': pressureBars,
+      'yieldGrams': yieldGrams,
+      'bloomAmountGrams': bloomAmountGrams,
+      'pourSchedule': pourSchedule,
+      'tds': tds,
+      'extractionYield': extractionYield,
+      'roomTempCelsius': roomTempCelsius,
+      'humidity': humidity,
+      'altitudeMeters': altitudeMeters,
+      'timeOfDay': timeOfDay,
+      'cuppingFragrance': cuppingFragrance,
+      'cuppingAroma': cuppingAroma,
+      'cuppingFlavor': cuppingFlavor,
+      'cuppingAftertaste': cuppingAftertaste,
+      'cuppingAcidity': cuppingAcidity,
+      'cuppingBody': cuppingBody,
+      'cuppingBalance': cuppingBalance,
+      'cuppingSweetness': cuppingSweetness,
+      'cuppingCleanCup': cuppingCleanCup,
+      'cuppingUniformity': cuppingUniformity,
+      'cuppingOverall': cuppingOverall,
+      'cuppingTotal': cuppingTotal,
+      'cuppingDefects': cuppingDefects,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -256,6 +408,30 @@ class Cup extends HiveObject {
       customTitle: json['customTitle'] as String?,
       equipmentSetupId: json['equipmentSetupId'] as String?,
       adaptationNotes: json['adaptationNotes'] as String?,
+      preInfusionTimeSeconds: json['preInfusionTimeSeconds'] as int?,
+      pressureBars: json['pressureBars']?.toDouble(),
+      yieldGrams: json['yieldGrams']?.toDouble(),
+      bloomAmountGrams: json['bloomAmountGrams']?.toDouble(),
+      pourSchedule: json['pourSchedule'] as String?,
+      tds: json['tds']?.toDouble(),
+      extractionYield: json['extractionYield']?.toDouble(),
+      roomTempCelsius: json['roomTempCelsius']?.toDouble(),
+      humidity: json['humidity']?.toDouble(),
+      altitudeMeters: json['altitudeMeters'] as int?,
+      timeOfDay: json['timeOfDay'] as String?,
+      cuppingFragrance: json['cuppingFragrance']?.toDouble(),
+      cuppingAroma: json['cuppingAroma']?.toDouble(),
+      cuppingFlavor: json['cuppingFlavor']?.toDouble(),
+      cuppingAftertaste: json['cuppingAftertaste']?.toDouble(),
+      cuppingAcidity: json['cuppingAcidity']?.toDouble(),
+      cuppingBody: json['cuppingBody']?.toDouble(),
+      cuppingBalance: json['cuppingBalance']?.toDouble(),
+      cuppingSweetness: json['cuppingSweetness']?.toDouble(),
+      cuppingCleanCup: json['cuppingCleanCup']?.toDouble(),
+      cuppingUniformity: json['cuppingUniformity']?.toDouble(),
+      cuppingOverall: json['cuppingOverall']?.toDouble(),
+      cuppingTotal: json['cuppingTotal']?.toDouble(),
+      cuppingDefects: json['cuppingDefects'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -281,6 +457,17 @@ class Cup extends HiveObject {
     String? customTitle,
     String? equipmentSetupId,
     String? adaptationNotes,
+    int? preInfusionTimeSeconds,
+    double? pressureBars,
+    double? yieldGrams,
+    double? bloomAmountGrams,
+    String? pourSchedule,
+    double? tds,
+    double? extractionYield,
+    double? roomTempCelsius,
+    double? humidity,
+    int? altitudeMeters,
+    String? timeOfDay,
   }) {
     final cup = Cup(
       id: id,
@@ -306,6 +493,30 @@ class Cup extends HiveObject {
       customTitle: customTitle ?? this.customTitle,
       equipmentSetupId: equipmentSetupId ?? this.equipmentSetupId,
       adaptationNotes: adaptationNotes ?? this.adaptationNotes,
+      preInfusionTimeSeconds: preInfusionTimeSeconds ?? this.preInfusionTimeSeconds,
+      pressureBars: pressureBars ?? this.pressureBars,
+      yieldGrams: yieldGrams ?? this.yieldGrams,
+      bloomAmountGrams: bloomAmountGrams ?? this.bloomAmountGrams,
+      pourSchedule: pourSchedule ?? this.pourSchedule,
+      tds: tds ?? this.tds,
+      extractionYield: extractionYield ?? this.extractionYield,
+      roomTempCelsius: roomTempCelsius ?? this.roomTempCelsius,
+      humidity: humidity ?? this.humidity,
+      altitudeMeters: altitudeMeters ?? this.altitudeMeters,
+      timeOfDay: timeOfDay ?? this.timeOfDay,
+      cuppingFragrance: cuppingFragrance,
+      cuppingAroma: cuppingAroma,
+      cuppingFlavor: cuppingFlavor,
+      cuppingAftertaste: cuppingAftertaste,
+      cuppingAcidity: cuppingAcidity,
+      cuppingBody: cuppingBody,
+      cuppingBalance: cuppingBalance,
+      cuppingSweetness: cuppingSweetness,
+      cuppingCleanCup: cuppingCleanCup,
+      cuppingUniformity: cuppingUniformity,
+      cuppingOverall: cuppingOverall,
+      cuppingTotal: cuppingTotal,
+      cuppingDefects: cuppingDefects,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
     );
@@ -343,6 +554,30 @@ class Cup extends HiveObject {
       customTitle: customTitle,
       equipmentSetupId: equipmentSetupId, // Include equipment info in shares
       adaptationNotes: adaptationNotes,
+      preInfusionTimeSeconds: preInfusionTimeSeconds,
+      pressureBars: pressureBars,
+      yieldGrams: yieldGrams,
+      bloomAmountGrams: bloomAmountGrams,
+      pourSchedule: pourSchedule,
+      tds: tds,
+      extractionYield: extractionYield,
+      roomTempCelsius: roomTempCelsius,
+      humidity: humidity,
+      altitudeMeters: altitudeMeters,
+      timeOfDay: timeOfDay,
+      cuppingFragrance: cuppingFragrance,
+      cuppingAroma: cuppingAroma,
+      cuppingFlavor: cuppingFlavor,
+      cuppingAftertaste: cuppingAftertaste,
+      cuppingAcidity: cuppingAcidity,
+      cuppingBody: cuppingBody,
+      cuppingBalance: cuppingBalance,
+      cuppingSweetness: cuppingSweetness,
+      cuppingCleanCup: cuppingCleanCup,
+      cuppingUniformity: cuppingUniformity,
+      cuppingOverall: cuppingOverall,
+      cuppingTotal: cuppingTotal,
+      cuppingDefects: cuppingDefects,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
