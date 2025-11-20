@@ -43,10 +43,14 @@ class _TemperatureDialState extends State<TemperatureDial> {
     }
   }
 
-  void _updateTemperature(double temp) {
+  void _onDialed(double degrees, double percent, int stopNumber) {
+    // Map percent (0.0-1.0) to temperature range
+    final newTemp = widget.minTemp + (percent * (widget.maxTemp - widget.minTemp));
+
     setState(() {
-      _temperatureCelsius = double.parse(temp.toStringAsFixed(1));
+      _temperatureCelsius = double.parse(newTemp.toStringAsFixed(1));
     });
+
     widget.onChanged(_temperatureCelsius);
   }
 
@@ -154,19 +158,18 @@ class _TemperatureDialState extends State<TemperatureDial> {
           ),
 
           // Right side: Rotatable dial knob using flutter_dial
-          SizedBox(
-            width: 144,
-            height: 144,
-            child: Dial(
-              value: _temperatureCelsius ?? widget.minTemp,
-              min: widget.minTemp,
-              max: widget.maxTemp,
-              onChanged: _updateTemperature,
-              decoration: DialDecoration(
-                dialColor: const Color(0xFF2C2C2C),
-                shadowColor: Colors.black.withOpacity(0.3),
+          Dial(
+            key: ValueKey(_temperatureCelsius),
+            value: _temperatureCelsius ?? widget.minTemp,
+            image: Container(
+              width: 144,
+              height: 144,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF2C2C2C),
               ),
               child: Container(
+                margin: const EdgeInsets.all(4),
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: Color(0xFF242424),
@@ -178,6 +181,15 @@ class _TemperatureDialState extends State<TemperatureDial> {
                 ),
               ),
             ),
+            size: 144,
+            ringWidth: 0,
+            stopCount: 75,
+            color: Colors.transparent,
+            indicatorWidth: 0,
+            indicatorLength: 0,
+            indicatorColor: Colors.transparent,
+            opacity: 0,
+            onDialed: _onDialed,
           ),
         ],
       ),
@@ -274,12 +286,12 @@ class _KnobIndicatorPainter extends CustomPainter {
 
     // Draw white indicator line at the edge
     final indicatorStart = Offset(
-      center.dx + (radius * 0.75) * math.cos(angleRad),
-      center.dy + (radius * 0.75) * math.sin(angleRad),
+      center.dx + (radius * 0.70) * math.cos(angleRad),
+      center.dy + (radius * 0.70) * math.sin(angleRad),
     );
     final indicatorEnd = Offset(
-      center.dx + (radius * 0.95) * math.cos(angleRad),
-      center.dy + (radius * 0.95) * math.sin(angleRad),
+      center.dx + (radius * 0.90) * math.cos(angleRad),
+      center.dy + (radius * 0.90) * math.sin(angleRad),
     );
 
     final indicatorPaint = Paint()
@@ -295,7 +307,7 @@ class _KnobIndicatorPainter extends CustomPainter {
       ..color = const Color(0xFF1A1A1A)
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(center, radius * 0.2, centerDotPaint);
+    canvas.drawCircle(center, radius * 0.15, centerDotPaint);
   }
 
   @override
