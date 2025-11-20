@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_dial_knob/flutter_dial_knob.dart';
+import 'package:flutter_dial/flutter_dial.dart';
 
 enum TemperatureUnit { celsius, fahrenheit }
 
@@ -27,14 +27,12 @@ class TemperatureDial extends StatefulWidget {
 class _TemperatureDialState extends State<TemperatureDial> {
   late double? _temperatureCelsius;
   late TemperatureUnit _currentUnit;
-  late double _knobValue; // 0.0 to 1.0 for the dial knob
 
   @override
   void initState() {
     super.initState();
     _temperatureCelsius = widget.initialValue;
     _currentUnit = widget.initialUnit;
-    _updateKnobValue();
   }
 
   @override
@@ -42,30 +40,13 @@ class _TemperatureDialState extends State<TemperatureDial> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialValue != widget.initialValue) {
       _temperatureCelsius = widget.initialValue;
-      _updateKnobValue();
     }
   }
 
-  void _updateKnobValue() {
-    if (_temperatureCelsius == null) {
-      _knobValue = 0.0;
-      return;
-    }
-    // Map temperature to 0-1 range
-    final normalized = (_temperatureCelsius! - widget.minTemp) /
-        (widget.maxTemp - widget.minTemp);
-    _knobValue = normalized.clamp(0.0, 1.0);
-  }
-
-  void _updateTemperatureFromKnob(double value) {
-    // Map 0-1 range back to temperature
-    final newTemp = widget.minTemp + (value * (widget.maxTemp - widget.minTemp));
-
+  void _updateTemperature(double temp) {
     setState(() {
-      _temperatureCelsius = double.parse(newTemp.toStringAsFixed(1));
-      _knobValue = value;
+      _temperatureCelsius = double.parse(temp.toStringAsFixed(1));
     });
-
     widget.onChanged(_temperatureCelsius);
   }
 
@@ -92,6 +73,13 @@ class _TemperatureDialState extends State<TemperatureDial> {
     });
   }
 
+  double get _progress {
+    if (_temperatureCelsius == null) return 0.0;
+    final normalized = (_temperatureCelsius! - widget.minTemp) /
+        (widget.maxTemp - widget.minTemp);
+    return normalized.clamp(0.0, 1.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final displayTemp = _getDisplayTemperature();
@@ -110,7 +98,7 @@ class _TemperatureDialState extends State<TemperatureDial> {
                 height: 144,
                 child: CustomPaint(
                   painter: _CircularArcPainter(
-                    progress: _knobValue,
+                    progress: _progress,
                     color: _getTemperatureColor(_temperatureCelsius ?? widget.minTemp),
                   ),
                   child: Center(
@@ -164,24 +152,19 @@ class _TemperatureDialState extends State<TemperatureDial> {
             ],
           ),
 
-          // Right side: Rotatable dial knob using flutter_dial_knob
-          Container(
+          // Right side: Rotatable dial knob using flutter_dial
+          SizedBox(
             width: 144,
             height: 144,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF2C2C2C),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: DialKnob(
-              value: _knobValue,
-              onChanged: _updateTemperatureFromKnob,
+            child: Dial(
+              value: _temperatureCelsius ?? widget.minTemp,
+              min: widget.minTemp,
+              max: widget.maxTemp,
+              onChanged: _updateTemperature,
+              decoration: DialDecoration(
+                dialColor: const Color(0xFF2C2C2C),
+                shadowColor: Colors.black.withOpacity(0.3),
+              ),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
@@ -189,7 +172,7 @@ class _TemperatureDialState extends State<TemperatureDial> {
                 ),
                 child: CustomPaint(
                   painter: _KnobIndicatorPainter(
-                    progress: _knobValue,
+                    progress: _progress,
                   ),
                 ),
               ),

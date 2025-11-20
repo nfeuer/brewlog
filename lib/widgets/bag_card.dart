@@ -35,7 +35,10 @@ class BagCard extends StatelessWidget {
       children: [
         // Image - flexible to take available space
         Expanded(
-          child: _buildImage(),
+          child: Container(
+            width: double.infinity,
+            child: _buildImage(),
+          ),
         ),
         // Info - fixed height section
         Padding(
