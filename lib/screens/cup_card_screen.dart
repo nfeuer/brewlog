@@ -15,6 +15,7 @@ import '../utils/helpers.dart';
 import '../utils/theme.dart';
 import '../widgets/rating_input.dart';
 import '../widgets/photo_viewer.dart';
+import '../widgets/temperature_dial.dart';
 import 'equipment_form_screen.dart';
 
 class CupCardScreen extends ConsumerStatefulWidget {
@@ -492,12 +493,16 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   ),
                 ],
                 if (fieldVisibility['waterTemp'] == true) ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _waterTempController,
-                    decoration:
-                        const InputDecoration(labelText: 'Water Temp (°C)'),
-                    keyboardType: TextInputType.number,
+                  const SizedBox(height: 24),
+                  TemperatureDial(
+                    initialValue: _waterTempController.text.isEmpty
+                        ? null
+                        : double.tryParse(_waterTempController.text),
+                    onChanged: (value) {
+                      setState(() {
+                        _waterTempController.text = value?.toStringAsFixed(1) ?? '';
+                      });
+                    },
                   ),
                 ],
                 if (fieldVisibility['gramsUsed'] == true ||
