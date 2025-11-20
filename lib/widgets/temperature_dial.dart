@@ -106,8 +106,8 @@ class _TemperatureDialState extends State<TemperatureDial> {
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 120,
-                height: 120,
+                width: 144,
+                height: 144,
                 child: CustomPaint(
                   painter: _CircularArcPainter(
                     progress: _knobAngle / 270.0,
@@ -122,27 +122,27 @@ class _TemperatureDialState extends State<TemperatureDial> {
                               ? displayTemp.toStringAsFixed(0)
                               : '--',
                           style: const TextStyle(
-                            fontSize: 42,
+                            fontSize: 50,
                             fontWeight: FontWeight.w300,
                             height: 1.0,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         GestureDetector(
                           onTap: _toggleUnit,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 3,
+                              horizontal: 12,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               '°${_currentUnit == TemperatureUnit.celsius ? 'C' : 'F'}',
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -165,40 +165,76 @@ class _TemperatureDialState extends State<TemperatureDial> {
           ),
 
           // Right side: Rotatable dial knob
-          GestureDetector(
-            onPanUpdate: (details) {
-              final RenderBox box = context.findRenderObject() as RenderBox;
-              final localPosition = box.globalToLocal(details.globalPosition);
+          SizedBox(
+            width: 144,
+            height: 144,
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                final RenderBox box = context.findRenderObject() as RenderBox;
+                final localPosition = box.globalToLocal(details.globalPosition);
 
-              // Calculate angle from center of the knob
-              // The knob is on the right side, so we need to adjust for its position
-              final knobCenterX = box.size.width * 0.75; // Approximate knob center
-              final knobCenterY = box.size.height * 0.4;
+                // Calculate angle from center of this specific knob widget
+                final center = Offset(box.size.width / 2, box.size.height / 2);
+                final dx = localPosition.dx - center.dx;
+                final dy = localPosition.dy - center.dy;
 
-              final dx = localPosition.dx - knobCenterX;
-              final dy = localPosition.dy - knobCenterY;
+                // Calculate angle in degrees (atan2 returns radians)
+                double angle = math.atan2(dy, dx) * 180 / math.pi;
 
-              // Calculate angle in degrees
-              double angle = math.atan2(dy, dx) * 180 / math.pi;
+                // Normalize angle to 0-360
+                if (angle < 0) angle += 360;
 
-              // Adjust angle to start from top (270 degrees in standard coordinates)
-              angle = (angle + 90) % 360;
+                // Our dial starts at bottom-left (225°) and goes to bottom-right (495° or -135°)
+                // Convert to our 0-270 internal range
+                double dialAngle;
 
-              // Map to 0-270 range, starting from bottom-left going clockwise
-              if (angle < 0) angle += 360;
+                // The dial arc goes from 225° to 495° (or -135°)
+                // We want to map this to 0-270 for our internal representation
+                if (angle >= 225) {
+                  // From 225° to 360°
+                  dialAngle = angle - 225;
+                } else if (angle <= 135) {
+                  // From 0° to 135°
+                  dialAngle = angle + 135;
+                } else {
+                  // In the "dead zone" - snap to nearest end
+                  if (angle < 180) {
+                    dialAngle = 270;
+                  } else {
+                    dialAngle = 0;
+                  }
+                }
 
-              // Convert to our 0-270 range (bottom-left to bottom-right)
-              double dialAngle;
-              if (angle >= 135 && angle <= 405) {
-                dialAngle = angle - 135;
-                if (dialAngle > 270) dialAngle = 270;
-                if (dialAngle < 0) dialAngle = 0;
+                dialAngle = dialAngle.clamp(0.0, 270.0);
                 _updateTemperatureFromAngle(dialAngle);
-              }
-            },
-            child: SizedBox(
-              width: 120,
-              height: 120,
+              },
+              onPanDown: (details) {
+                // Same logic as onPanUpdate for initial touch
+                final RenderBox box = context.findRenderObject() as RenderBox;
+                final localPosition = box.globalToLocal(details.globalPosition);
+                final center = Offset(box.size.width / 2, box.size.height / 2);
+                final dx = localPosition.dx - center.dx;
+                final dy = localPosition.dy - center.dy;
+
+                double angle = math.atan2(dy, dx) * 180 / math.pi;
+                if (angle < 0) angle += 360;
+
+                double dialAngle;
+                if (angle >= 225) {
+                  dialAngle = angle - 225;
+                } else if (angle <= 135) {
+                  dialAngle = angle + 135;
+                } else {
+                  if (angle < 180) {
+                    dialAngle = 270;
+                  } else {
+                    dialAngle = 0;
+                  }
+                }
+
+                dialAngle = dialAngle.clamp(0.0, 270.0);
+                _updateTemperatureFromAngle(dialAngle);
+              },
               child: CustomPaint(
                 painter: _DialKnobPainter(
                   angle: _knobAngle,
