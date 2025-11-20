@@ -2,22 +2,14 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_dial/dial.dart';
 
-enum TemperatureUnit { celsius, fahrenheit }
-
 class TemperatureDial extends StatefulWidget {
   final double? initialValue; // Temperature in Celsius
-  final TemperatureUnit initialUnit;
   final ValueChanged<double?> onChanged; // Returns value in Celsius
-  final double minTemp; // Min in Celsius
-  final double maxTemp; // Max in Celsius
 
   const TemperatureDial({
     super.key,
     this.initialValue,
-    this.initialUnit = TemperatureUnit.celsius,
     required this.onChanged,
-    this.minTemp = 60.0, // Default range 60-135°C (140-275°F)
-    this.maxTemp = 135.0,
   });
 
   @override
@@ -25,33 +17,69 @@ class TemperatureDial extends StatefulWidget {
 }
 
 class _TemperatureDialState extends State<TemperatureDial> {
-  late double? _temperatureCelsius;
-  late TemperatureUnit _currentUnit;
+  // Store temperature in Fahrenheit internally
+  late double _temperatureFahrenheit;
+  late bool _isFahrenheit; // Display unit flag
+
+  // Temperature range in Fahrenheit (60-215°F)
+  static const double _minTempF = 60.0;
+  static const double _maxTempF = 215.0;
+
+  // Track previous dial angle for delta calculation
+  double? _previousDialAngle;
 
   @override
   void initState() {
     super.initState();
-    _temperatureCelsius = widget.initialValue;
-    _currentUnit = widget.initialUnit;
+    // Initialize temperature from Celsius value or default to 140°F
+    if (widget.initialValue != null) {
+      _temperatureFahrenheit = _celsiusToFahrenheit(widget.initialValue!);
+    } else {
+      _temperatureFahrenheit = 140.0; // Default starting temperature
+    }
+    _isFahrenheit = true; // Start displaying in Fahrenheit
   }
 
   @override
   void didUpdateWidget(TemperatureDial oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue) {
-      _temperatureCelsius = widget.initialValue;
+    if (oldWidget.initialValue != widget.initialValue &&
+        widget.initialValue != null) {
+      _temperatureFahrenheit = _celsiusToFahrenheit(widget.initialValue!);
     }
   }
 
   void _onDialed(double degrees, double percent, int stopNumber) {
-    // Map percent (0.0-1.0) to temperature range
-    final newTemp = widget.minTemp + (percent * (widget.maxTemp - widget.minTemp));
+    // Initialize previous angle on first call
+    if (_previousDialAngle == null) {
+      _previousDialAngle = degrees;
+      return;
+    }
+
+    // Calculate angular change
+    double deltaAngle = degrees - _previousDialAngle!;
+
+    // Handle wrap-around when crossing 0/360 degree boundary
+    if (deltaAngle > 180) {
+      deltaAngle -= 360;
+    } else if (deltaAngle < -180) {
+      deltaAngle += 360;
+    }
+
+    _previousDialAngle = degrees;
+
+    // Map angle change to temperature change
+    // Full rotation (360°) covers the entire temperature range
+    double tempChange = (deltaAngle / 360.0) * (_maxTempF - _minTempF);
 
     setState(() {
-      _temperatureCelsius = double.parse(newTemp.toStringAsFixed(1));
+      // Update temperature with clamping to min/max range
+      _temperatureFahrenheit =
+          (_temperatureFahrenheit + tempChange).clamp(_minTempF, _maxTempF);
     });
 
-    widget.onChanged(_temperatureCelsius);
+    // Notify parent with value in Celsius
+    widget.onChanged(_fahrenheitToCelsius(_temperatureFahrenheit));
   }
 
   double _celsiusToFahrenheit(double celsius) {
@@ -62,38 +90,58 @@ class _TemperatureDialState extends State<TemperatureDial> {
     return (fahrenheit - 32) * 5 / 9;
   }
 
-  double? _getDisplayTemperature() {
-    if (_temperatureCelsius == null) return null;
-    return _currentUnit == TemperatureUnit.celsius
-        ? _temperatureCelsius
-        : _celsiusToFahrenheit(_temperatureCelsius!);
+  double get _temperatureCelsius {
+    return _fahrenheitToCelsius(_temperatureFahrenheit);
+  }
+
+  double get _displayTemperature {
+    return _isFahrenheit ? _temperatureFahrenheit : _temperatureCelsius;
+  }
+
+  String get _displayUnit {
+    return _isFahrenheit ? 'F' : 'C';
   }
 
   void _toggleUnit() {
     setState(() {
-      _currentUnit = _currentUnit == TemperatureUnit.celsius
-          ? TemperatureUnit.fahrenheit
-          : TemperatureUnit.celsius;
+      _isFahrenheit = !_isFahrenheit;
     });
   }
 
   double get _progress {
-    if (_temperatureCelsius == null) return 0.0;
-    final normalized = (_temperatureCelsius! - widget.minTemp) /
-        (widget.maxTemp - widget.minTemp);
-    return normalized.clamp(0.0, 1.0);
+    // Calculate progress as percentage of temperature range
+    return ((_temperatureFahrenheit - _minTempF) / (_maxTempF - _minTempF))
+        .clamp(0.0, 1.0);
+  }
+
+  Color _getTemperatureColor() {
+    final normalized = _progress;
+
+    if (normalized < 0.5) {
+      // Blue to yellow (cool to warm)
+      return Color.lerp(
+        Colors.blue.shade400,
+        Colors.yellow.shade700,
+        normalized * 2,
+      )!;
+    } else {
+      // Yellow to red (warm to hot)
+      return Color.lerp(
+        Colors.yellow.shade700,
+        Colors.red.shade600,
+        (normalized - 0.5) * 2,
+      )!;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final displayTemp = _getDisplayTemperature();
-
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Left side: Circular arc with temperature display
+          // Left side: Circular arc progress indicator with temperature display
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -103,17 +151,14 @@ class _TemperatureDialState extends State<TemperatureDial> {
                 child: CustomPaint(
                   painter: _CircularArcPainter(
                     progress: _progress,
-                    color: _getTemperatureColor(
-                        _temperatureCelsius ?? widget.minTemp),
+                    color: _getTemperatureColor(),
                   ),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          displayTemp != null
-                              ? displayTemp.toStringAsFixed(0)
-                              : '--',
+                          _displayTemperature.toStringAsFixed(0),
                           style: const TextStyle(
                             fontSize: 50,
                             fontWeight: FontWeight.w300,
@@ -133,7 +178,7 @@ class _TemperatureDialState extends State<TemperatureDial> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              '°${_currentUnit == TemperatureUnit.celsius ? 'C' : 'F'}',
+                              '°$_displayUnit',
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -157,17 +202,14 @@ class _TemperatureDialState extends State<TemperatureDial> {
             ],
           ),
 
-          // Right side: Rotatable dial knob using flutter_dial
+          // Right side: Rotatable dial knob with infinite rotation
           Dial(
             image: Image.asset(
               'assets/images/dial_knob.png',
               fit: BoxFit.cover,
             ),
-            key: ValueKey(_temperatureCelsius),
-            value: _temperatureCelsius ?? widget.minTemp,
             size: 144,
             ringWidth: 144 / 4,
-            stopCount: 75,
             color: const Color(0xFF2C2C2C),
             indicatorWidth: 4,
             indicatorLength: 144 / 4,
@@ -178,29 +220,6 @@ class _TemperatureDialState extends State<TemperatureDial> {
         ],
       ),
     );
-  }
-
-  Color _getTemperatureColor(double tempCelsius) {
-    // Gradient from cool blue to hot red
-    final normalized =
-        ((tempCelsius - widget.minTemp) / (widget.maxTemp - widget.minTemp))
-            .clamp(0.0, 1.0);
-
-    if (normalized < 0.5) {
-      // Blue to yellow
-      return Color.lerp(
-        Colors.blue.shade400,
-        Colors.yellow.shade700,
-        normalized * 2,
-      )!;
-    } else {
-      // Yellow to red
-      return Color.lerp(
-        Colors.yellow.shade700,
-        Colors.red.shade600,
-        (normalized - 0.5) * 2,
-      )!;
-    }
   }
 }
 
@@ -225,8 +244,8 @@ class _CircularArcPainter extends CustomPainter {
     // Draw background arc (270 degrees, starting from bottom-left)
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
-      135 * math.pi / 180, // Start at bottom-left
-      270 * math.pi / 180, // Sweep 270 degrees
+      135 * math.pi / 180, // Start at bottom-left (135°)
+      270 * math.pi / 180, // Sweep 270 degrees clockwise
       false,
       backgroundPaint,
     );
@@ -253,4 +272,3 @@ class _CircularArcPainter extends CustomPainter {
     return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }
-
