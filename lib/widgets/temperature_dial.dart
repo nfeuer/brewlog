@@ -161,34 +161,14 @@ class _TemperatureDialState extends State<TemperatureDial> {
           Dial(
             key: ValueKey(_temperatureCelsius),
             value: _temperatureCelsius ?? widget.minTemp,
-            image: Container(
-              width: 144,
-              height: 144,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF2C2C2C),
-              ),
-              child: Container(
-                margin: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFF242424),
-                ),
-                child: CustomPaint(
-                  painter: _KnobIndicatorPainter(
-                    progress: _progress,
-                  ),
-                ),
-              ),
-            ),
             size: 144,
-            ringWidth: 0,
+            ringWidth: 144 / 4,
             stopCount: 75,
-            color: Colors.transparent,
-            indicatorWidth: 0,
-            indicatorLength: 0,
-            indicatorColor: Colors.transparent,
-            opacity: 0,
+            color: const Color(0xFF2C2C2C),
+            indicatorWidth: 4,
+            indicatorLength: 144 / 4,
+            indicatorColor: Colors.white,
+            opacity: 1.0,
             onDialed: _onDialed,
           ),
         ],
