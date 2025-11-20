@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_dial/dial.dart';
 
 class TemperatureDial extends StatefulWidget {
   final double? initialValue; // Temperature in Celsius
@@ -28,6 +27,9 @@ class _TemperatureDialState extends State<TemperatureDial> {
   // Track previous dial angle for delta calculation
   double? _previousDialAngle;
 
+  // Track cumulative rotation for visual display
+  double _cumulativeRotation = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -49,15 +51,29 @@ class _TemperatureDialState extends State<TemperatureDial> {
     }
   }
 
-  void _onDialed(double degrees, double percent, int stopNumber) {
-    // Initialize previous angle on first call
+  void _handlePanUpdate(DragUpdateDetails details, Size size) {
+    // Calculate center of the dial
+    final center = Offset(size.width / 2, size.height / 2);
+
+    // Get touch position relative to center
+    final touchPos = details.localPosition - center;
+
+    // Calculate angle of touch position (in radians, then convert to degrees)
+    double currentAngle = math.atan2(touchPos.dy, touchPos.dx) * 180 / math.pi;
+
+    // Normalize to 0-360 range
+    if (currentAngle < 0) {
+      currentAngle += 360;
+    }
+
+    // Initialize previous angle on first touch
     if (_previousDialAngle == null) {
-      _previousDialAngle = degrees;
+      _previousDialAngle = currentAngle;
       return;
     }
 
     // Calculate angular change
-    double deltaAngle = degrees - _previousDialAngle!;
+    double deltaAngle = currentAngle - _previousDialAngle!;
 
     // Handle wrap-around when crossing 0/360 degree boundary
     if (deltaAngle > 180) {
@@ -66,13 +82,16 @@ class _TemperatureDialState extends State<TemperatureDial> {
       deltaAngle += 360;
     }
 
-    _previousDialAngle = degrees;
+    _previousDialAngle = currentAngle;
 
     // Map angle change to temperature change
     // Full rotation (360°) covers the entire temperature range
     double tempChange = (deltaAngle / 360.0) * (_maxTempF - _minTempF);
 
     setState(() {
+      // Update cumulative rotation for visual feedback
+      _cumulativeRotation += deltaAngle;
+
       // Update temperature with clamping to min/max range
       _temperatureFahrenheit =
           (_temperatureFahrenheit + tempChange).clamp(_minTempF, _maxTempF);
@@ -80,6 +99,11 @@ class _TemperatureDialState extends State<TemperatureDial> {
 
     // Notify parent with value in Celsius
     widget.onChanged(_fahrenheitToCelsius(_temperatureFahrenheit));
+  }
+
+  void _handlePanEnd(DragEndDetails details) {
+    // Reset angle tracking when touch ends
+    _previousDialAngle = null;
   }
 
   double _celsiusToFahrenheit(double celsius) {
@@ -203,21 +227,52 @@ class _TemperatureDialState extends State<TemperatureDial> {
           ),
 
           // Right side: Rotatable dial knob with infinite rotation
-          Dial(
-            image: Image.asset(
-              'assets/images/dial_knob.png',
-              fit: BoxFit.cover,
-            ),
+          _RotatableDialKnob(
             size: 144,
-            ringWidth: 144 / 4,
-            color: const Color(0xFF2C2C2C),
-            indicatorWidth: 4,
-            indicatorLength: 144 / 4,
-            indicatorColor: Colors.white,
-            opacity: 1.0,
-            onDialed: _onDialed,
+            rotation: _cumulativeRotation,
+            onPanUpdate: _handlePanUpdate,
+            onPanEnd: _handlePanEnd,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RotatableDialKnob extends StatelessWidget {
+  final double size;
+  final double rotation; // Rotation in degrees
+  final Function(DragUpdateDetails, Size) onPanUpdate;
+  final Function(DragEndDetails) onPanEnd;
+
+  const _RotatableDialKnob({
+    required this.size,
+    required this.rotation,
+    required this.onPanUpdate,
+    required this.onPanEnd,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onPanUpdate: (details) => onPanUpdate(details, Size(size, size)),
+      onPanEnd: onPanEnd,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xFF2C2C2C),
+        ),
+        child: Transform.rotate(
+          angle: rotation * math.pi / 180, // Convert degrees to radians
+          child: Image.asset(
+            'assets/images/dial_knob.png',
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+          ),
+        ),
       ),
     );
   }
