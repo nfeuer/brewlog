@@ -15,8 +15,8 @@ class TemperatureDial extends StatefulWidget {
     this.initialValue,
     this.initialUnit = TemperatureUnit.celsius,
     required this.onChanged,
-    this.minTemp = 60.0, // Default range 60-100°C
-    this.maxTemp = 100.0,
+    this.minTemp = 60.0, // Default range 60-135°C (140-275°F)
+    this.maxTemp = 135.0,
   });
 
   @override
@@ -106,8 +106,8 @@ class _TemperatureDialState extends State<TemperatureDial> {
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 140,
-                height: 140,
+                width: 120,
+                height: 120,
                 child: CustomPaint(
                   painter: _CircularArcPainter(
                     progress: _knobAngle / 270.0,
@@ -122,7 +122,7 @@ class _TemperatureDialState extends State<TemperatureDial> {
                               ? displayTemp.toStringAsFixed(0)
                               : '--',
                           style: const TextStyle(
-                            fontSize: 48,
+                            fontSize: 42,
                             fontWeight: FontWeight.w300,
                             height: 1.0,
                           ),
@@ -132,18 +132,18 @@ class _TemperatureDialState extends State<TemperatureDial> {
                           onTap: _toggleUnit,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
+                              horizontal: 10,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               '°${_currentUnit == TemperatureUnit.celsius ? 'C' : 'F'}',
                               style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
@@ -197,8 +197,8 @@ class _TemperatureDialState extends State<TemperatureDial> {
               }
             },
             child: SizedBox(
-              width: 80,
-              height: 80,
+              width: 120,
+              height: 120,
               child: CustomPaint(
                 painter: _DialKnobPainter(
                   angle: _knobAngle,
@@ -296,51 +296,53 @@ class _DialKnobPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    // Draw outer circle (knob body)
+    // Draw outer circle (dark knob body)
     final knobPaint = Paint()
-      ..color = Colors.grey.shade800
+      ..color = const Color(0xFF2C2C2C)
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(center, radius, knobPaint);
 
-    // Draw inner circle (slightly lighter)
+    // Draw inner circle (slightly darker for depth)
     final innerPaint = Paint()
-      ..color = Colors.grey.shade700
+      ..color = const Color(0xFF242424)
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(center, radius * 0.85, innerPaint);
+    canvas.drawCircle(center, radius * 0.9, innerPaint);
 
-    // Draw indicator line
+    // Draw indicator notch/line at the edge
     final angleRad = (angle + 135) * math.pi / 180; // Convert to radians, adjust for starting position
+
+    // Draw a white indicator line at the outer edge
     final indicatorStart = Offset(
-      center.dx + (radius * 0.3) * math.cos(angleRad),
-      center.dy + (radius * 0.3) * math.sin(angleRad),
+      center.dx + (radius * 0.75) * math.cos(angleRad),
+      center.dy + (radius * 0.75) * math.sin(angleRad),
     );
     final indicatorEnd = Offset(
-      center.dx + (radius * 0.7) * math.cos(angleRad),
-      center.dy + (radius * 0.7) * math.sin(angleRad),
+      center.dx + (radius * 0.95) * math.cos(angleRad),
+      center.dy + (radius * 0.95) * math.sin(angleRad),
     );
 
     final indicatorPaint = Paint()
-      ..color = color
+      ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
+      ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
 
     canvas.drawLine(indicatorStart, indicatorEnd, indicatorPaint);
 
-    // Draw center dot
+    // Draw center dot for depth
     final centerDotPaint = Paint()
-      ..color = Colors.grey.shade900
+      ..color = const Color(0xFF1A1A1A)
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(center, radius * 0.15, centerDotPaint);
+    canvas.drawCircle(center, radius * 0.2, centerDotPaint);
 
-    // Draw subtle edge highlight
+    // Draw subtle edge highlight for 3D effect
     final highlightPaint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
+      ..color = Colors.white.withOpacity(0.05)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = 1;
 
     canvas.drawCircle(center, radius - 1, highlightPaint);
   }
