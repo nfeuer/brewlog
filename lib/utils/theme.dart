@@ -227,4 +227,10 @@ class AppTextStyles {
     fontWeight: FontWeight.w600,
     letterSpacing: 0.5,
   );
+
+  static const TextStyle label = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: AppTheme.textDark,
+  );
 }

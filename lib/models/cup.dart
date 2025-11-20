@@ -265,7 +265,7 @@ class Cup extends HiveObject {
     if (validScores.isNotEmpty) {
       // SCA scoring: each category 0-10, total = sum of all (max 110, but typically reported as 0-100)
       // We'll use simple sum for now
-      cuppingTotal = validScores.fold(0.0, (sum, score) => sum + score!);
+      cuppingTotal = validScores.fold<double>(0.0, (sum, score) => sum + score!);
     } else {
       cuppingTotal = null;
     }
