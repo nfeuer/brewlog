@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_dial_knob/flutter_dial_knob.dart';
 
 enum TemperatureUnit { celsius, fahrenheit }
 
@@ -26,14 +27,14 @@ class TemperatureDial extends StatefulWidget {
 class _TemperatureDialState extends State<TemperatureDial> {
   late double? _temperatureCelsius;
   late TemperatureUnit _currentUnit;
-  double _knobAngle = 0.0;
+  late double _knobValue; // 0.0 to 1.0 for the dial knob
 
   @override
   void initState() {
     super.initState();
     _temperatureCelsius = widget.initialValue;
     _currentUnit = widget.initialUnit;
-    _updateKnobAngle();
+    _updateKnobValue();
   }
 
   @override
@@ -41,29 +42,28 @@ class _TemperatureDialState extends State<TemperatureDial> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialValue != widget.initialValue) {
       _temperatureCelsius = widget.initialValue;
-      _updateKnobAngle();
+      _updateKnobValue();
     }
   }
 
-  void _updateKnobAngle() {
+  void _updateKnobValue() {
     if (_temperatureCelsius == null) {
-      _knobAngle = 0.0;
+      _knobValue = 0.0;
       return;
     }
-    // Map temperature to angle (0 to 270 degrees)
+    // Map temperature to 0-1 range
     final normalized = (_temperatureCelsius! - widget.minTemp) /
-                      (widget.maxTemp - widget.minTemp);
-    _knobAngle = normalized.clamp(0.0, 1.0) * 270.0;
+        (widget.maxTemp - widget.minTemp);
+    _knobValue = normalized.clamp(0.0, 1.0);
   }
 
-  void _updateTemperatureFromAngle(double angle) {
-    // Map angle (0 to 270 degrees) back to temperature
-    final normalized = (angle / 270.0).clamp(0.0, 1.0);
-    final newTemp = widget.minTemp + (normalized * (widget.maxTemp - widget.minTemp));
+  void _updateTemperatureFromKnob(double value) {
+    // Map 0-1 range back to temperature
+    final newTemp = widget.minTemp + (value * (widget.maxTemp - widget.minTemp));
 
     setState(() {
       _temperatureCelsius = double.parse(newTemp.toStringAsFixed(1));
-      _knobAngle = angle;
+      _knobValue = value;
     });
 
     widget.onChanged(_temperatureCelsius);
@@ -110,7 +110,7 @@ class _TemperatureDialState extends State<TemperatureDial> {
                 height: 144,
                 child: CustomPaint(
                   painter: _CircularArcPainter(
-                    progress: _knobAngle / 270.0,
+                    progress: _knobValue,
                     color: _getTemperatureColor(_temperatureCelsius ?? widget.minTemp),
                   ),
                   child: Center(
@@ -164,81 +164,33 @@ class _TemperatureDialState extends State<TemperatureDial> {
             ],
           ),
 
-          // Right side: Rotatable dial knob
+          // Right side: Rotatable dial knob using flutter_dial_knob
           SizedBox(
             width: 144,
             height: 144,
-            child: GestureDetector(
-              onPanUpdate: (details) {
-                final RenderBox box = context.findRenderObject() as RenderBox;
-                final localPosition = box.globalToLocal(details.globalPosition);
-
-                // Calculate angle from center of this specific knob widget
-                final center = Offset(box.size.width / 2, box.size.height / 2);
-                final dx = localPosition.dx - center.dx;
-                final dy = localPosition.dy - center.dy;
-
-                // Calculate angle in degrees (atan2 returns radians)
-                double angle = math.atan2(dy, dx) * 180 / math.pi;
-
-                // Normalize angle to 0-360
-                if (angle < 0) angle += 360;
-
-                // Our dial starts at bottom-left (225°) and goes to bottom-right (495° or -135°)
-                // Convert to our 0-270 internal range
-                double dialAngle;
-
-                // The dial arc goes from 225° to 495° (or -135°)
-                // We want to map this to 0-270 for our internal representation
-                if (angle >= 225) {
-                  // From 225° to 360°
-                  dialAngle = angle - 225;
-                } else if (angle <= 135) {
-                  // From 0° to 135°
-                  dialAngle = angle + 135;
-                } else {
-                  // In the "dead zone" - snap to nearest end
-                  if (angle < 180) {
-                    dialAngle = 270;
-                  } else {
-                    dialAngle = 0;
-                  }
-                }
-
-                dialAngle = dialAngle.clamp(0.0, 270.0);
-                _updateTemperatureFromAngle(dialAngle);
-              },
-              onPanDown: (details) {
-                // Same logic as onPanUpdate for initial touch
-                final RenderBox box = context.findRenderObject() as RenderBox;
-                final localPosition = box.globalToLocal(details.globalPosition);
-                final center = Offset(box.size.width / 2, box.size.height / 2);
-                final dx = localPosition.dx - center.dx;
-                final dy = localPosition.dy - center.dy;
-
-                double angle = math.atan2(dy, dx) * 180 / math.pi;
-                if (angle < 0) angle += 360;
-
-                double dialAngle;
-                if (angle >= 225) {
-                  dialAngle = angle - 225;
-                } else if (angle <= 135) {
-                  dialAngle = angle + 135;
-                } else {
-                  if (angle < 180) {
-                    dialAngle = 270;
-                  } else {
-                    dialAngle = 0;
-                  }
-                }
-
-                dialAngle = dialAngle.clamp(0.0, 270.0);
-                _updateTemperatureFromAngle(dialAngle);
-              },
-              child: CustomPaint(
-                painter: _DialKnobPainter(
-                  angle: _knobAngle,
-                  color: _getTemperatureColor(_temperatureCelsius ?? widget.minTemp),
+            child: DialKnob(
+              value: _knobValue,
+              onChanged: _updateTemperatureFromKnob,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF2C2C2C),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0xFF242424),
+                ),
+                child: CustomPaint(
+                  painter: _KnobIndicatorPainter(
+                    progress: _knobValue,
+                  ),
                 ),
               ),
             ),
@@ -251,7 +203,7 @@ class _TemperatureDialState extends State<TemperatureDial> {
   Color _getTemperatureColor(double tempCelsius) {
     // Gradient from cool blue to hot red
     final normalized = ((tempCelsius - widget.minTemp) /
-                       (widget.maxTemp - widget.minTemp)).clamp(0.0, 1.0);
+        (widget.maxTemp - widget.minTemp)).clamp(0.0, 1.0);
 
     if (normalized < 0.5) {
       // Blue to yellow
@@ -321,35 +273,21 @@ class _CircularArcPainter extends CustomPainter {
   }
 }
 
-class _DialKnobPainter extends CustomPainter {
-  final double angle; // 0 to 270 degrees
-  final Color color;
+class _KnobIndicatorPainter extends CustomPainter {
+  final double progress; // 0.0 to 1.0
 
-  _DialKnobPainter({required this.angle, required this.color});
+  _KnobIndicatorPainter({required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    // Draw outer circle (dark knob body)
-    final knobPaint = Paint()
-      ..color = const Color(0xFF2C2C2C)
-      ..style = PaintingStyle.fill;
+    // Calculate angle from progress (0-1 maps to 270 degrees starting at bottom-left)
+    final angle = (progress * 270) + 135; // Start at 135° (bottom-left)
+    final angleRad = angle * math.pi / 180;
 
-    canvas.drawCircle(center, radius, knobPaint);
-
-    // Draw inner circle (slightly darker for depth)
-    final innerPaint = Paint()
-      ..color = const Color(0xFF242424)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(center, radius * 0.9, innerPaint);
-
-    // Draw indicator notch/line at the edge
-    final angleRad = (angle + 135) * math.pi / 180; // Convert to radians, adjust for starting position
-
-    // Draw a white indicator line at the outer edge
+    // Draw white indicator line at the edge
     final indicatorStart = Offset(
       center.dx + (radius * 0.75) * math.cos(angleRad),
       center.dy + (radius * 0.75) * math.sin(angleRad),
@@ -373,18 +311,10 @@ class _DialKnobPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(center, radius * 0.2, centerDotPaint);
-
-    // Draw subtle edge highlight for 3D effect
-    final highlightPaint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    canvas.drawCircle(center, radius - 1, highlightPaint);
   }
 
   @override
-  bool shouldRepaint(_DialKnobPainter oldDelegate) {
-    return oldDelegate.angle != angle || oldDelegate.color != color;
+  bool shouldRepaint(_KnobIndicatorPainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }
