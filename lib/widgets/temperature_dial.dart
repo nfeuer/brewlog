@@ -159,6 +159,10 @@ class _TemperatureDialState extends State<TemperatureDial> {
 
           // Right side: Rotatable dial knob using flutter_dial
           Dial(
+            image: Image.asset(
+              'assets/images/dial_knob.png',
+              fit: BoxFit.cover,
+            ),
             key: ValueKey(_temperatureCelsius),
             value: _temperatureCelsius ?? widget.minTemp,
             size: 144,
@@ -250,48 +254,3 @@ class _CircularArcPainter extends CustomPainter {
   }
 }
 
-class _KnobIndicatorPainter extends CustomPainter {
-  final double progress; // 0.0 to 1.0
-
-  _KnobIndicatorPainter({required this.progress});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    // Calculate angle from progress (0-1 maps to 270 degrees starting at bottom-left)
-    final angle = (progress * 270) + 135; // Start at 135° (bottom-left)
-    final angleRad = angle * math.pi / 180;
-
-    // Draw white indicator line at the edge
-    final indicatorStart = Offset(
-      center.dx + (radius * 0.70) * math.cos(angleRad),
-      center.dy + (radius * 0.70) * math.sin(angleRad),
-    );
-    final indicatorEnd = Offset(
-      center.dx + (radius * 0.90) * math.cos(angleRad),
-      center.dy + (radius * 0.90) * math.sin(angleRad),
-    );
-
-    final indicatorPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawLine(indicatorStart, indicatorEnd, indicatorPaint);
-
-    // Draw center dot for depth
-    final centerDotPaint = Paint()
-      ..color = const Color(0xFF1A1A1A)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(center, radius * 0.15, centerDotPaint);
-  }
-
-  @override
-  bool shouldRepaint(_KnobIndicatorPainter oldDelegate) {
-    return oldDelegate.progress != progress;
-  }
-}
