@@ -42,7 +42,7 @@ dependencies:
   fl_chart: ^0.66.2
 
   # Interactive controls
-  flutter_dial_knob: ^1.0.1
+  flutter_dial_knob: ^0.1.0
 
   # Utilities
   collection: ^1.18.0
