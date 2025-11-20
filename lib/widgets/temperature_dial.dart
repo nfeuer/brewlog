@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_dial/flutter_dial.dart';
+import 'package:flutter_dial/dial.dart';
 
 enum TemperatureUnit { celsius, fahrenheit }
 
@@ -99,7 +99,8 @@ class _TemperatureDialState extends State<TemperatureDial> {
                 child: CustomPaint(
                   painter: _CircularArcPainter(
                     progress: _progress,
-                    color: _getTemperatureColor(_temperatureCelsius ?? widget.minTemp),
+                    color: _getTemperatureColor(
+                        _temperatureCelsius ?? widget.minTemp),
                   ),
                   child: Center(
                     child: Column(
@@ -185,8 +186,9 @@ class _TemperatureDialState extends State<TemperatureDial> {
 
   Color _getTemperatureColor(double tempCelsius) {
     // Gradient from cool blue to hot red
-    final normalized = ((tempCelsius - widget.minTemp) /
-        (widget.maxTemp - widget.minTemp)).clamp(0.0, 1.0);
+    final normalized =
+        ((tempCelsius - widget.minTemp) / (widget.maxTemp - widget.minTemp))
+            .clamp(0.0, 1.0);
 
     if (normalized < 0.5) {
       // Blue to yellow
