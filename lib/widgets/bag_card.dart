@@ -33,31 +33,31 @@ class BagCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Image
-        AspectRatio(
-          aspectRatio: 1,
+        // Image - flexible to take available space
+        Expanded(
           child: _buildImage(),
         ),
-        // Info
+        // Info - fixed height section
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 bag.displayTitle,
-                style: AppTextStyles.cardTitle.copyWith(fontSize: 16),
+                style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 bag.roaster,
-                style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
+                style: AppTextStyles.cardSubtitle.copyWith(fontSize: 11),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

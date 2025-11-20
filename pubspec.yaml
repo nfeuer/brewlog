@@ -41,6 +41,9 @@ dependencies:
   # Charts for statistics
   fl_chart: ^0.66.2
 
+  # Interactive controls
+  flutter_dial_knob: ^1.0.1
+
   # Utilities
   collection: ^1.18.0
 
@@ -55,9 +58,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Uncomment when adding images to the project
-  # assets:
-  #   - assets/images/
+  assets:
+    - assets/images/
 
   # fonts:
   #   - family: Schyler
