@@ -98,43 +98,44 @@ class BagDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header with photo (tap to zoom, long press to edit)
-            GestureDetector(
-              onTap: () {
-                // Tap to zoom if photo exists
-                if (bag.labelPhotoPath != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SinglePhotoViewer(
-                        photoPath: bag.labelPhotoPath!,
-                      ),
-                    ),
-                  );
-                }
-              },
-              onLongPress: () => _changeBagPhoto(context, ref, bag),
-              child: Stack(
-                children: [
-                  if (bag.labelPhotoPath != null) ...[
-                    AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: Image.file(
-                        File(bag.labelPhotoPath!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildPlaceholderImage();
-                        },
-                      ),
-                    ),
-                  ] else
-                    AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: _buildPlaceholderImage(),
-                    ),
-                  Positioned(
-                    bottom: 8,
-                    right: 8,
+            // Header with photo (tap to zoom, edit button to change photo)
+            Stack(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    // Tap to zoom if photo exists
+                    if (bag.labelPhotoPath != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SinglePhotoViewer(
+                            photoPath: bag.labelPhotoPath!,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: bag.labelPhotoPath != null
+                      ? AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Image.file(
+                            File(bag.labelPhotoPath!),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildPlaceholderImage();
+                            },
+                          ),
+                        )
+                      : AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: _buildPlaceholderImage(),
+                        ),
+                ),
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => _changeBagPhoto(context, ref, bag),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.black54,
@@ -146,8 +147,8 @@ class BagDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
 
             Padding(
