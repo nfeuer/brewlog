@@ -165,23 +165,23 @@ class _TemperatureDialState extends State<TemperatureDial> {
           ),
 
           // Right side: Rotatable dial knob using flutter_dial_knob
-          SizedBox(
+          Container(
             width: 144,
             height: 144,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF2C2C2C),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: DialKnob(
               value: _knobValue,
               onChanged: _updateTemperatureFromKnob,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF2C2C2C),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
               child: Container(
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
