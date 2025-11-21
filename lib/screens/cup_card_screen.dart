@@ -16,6 +16,7 @@ import '../utils/theme.dart';
 import '../widgets/rating_input.dart';
 import '../widgets/photo_viewer.dart';
 import '../widgets/temperature_dial.dart';
+import '../widgets/pour_schedule_timer.dart';
 import 'equipment_form_screen.dart';
 
 class CupCardScreen extends ConsumerStatefulWidget {
@@ -100,6 +101,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   List<String> _photoPaths = [];
   bool _showScaCuppingFields = false;
   bool _isBest = false;
+  List<PourEntry> _pourEntries = [];
+  bool _usePourTimer = false;
 
   @override
   void initState() {
@@ -130,6 +133,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _yieldGramsController.text = cup.yieldGrams?.toString() ?? '';
         _bloomAmountController.text = cup.bloomAmountGrams?.toString() ?? '';
         _pourScheduleController.text = cup.pourSchedule ?? '';
+        _parsePourSchedule(cup.pourSchedule);
         _tdsController.text = cup.tds?.toString() ?? '';
         _extractionYieldController.text = cup.extractionYield?.toString() ?? '';
 
@@ -637,14 +641,42 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       const SizedBox(height: 12),
                     ],
                     if (fieldVisibility['pourSchedule'] == true) ...[
-                      TextFormField(
-                        controller: _pourScheduleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Pour Schedule',
-                          hintText: 'e.g., 0:00-50g, 0:45-100g, 1:30-final',
-                        ),
-                        maxLines: 2,
+                      Row(
+                        children: [
+                          const Text('Pour Schedule'),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _usePourTimer = !_usePourTimer;
+                              });
+                            },
+                            icon: Icon(_usePourTimer ? Icons.timer : Icons.text_fields),
+                            label: Text(_usePourTimer ? 'Use Text' : 'Use Timer'),
+                          ),
+                        ],
                       ),
+                      if (_usePourTimer) ...[
+                        PourScheduleTimer(
+                          initialEntries: _pourEntries,
+                          onStop: (entries, totalSeconds) {
+                            setState(() {
+                              _pourEntries = entries;
+                              _brewTimeController.text = totalSeconds.toString();
+                              _pourScheduleController.text = _formatPourEntries(entries);
+                            });
+                          },
+                        ),
+                      ] else ...[
+                        TextFormField(
+                          controller: _pourScheduleController,
+                          decoration: const InputDecoration(
+                            labelText: 'Pour Schedule (Text)',
+                            hintText: 'e.g., 0:00-50g, 0:45-100g, 1:30-final',
+                          ),
+                          maxLines: 2,
+                        ),
+                      ],
                       const SizedBox(height: 12),
                     ],
                   ],
@@ -1424,6 +1456,26 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         Navigator.pop(context);
       }
     }
+  }
+
+  void _parsePourSchedule(String? schedule) {
+    if (schedule == null || schedule.isEmpty) {
+      _usePourTimer = false;
+      _pourEntries = [];
+      return;
+    }
+
+    // Check if it's timer format (has entries with timestamps)
+    if (schedule.contains(':')) {
+      _usePourTimer = true;
+      // Simple parsing - entries are formatted like "00:45 - 50g"
+      // This allows backward compatibility with text entries
+    }
+  }
+
+  String _formatPourEntries(List<PourEntry> entries) {
+    if (entries.isEmpty) return '';
+    return entries.map((e) => e.toString()).join(', ');
   }
 
   @override

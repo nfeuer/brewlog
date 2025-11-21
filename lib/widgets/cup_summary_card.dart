@@ -135,6 +135,40 @@ class CupSummaryCard extends StatelessWidget {
                 ],
               ),
 
+              // SCA Cupping Total Score
+              if (cup.cuppingTotal != null) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBrown.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.primaryBrown.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.assessment, size: 14, color: AppTheme.primaryBrown),
+                      const SizedBox(width: 4),
+                      Text(
+                        'SCA: ${cup.cuppingTotal!.toStringAsFixed(1)}/110',
+                        style: TextStyle(
+                          color: AppTheme.primaryBrown,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               // Photos indicator
               if (cup.photoPaths.isNotEmpty) ...[
                 const SizedBox(height: 8),
