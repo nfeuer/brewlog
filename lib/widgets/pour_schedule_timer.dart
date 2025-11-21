@@ -41,6 +41,7 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
   Timer? _timer;
   int _seconds = 0;
   bool _isRunning = false;
+  bool _isStopped = false;
   List<PourEntry> _entries = [];
   final TextEditingController _gramsController = TextEditingController();
 
@@ -86,6 +87,7 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
     setState(() {
       _timer?.cancel();
       _isRunning = false;
+      _isStopped = false;
       _seconds = 0;
       _entries.clear();
       _gramsController.clear();
@@ -100,8 +102,8 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
         content: TextField(
           controller: _gramsController,
           decoration: const InputDecoration(
-            labelText: 'Grams',
-            hintText: 'Enter grams poured',
+            labelText: 'Current Volume',
+            hintText: 'Total volume so far',
             suffixText: 'g',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -136,6 +138,7 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
     widget.onStop(_entries, _seconds);
     setState(() {
       _isRunning = false;
+      _isStopped = true;
     });
   }
 
@@ -153,73 +156,92 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Timer display
-            Center(
-              child: Text(
-                _formatTime(_seconds),
-                style: const TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w300,
-                  fontFeatures: [FontFeature.tabularFigures()],
+            // Timer display and controls (hide when stopped)
+            if (!_isStopped) ...[
+              // Timer display
+              Center(
+                child: Text(
+                  _formatTime(_seconds),
+                  style: const TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w300,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Control buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Reset button
-                ElevatedButton.icon(
-                  onPressed: _seconds > 0 && !_isRunning ? _resetTimer : null,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reset'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[300],
-                    foregroundColor: Colors.black87,
+              // Control buttons row (circular icon buttons)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Reset button
+                  IconButton(
+                    onPressed: _seconds > 0 && !_isRunning ? _resetTimer : null,
+                    icon: const Icon(Icons.refresh),
+                    style: IconButton.styleFrom(
+                      backgroundColor: _seconds > 0 && !_isRunning
+                          ? Colors.grey[300]
+                          : Colors.grey[200],
+                      foregroundColor: Colors.black87,
+                      disabledBackgroundColor: Colors.grey[200],
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    iconSize: 24,
+                    tooltip: 'Reset',
                   ),
-                ),
+                  const SizedBox(width: 12),
 
-                // Start/Pause button
-                ElevatedButton.icon(
-                  onPressed: _startPauseTimer,
-                  icon: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
-                  label: Text(_isRunning ? 'Pause' : 'Start'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryBrown,
-                    foregroundColor: Colors.white,
+                  // Start/Pause button
+                  IconButton(
+                    onPressed: _startPauseTimer,
+                    icon: Icon(_isRunning ? Icons.pause : Icons.play_arrow),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppTheme.primaryBrown,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    iconSize: 24,
+                    tooltip: _isRunning ? 'Pause' : 'Start',
                   ),
-                ),
+                  const SizedBox(width: 12),
 
-                // Lap button
-                ElevatedButton.icon(
+                  // Stop button
+                  IconButton(
+                    onPressed: _seconds > 0 ? _stopTimer : null,
+                    icon: const Icon(Icons.stop),
+                    style: IconButton.styleFrom(
+                      backgroundColor: _seconds > 0 ? Colors.red : Colors.grey[200],
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey[200],
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    iconSize: 24,
+                    tooltip: 'Stop',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Lap button (below, with text)
+              Center(
+                child: ElevatedButton.icon(
                   onPressed: _isRunning ? _addLap : null,
                   icon: const Icon(Icons.add),
-                  label: const Text('Lap'),
+                  label: const Text('+ Pour'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey[300],
                   ),
                 ),
-
-                // Stop button
-                ElevatedButton.icon(
-                  onPressed: _seconds > 0 ? _stopTimer : null,
-                  icon: const Icon(Icons.stop),
-                  label: const Text('Stop'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
 
             // Pour entries list
             if (_entries.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              const Divider(),
+              if (!_isStopped) const SizedBox(height: 16),
+              if (!_isStopped) const Divider(),
               const SizedBox(height: 8),
               const Text(
                 'Pour Schedule:',
@@ -254,16 +276,17 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
                           '-',
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 16),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () {
-                          setState(() {
-                            _entries.removeAt(index);
-                          });
-                        },
-                      ),
+                      if (!_isStopped)
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 16),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            setState(() {
+                              _entries.removeAt(index);
+                            });
+                          },
+                        ),
                     ],
                   ),
                 );
