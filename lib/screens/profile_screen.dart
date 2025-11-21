@@ -9,11 +9,18 @@ import '../utils/theme.dart';
 import '../utils/helpers.dart';
 import 'equipment_screen.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isEditing = false;
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(userProfileProvider);
     final stats = ref.watch(userStatsProvider);
     final hasEquipment = ref.watch(hasEquipmentProvider);
@@ -27,6 +34,17 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+            tooltip: _isEditing ? 'Done' : 'Edit Profile',
+          ),
+        ],
       ),
       body: ListView(
         padding: AppStyles.screenPadding,
@@ -49,39 +67,37 @@ class ProfileScreen extends ConsumerWidget {
                             ? const Icon(Icons.person, size: 40, color: Colors.white)
                             : null,
                       ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: AppTheme.primaryBrown,
-                          child: IconButton(
-                            icon: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
-                            padding: EdgeInsets.zero,
-                            onPressed: () => _showProfilePictureOptions(context, ref),
+                      if (_isEditing)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: CircleAvatar(
+                            radius: 16,
+                            backgroundColor: AppTheme.primaryBrown,
+                            child: IconButton(
+                              icon: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                              padding: EdgeInsets.zero,
+                              onPressed: () => _showProfilePictureOptions(context, ref),
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        user.username ?? 'Coffee Enthusiast',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 18),
-                        onPressed: () => _showEditNameDialog(context, ref, user.username),
-                      ),
-                    ],
+                  // Centered username
+                  GestureDetector(
+                    onTap: _isEditing ? () => _showEditNameDialog(context, ref, user.username) : null,
+                    child: Text(
+                      user.username ?? 'Coffee Enthusiast',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
+                  // Bio section
                   if (user.bio != null && user.bio!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     GestureDetector(
-                      onTap: () => _showEditBioDialog(context, ref, user.bio),
+                      onTap: _isEditing ? () => _showEditBioDialog(context, ref, user.bio) : null,
                       child: Text(
                         user.bio!,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -91,7 +107,7 @@ class ProfileScreen extends ConsumerWidget {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                  ] else ...[
+                  ] else if (_isEditing) ...[
                     const SizedBox(height: 4),
                     TextButton.icon(
                       onPressed: () => _showEditBioDialog(context, ref, null),
