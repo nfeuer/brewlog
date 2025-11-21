@@ -2,24 +2,33 @@ import 'package:flutter/material.dart';
 import '../models/cup.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
+import '../utils/constants.dart';
 
 /// Summary card for a cup (used in swipeable list on bag detail screen)
 class CupSummaryCard extends StatelessWidget {
   final Cup cup;
   final VoidCallback onTap;
   final VoidCallback? onCopy;
-  final double ratingMax;
+  final RatingScale ratingScale;
 
   const CupSummaryCard({
     super.key,
     required this.cup,
     required this.onTap,
     this.onCopy,
-    this.ratingMax = 5.0,
+    required this.ratingScale,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Get rating in user's preferred scale
+    final rating = cup.getRating(ratingScale);
+    final ratingMax = ratingScale == RatingScale.oneToFive
+        ? 5.0
+        : ratingScale == RatingScale.oneToTen
+            ? 10.0
+            : 100.0;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8),
       child: InkWell(
@@ -96,14 +105,14 @@ class CupSummaryCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Rating
-                  if (cup.score1to5 != null)
+                  if (rating != null)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: getRatingColor(cup.score1to5, ratingMax),
+                        color: getRatingColor(rating, ratingMax),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -112,7 +121,7 @@ class CupSummaryCard extends StatelessWidget {
                           const Icon(Icons.star, size: 14, color: Colors.white),
                           const SizedBox(width: 4),
                           Text(
-                            formatRating(cup.score1to5!, ratingMax),
+                            formatRating(rating, ratingMax),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
