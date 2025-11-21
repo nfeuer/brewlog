@@ -786,136 +786,135 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (fieldVisibility['cuppingFragrance'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingFragranceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Fragrance/Aroma (Dry)',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  TextFormField(
+                    controller: _cuppingFragranceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Fragrance/Aroma (Dry)',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingAroma'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingAromaController,
-                      decoration: const InputDecoration(
-                        labelText: 'Aroma (Wet)',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingAroma'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingAromaController,
+                    decoration: const InputDecoration(
+                      labelText: 'Aroma (Wet)',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingFlavor'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingFlavorController,
-                      decoration: const InputDecoration(
-                        labelText: 'Flavor',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingFlavor'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingFlavorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Flavor',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingAftertaste'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingAftertasteController,
-                      decoration: const InputDecoration(
-                        labelText: 'Aftertaste',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingAftertaste'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingAftertasteController,
+                    decoration: const InputDecoration(
+                      labelText: 'Aftertaste',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingAcidity'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingAcidityController,
-                      decoration: const InputDecoration(
-                        labelText: 'Acidity',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingAcidity'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingAcidityController,
+                    decoration: const InputDecoration(
+                      labelText: 'Acidity',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingBody'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingBodyController,
-                      decoration: const InputDecoration(
-                        labelText: 'Body',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingBody'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingBodyController,
+                    decoration: const InputDecoration(
+                      labelText: 'Body',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingBalance'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingBalanceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Balance',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingBalance'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingBalanceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Balance',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingSweetness'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingSweetnessController,
-                      decoration: const InputDecoration(
-                        labelText: 'Sweetness',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingSweetness'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingSweetnessController,
+                    decoration: const InputDecoration(
+                      labelText: 'Sweetness',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingCleanCup'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingCleanCupController,
-                      decoration: const InputDecoration(
-                        labelText: 'Clean Cup',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingCleanCup'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingCleanCupController,
+                    decoration: const InputDecoration(
+                      labelText: 'Clean Cup',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingUniformity'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingUniformityController,
-                      decoration: const InputDecoration(
-                        labelText: 'Uniformity',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingUniformity'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingUniformityController,
+                    decoration: const InputDecoration(
+                      labelText: 'Uniformity',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingOverall'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingOverallController,
-                      decoration: const InputDecoration(
-                        labelText: 'Overall',
-                        hintText: '0-10',
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingOverall'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingOverallController,
+                    decoration: const InputDecoration(
+                      labelText: 'Overall',
+                      hintText: '0-10',
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  if (fieldVisibility['cuppingDefects'] == true) ...[
-                    TextFormField(
-                      controller: _cuppingDefectsController,
-                      decoration: const InputDecoration(
-                        labelText: 'Defects Notes',
-                        hintText: 'Describe any defects found',
-                      ),
-                      maxLines: 2,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (fieldVisibility['cuppingDefects'] == true) ...[
+                  TextFormField(
+                    controller: _cuppingDefectsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Defects Notes',
+                      hintText: 'Describe any defects found',
                     ),
-                  ],
+                    maxLines: 2,
+                  ),
                 ],
               ],
             ],
