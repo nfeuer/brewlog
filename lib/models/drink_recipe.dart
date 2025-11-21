@@ -47,6 +47,9 @@ class DrinkRecipe extends HiveObject {
   @HiveField(13)
   int usageCount; // Number of times this recipe has been used
 
+  @HiveField(14)
+  String? espressoShot; // "Single" or "Double" for espresso-based drinks
+
   DrinkRecipe({
     required this.id,
     required this.userId,
@@ -62,6 +65,7 @@ class DrinkRecipe extends HiveObject {
     DateTime? createdAt,
     DateTime? updatedAt,
     this.usageCount = 0,
+    this.espressoShot,
   })  : syrups = syrups ?? [],
         sweeteners = sweeteners ?? [],
         otherAdditions = otherAdditions ?? [],
@@ -90,6 +94,7 @@ class DrinkRecipe extends HiveObject {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'usageCount': usageCount,
+      'espressoShot': espressoShot,
     };
   }
 
@@ -109,6 +114,7 @@ class DrinkRecipe extends HiveObject {
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       usageCount: json['usageCount'] as int? ?? 0,
+      espressoShot: json['espressoShot'] as String?,
     );
   }
 
@@ -116,7 +122,13 @@ class DrinkRecipe extends HiveObject {
   String get summary {
     final parts = <String>[];
 
-    if (baseType != null) parts.add(baseType!);
+    if (baseType != null) {
+      if (espressoShot != null && baseType!.toLowerCase().contains('espresso')) {
+        parts.add('$espressoShot $baseType');
+      } else {
+        parts.add(baseType!);
+      }
+    }
     if (milkType != null) {
       if (milkAmountMl != null) {
         parts.add('$milkType (${milkAmountMl!.toInt()}ml)');
