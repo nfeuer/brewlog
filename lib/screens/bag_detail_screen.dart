@@ -298,11 +298,7 @@ class BagDetailScreen extends ConsumerWidget {
                         cup: cup,
                         onTap: () => _openCup(context, cup.id),
                         onCopy: () => _copyCup(context, ref, cup.id),
-                        ratingMax: ratingScale.index == 0
-                            ? 5
-                            : ratingScale.index == 1
-                                ? 10
-                                : 100,
+                        ratingScale: ratingScale,
                       ),
                     );
                   },
