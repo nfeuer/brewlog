@@ -5,6 +5,7 @@ import '../models/coffee_bag.dart';
 import '../models/cup.dart';
 import '../models/shared_cup.dart';
 import '../models/equipment_setup.dart';
+import '../models/drink_recipe.dart';
 import '../utils/constants.dart';
 
 /// Local database service using Hive for offline-first storage
@@ -15,6 +16,7 @@ class DatabaseService {
   static const String _cupsBoxName = 'cups';
   static const String _sharedCupsBoxName = 'shared_cups';
   static const String _equipmentBoxName = 'equipment';
+  static const String _drinkRecipesBoxName = 'drink_recipes';
 
   final _uuid = const Uuid();
 
@@ -25,6 +27,7 @@ class DatabaseService {
   late Box _cupsBox;
   late Box _sharedCupsBox;
   late Box _equipmentBox;
+  late Box _drinkRecipesBox;
 
   // Singleton pattern
   static final DatabaseService _instance = DatabaseService._internal();
@@ -56,6 +59,7 @@ class DatabaseService {
     _cupsBox = await Hive.openBox(_cupsBoxName);
     _sharedCupsBox = await Hive.openBox(_sharedCupsBoxName);
     _equipmentBox = await Hive.openBox(_equipmentBoxName);
+    _drinkRecipesBox = await Hive.openBox(_drinkRecipesBoxName);
 
     // Create default user if doesn't exist
     if (_userBox.isEmpty) {
@@ -260,6 +264,11 @@ class DatabaseService {
     // Update bag stats
     await recalculateBagStats(cup.bagId);
 
+    // Increment drink recipe usage count if recipe was used
+    if (cup.drinkRecipeId != null) {
+      await incrementDrinkRecipeUsage(cup.drinkRecipeId!);
+    }
+
     return cup.id;
   }
 
@@ -295,6 +304,14 @@ class DatabaseService {
 
     // Update bag stats
     await recalculateBagStats(cup.bagId);
+
+    // Increment drink recipe usage count if recipe was added or changed
+    if (oldCup != null && cup.drinkRecipeId != null) {
+      // Only increment if recipe was newly added or changed to a different recipe
+      if (oldCup.drinkRecipeId != cup.drinkRecipeId) {
+        await incrementDrinkRecipeUsage(cup.drinkRecipeId!);
+      }
+    }
   }
 
   /// Delete cup
@@ -515,6 +532,72 @@ class DatabaseService {
   }
 
   // ============================================================================
+  // DRINK RECIPE OPERATIONS
+  // ============================================================================
+
+  /// Get all drink recipes for current user
+  List<DrinkRecipe> getAllDrinkRecipes() {
+    final user = getCurrentUser();
+    if (user == null) return [];
+
+    return _drinkRecipesBox.values
+        .map((json) => DrinkRecipe.fromJson(Map<String, dynamic>.from(json as Map)))
+        .where((recipe) => recipe.userId == user.id)
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  }
+
+  /// Get drink recipe by ID
+  DrinkRecipe? getDrinkRecipe(String recipeId) {
+    final json = _drinkRecipesBox.get(recipeId);
+    if (json == null) return null;
+    return DrinkRecipe.fromJson(Map<String, dynamic>.from(json as Map));
+  }
+
+  /// Search drink recipes by name
+  List<DrinkRecipe> searchDrinkRecipes(String query) {
+    final user = getCurrentUser();
+    if (user == null) return [];
+
+    final lowerQuery = query.toLowerCase();
+    return _drinkRecipesBox.values
+        .map((json) => DrinkRecipe.fromJson(Map<String, dynamic>.from(json as Map)))
+        .where((recipe) =>
+            recipe.userId == user.id &&
+            recipe.name.toLowerCase().contains(lowerQuery))
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  }
+
+  /// Create new drink recipe
+  Future<String> createDrinkRecipe(DrinkRecipe recipe) async {
+    // Store as JSON until adapters are generated
+    await _drinkRecipesBox.put(recipe.id, recipe.toJson());
+    return recipe.id;
+  }
+
+  /// Update existing drink recipe
+  Future<void> updateDrinkRecipe(DrinkRecipe recipe) async {
+    recipe.touch();
+    // Store as JSON until adapters are generated
+    await _drinkRecipesBox.put(recipe.id, recipe.toJson());
+  }
+
+  /// Delete drink recipe
+  Future<void> deleteDrinkRecipe(String recipeId) async {
+    await _drinkRecipesBox.delete(recipeId);
+  }
+
+  /// Increment usage count for a drink recipe
+  Future<void> incrementDrinkRecipeUsage(String recipeId) async {
+    final recipe = getDrinkRecipe(recipeId);
+    if (recipe == null) return;
+
+    recipe.usageCount++;
+    await updateDrinkRecipe(recipe);
+  }
+
+  // ============================================================================
   // UTILITY METHODS
   // ============================================================================
 
@@ -528,6 +611,7 @@ class DatabaseService {
     await _cupsBox.clear();
     await _sharedCupsBox.clear();
     await _equipmentBox.clear();
+    await _drinkRecipesBox.clear();
     await _createDefaultUser();
   }
 
@@ -539,6 +623,7 @@ class DatabaseService {
       'cups': _cupsBox.length,
       'sharedCups': _sharedCupsBox.length,
       'equipment': _equipmentBox.length,
+      'drinkRecipes': _drinkRecipesBox.length,
     };
   }
 
@@ -549,6 +634,7 @@ class DatabaseService {
     await _cupsBox.close();
     await _sharedCupsBox.close();
     await _equipmentBox.close();
+    await _drinkRecipesBox.close();
   }
 }
 

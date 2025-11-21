@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
+import '../providers/drink_recipes_provider.dart';
 import '../services/photo_service.dart';
 import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
 import 'equipment_screen.dart';
+import 'drink_recipe_book_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -84,28 +86,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Centered username
-                  GestureDetector(
-                    onTap: _isEditing ? () => _showEditNameDialog(context, ref, user.username) : null,
-                    child: Text(
-                      user.username ?? 'Coffee Enthusiast',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
-                    ),
+                  // Centered username with edit button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: GestureDetector(
+                          onTap: _isEditing ? () => _showEditNameDialog(context, ref, user.username) : null,
+                          child: Text(
+                            user.username ?? 'Coffee Enthusiast',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                      if (_isEditing)
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 18),
+                          color: AppTheme.primaryBrown,
+                          onPressed: () => _showEditNameDialog(context, ref, user.username),
+                          padding: const EdgeInsets.only(left: 4),
+                          constraints: const BoxConstraints(),
+                        ),
+                    ],
                   ),
-                  // Bio section
+                  // Bio section with edit button
                   if (user.bio != null && user.bio!.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    GestureDetector(
-                      onTap: _isEditing ? () => _showEditBioDialog(context, ref, user.bio) : null,
-                      child: Text(
-                        user.bio!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey[600],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: _isEditing ? () => _showEditBioDialog(context, ref, user.bio) : null,
+                            child: Text(
+                              user.bio!,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey[600],
+                                  ),
+                              textAlign: TextAlign.center,
                             ),
-                        textAlign: TextAlign.center,
-                      ),
+                          ),
+                        ),
+                        if (_isEditing)
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 16),
+                            color: Colors.grey[600],
+                            onPressed: () => _showEditBioDialog(context, ref, user.bio),
+                            padding: const EdgeInsets.only(left: 4),
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
                     ),
                   ] else if (_isEditing) ...[
                     const SizedBox(height: 4),
@@ -279,6 +311,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const EquipmentScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.menu_book),
+                  title: const Text('Drink Recipe Book'),
+                  subtitle: Text(ref.watch(hasDrinkRecipesProvider)
+                      ? 'View and manage your drink recipes'
+                      : 'No saved recipes yet'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DrinkRecipeBookScreen()),
                     );
                   },
                 ),
