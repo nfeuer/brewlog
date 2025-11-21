@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
+import '../providers/drink_recipes_provider.dart';
 import '../services/photo_service.dart';
 import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
 import 'equipment_screen.dart';
+import 'drink_recipe_book_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -309,6 +311,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const EquipmentScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.menu_book),
+                  title: const Text('Drink Recipe Book'),
+                  subtitle: Text(ref.watch(hasDrinkRecipesProvider)
+                      ? 'View and manage your drink recipes'
+                      : 'No saved recipes yet'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DrinkRecipeBookScreen()),
                     );
                   },
                 ),
