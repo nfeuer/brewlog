@@ -14,15 +14,22 @@ import '../widgets/photo_viewer.dart';
 import 'bag_form_screen.dart';
 import 'cup_card_screen.dart';
 
-class BagDetailScreen extends ConsumerWidget {
+class BagDetailScreen extends ConsumerStatefulWidget {
   final String bagId;
 
   const BagDetailScreen({super.key, required this.bagId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bag = ref.watch(bagProvider(bagId));
-    final cups = ref.watch(cupsForBagProvider(bagId));
+  ConsumerState<BagDetailScreen> createState() => _BagDetailScreenState();
+}
+
+class _BagDetailScreenState extends ConsumerState<BagDetailScreen> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bag = ref.watch(bagProvider(widget.bagId));
+    final cups = ref.watch(cupsForBagProvider(widget.bagId));
     final ratingScale = ref.watch(ratingScaleProvider);
 
     if (bag == null) {
@@ -181,40 +188,62 @@ class BagDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Stats card
+                  // Stats card (tappable to expand)
                   Card(
-                    child: Padding(
-                      padding: AppStyles.cardPadding,
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildStat(
-                                context,
-                                'Total Cups',
-                                bag.totalCups.toString(),
-                              ),
-                              _buildStat(
-                                context,
-                                'Avg Score',
-                                bag.avgScore != null
-                                    ? formatRating(bag.avgScore!, 5)
-                                    : '-',
-                              ),
-                              _buildStat(
-                                context,
-                                'Days Open',
-                                bag.openDate != null
-                                    ? DateTime.now()
-                                        .difference(bag.openDate!)
-                                        .inDays
-                                        .toString()
-                                    : '-',
-                              ),
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isExpanded = !_isExpanded;
+                        });
+                      },
+                      child: Padding(
+                        padding: AppStyles.cardPadding,
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                _buildStat(
+                                  context,
+                                  'Total Cups',
+                                  bag.totalCups.toString(),
+                                ),
+                                _buildStat(
+                                  context,
+                                  'Avg Score',
+                                  bag.avgScore != null
+                                      ? formatRating(bag.avgScore!, 5)
+                                      : '-',
+                                ),
+                                _buildStat(
+                                  context,
+                                  'Days Open',
+                                  bag.openDate != null
+                                      ? DateTime.now()
+                                          .difference(bag.openDate!)
+                                          .inDays
+                                          .toString()
+                                      : '-',
+                                ),
+                              ],
+                            ),
+                            // Expansion indicator
+                            const SizedBox(height: 8),
+                            Icon(
+                              _isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: AppTheme.textGray,
+                            ),
+                            // Expanded details
+                            if (_isExpanded) ...[
+                              const SizedBox(height: 16),
+                              const Divider(),
+                              const SizedBox(height: 16),
+                              _buildExpandedDetails(bag, cups),
                             ],
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -335,6 +364,105 @@ class BagDetailScreen extends ConsumerWidget {
           style: AppTextStyles.statLabel,
         ),
       ],
+    );
+  }
+
+  Widget _buildExpandedDetails(CoffeeBag bag, List cups) {
+    // Calculate cost per cup if bag is finished and price is available
+    String? costPerCup;
+    if (bag.status == BagStatus.finished && bag.price != null && bag.totalCups > 0) {
+      final cost = bag.price! / bag.totalCups;
+      costPerCup = '\$${cost.toStringAsFixed(2)}';
+    }
+
+    // Calculate beans leftover
+    String? beansLeftover;
+    if (bag.bagSizeGrams != null) {
+      // Calculate total grams used across all cups
+      double totalGramsUsed = 0;
+      for (final cup in cups) {
+        if (cup.gramsUsed != null) {
+          totalGramsUsed += cup.gramsUsed!;
+        }
+      }
+      final leftover = bag.bagSizeGrams! - totalGramsUsed;
+      beansLeftover = '${leftover.toStringAsFixed(0)}g';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Variety
+        if (bag.variety != null)
+          _buildDetailRow('Variety', bag.variety!),
+        // Farmer
+        if (bag.farmer != null)
+          _buildDetailRow('Farmer', bag.farmer!),
+        // Processing Methods
+        if (bag.processingMethods != null && bag.processingMethods!.isNotEmpty)
+          _buildDetailRow('Processing', bag.processingMethods!.join(', ')),
+        // Custom Processing Method
+        if (bag.customProcessingMethod != null && bag.customProcessingMethod!.isNotEmpty)
+          _buildDetailRow('Custom Processing', bag.customProcessingMethod!),
+        // Region
+        if (bag.region != null)
+          _buildDetailRow('Region', bag.region!),
+        // Elevation
+        if (bag.elevation != null)
+          _buildDetailRow('Elevation', bag.elevation!),
+        // Roast Date
+        if (bag.roastDate != null)
+          _buildDetailRow('Roast Date', formatDate(bag.roastDate!)),
+        // Roast Level
+        if (bag.roastLevel != null)
+          _buildDetailRow('Roast Level', bag.roastLevel!),
+        // Price
+        if (bag.price != null)
+          _buildDetailRow('Price', '\$${bag.price!.toStringAsFixed(2)}'),
+        // Bag Size
+        if (bag.bagSizeGrams != null)
+          _buildDetailRow('Bag Size', '${bag.bagSizeGrams!.toStringAsFixed(0)}g'),
+        // Date Purchased
+        if (bag.datePurchased != null)
+          _buildDetailRow('Purchased', formatDate(bag.datePurchased!)),
+        // Open Date
+        if (bag.openDate != null)
+          _buildDetailRow('Opened', formatDate(bag.openDate!)),
+        // Cost Per Cup (only when finished)
+        if (costPerCup != null)
+          _buildDetailRow('Cost Per Cup', costPerCup, highlight: true),
+        // Beans Leftover
+        if (beansLeftover != null)
+          _buildDetailRow('Beans Leftover', beansLeftover, highlight: true),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {bool highlight = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.cardSubtitle.copyWith(
+              fontWeight: highlight ? FontWeight.bold : null,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: highlight ? AppTheme.primaryBrown : AppTheme.textPrimary,
+                fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
+              ),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

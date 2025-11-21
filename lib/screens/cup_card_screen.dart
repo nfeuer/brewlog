@@ -248,10 +248,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         child: ListView(
           padding: AppStyles.screenPadding,
           children: [
-            // Bag Info Section (expandable if not new bag)
-            _buildSection(
-              'Coffee Bag Info',
-              [
+            // Bag Info Section (only show when creating a new bag or editing existing cup)
+            if (widget.bagId == null || widget.cupId != null)
+              _buildSection(
+                'Coffee Bag Info',
+                [
                 TextFormField(
                   controller: _customTitleController,
                   decoration: const InputDecoration(labelText: 'Custom Title'),
@@ -430,9 +431,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   ),
                 ],
               ],
-            ),
+              ),
 
-            const SizedBox(height: 24),
+            if (widget.bagId == null || widget.cupId != null) const SizedBox(height: 24),
 
             // Brew Parameters Section
             _buildSection(
@@ -659,11 +660,21 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       if (_usePourTimer) ...[
                         PourScheduleTimer(
                           initialEntries: _pourEntries,
-                          onStop: (entries, totalSeconds) {
+                          onStop: (entries, totalSeconds, finalVolume, bloomAmount) {
                             setState(() {
                               _pourEntries = entries;
                               _brewTimeController.text = totalSeconds.toString();
                               _pourScheduleController.text = _formatPourEntries(entries);
+
+                              // Populate Final Volume with last entry
+                              if (finalVolume != null) {
+                                _finalVolumeController.text = finalVolume.toStringAsFixed(0);
+                              }
+
+                              // Populate Bloom Water Amount with first entry
+                              if (bloomAmount != null) {
+                                _bloomAmountController.text = bloomAmount.toStringAsFixed(0);
+                              }
                             });
                           },
                         ),
@@ -1191,6 +1202,23 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     final currentVisibility = ref.read(cupFieldVisibilityProvider);
     final tempVisibility = Map<String, bool>.from(currentVisibility);
 
+    // SCA field keys for master toggle
+    final scaFields = [
+      'cuppingFragrance',
+      'cuppingAroma',
+      'cuppingFlavor',
+      'cuppingAftertaste',
+      'cuppingAcidity',
+      'cuppingBody',
+      'cuppingBalance',
+      'cuppingSweetness',
+      'cuppingCleanCup',
+      'cuppingUniformity',
+      'cuppingOverall',
+      'cuppingTotal',
+      'cuppingDefects',
+    ];
+
     await showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -1209,6 +1237,22 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               child: ListView(
                 shrinkWrap: true,
                 children: fieldsBySection.entries.map((entry) {
+                  // Check if this is the SCA Cupping section
+                  final isScaSection = entry.key == 'SCA Cupping';
+
+                  // Calculate SCA master toggle state
+                  bool? scaMasterValue;
+                  if (isScaSection) {
+                    final scaValues = scaFields.map((key) => tempVisibility[key] ?? false).toList();
+                    if (scaValues.every((v) => v == true)) {
+                      scaMasterValue = true;
+                    } else if (scaValues.every((v) => v == false)) {
+                      scaMasterValue = false;
+                    } else {
+                      scaMasterValue = null; // Mixed state
+                    }
+                  }
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1219,17 +1263,37 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           style: AppTextStyles.sectionHeader,
                         ),
                       ),
-                      ...entry.value.map((field) {
-                        return CheckboxListTile(
-                          title: Text(field.displayName),
-                          value: tempVisibility[field.key] ?? true,
+                      // Show master toggle for SCA Cupping section
+                      if (isScaSection)
+                        CheckboxListTile(
+                          title: const Text(
+                            'SCA Cupping (All Fields)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          value: scaMasterValue ?? false,
+                          tristate: true,
                           onChanged: (value) {
                             setDialogState(() {
-                              tempVisibility[field.key] = value ?? true;
+                              final newValue = value ?? true;
+                              for (final scaKey in scaFields) {
+                                tempVisibility[scaKey] = newValue;
+                              }
                             });
                           },
-                        );
-                      }),
+                        ),
+                      // Show individual checkboxes for non-SCA sections only
+                      if (!isScaSection)
+                        ...entry.value.map((field) {
+                          return CheckboxListTile(
+                            title: Text(field.displayName),
+                            value: tempVisibility[field.key] ?? true,
+                            onChanged: (value) {
+                              setDialogState(() {
+                                tempVisibility[field.key] = value ?? true;
+                              });
+                            },
+                          );
+                        }),
                     ],
                   );
                 }).toList(),

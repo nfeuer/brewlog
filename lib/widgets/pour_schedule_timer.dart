@@ -24,7 +24,7 @@ class PourEntry {
 }
 
 class PourScheduleTimer extends StatefulWidget {
-  final Function(List<PourEntry> entries, int totalSeconds) onStop;
+  final Function(List<PourEntry> entries, int totalSeconds, double? finalVolume, double? bloomAmount) onStop;
   final List<PourEntry>? initialEntries;
 
   const PourScheduleTimer({
@@ -135,7 +135,17 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
 
   void _stopTimer() {
     _timer?.cancel();
-    widget.onStop(_entries, _seconds);
+
+    // Get final volume (last entry) and bloom amount (first entry)
+    double? finalVolume;
+    double? bloomAmount;
+
+    if (_entries.isNotEmpty) {
+      finalVolume = _entries.last.grams;
+      bloomAmount = _entries.first.grams;
+    }
+
+    widget.onStop(_entries, _seconds, finalVolume, bloomAmount);
     setState(() {
       _isRunning = false;
       _isStopped = true;
@@ -228,7 +238,7 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
                 child: ElevatedButton.icon(
                   onPressed: _isRunning ? _addLap : null,
                   icon: const Icon(Icons.add),
-                  label: const Text('+ Pour'),
+                  label: const Text('Pour'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
