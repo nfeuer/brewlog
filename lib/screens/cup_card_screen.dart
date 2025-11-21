@@ -1002,11 +1002,17 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           value: _selectedBrewType,
                           child: Text('$_selectedBrewType (from Brew Type)'),
                         ),
-                      const DropdownMenuItem(value: 'Espresso', child: Text('Espresso')),
-                      const DropdownMenuItem(value: 'Drip', child: Text('Drip')),
-                      const DropdownMenuItem(value: 'Pour Over', child: Text('Pour Over')),
-                      const DropdownMenuItem(value: 'French Press', child: Text('French Press')),
-                      const DropdownMenuItem(value: 'Cold Brew', child: Text('Cold Brew')),
+                      // Only show static options that aren't already the selected brew type
+                      if (_selectedBrewType?.toLowerCase() != 'espresso')
+                        const DropdownMenuItem(value: 'Espresso', child: Text('Espresso')),
+                      if (_selectedBrewType?.toLowerCase() != 'drip')
+                        const DropdownMenuItem(value: 'Drip', child: Text('Drip')),
+                      if (_selectedBrewType?.toLowerCase() != 'pour over')
+                        const DropdownMenuItem(value: 'Pour Over', child: Text('Pour Over')),
+                      if (_selectedBrewType?.toLowerCase() != 'french press')
+                        const DropdownMenuItem(value: 'French Press', child: Text('French Press')),
+                      if (_selectedBrewType?.toLowerCase() != 'cold brew')
+                        const DropdownMenuItem(value: 'Cold Brew', child: Text('Cold Brew')),
                     ],
                     onChanged: (value) => setState(() {
                       _drinkBaseType = value;
