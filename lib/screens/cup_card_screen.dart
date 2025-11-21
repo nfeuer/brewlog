@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/coffee_bag.dart';
 import '../models/cup.dart';
+import '../models/drink_recipe.dart';
 import '../providers/bags_provider.dart';
 import '../providers/cups_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
+import '../providers/drink_recipes_provider.dart';
 import '../services/photo_service.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
@@ -105,6 +107,18 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   bool _usePourTimer = false;
   Map<String, bool> _currentFieldVisibility = {};
 
+  // Drink recipe fields
+  String? _selectedDrinkRecipeId;
+  final _drinkNameController = TextEditingController();
+  String? _drinkBaseType;
+  String? _drinkMilkType;
+  final _drinkMilkAmountController = TextEditingController();
+  bool _drinkIce = false;
+  List<String> _drinkSyrups = [];
+  List<String> _drinkSweeteners = [];
+  List<String> _drinkOtherAdditions = [];
+  final _drinkInstructionsController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -182,6 +196,15 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _selectedFlavorTags = List.from(cup.flavorTags);
         _photoPaths = List.from(cup.photoPaths);
         _isBest = cup.isBest;
+
+        // Load drink recipe if present
+        if (cup.drinkRecipeId != null) {
+          _selectedDrinkRecipeId = cup.drinkRecipeId;
+          final recipe = ref.read(drinkRecipeByIdProvider(cup.drinkRecipeId!));
+          if (recipe != null) {
+            _loadDrinkRecipe(recipe);
+          }
+        }
 
         // Load bag info
         final bag = ref.read(bagProvider(cup.bagId));
@@ -901,6 +924,248 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               ],
             ],
 
+            // Drink Making Section
+            const SizedBox(height: 24),
+            _buildSection(
+              'Drink Recipe',
+              [
+                // Recipe selection dropdown
+                DropdownButtonFormField<String>(
+                  value: _selectedDrinkRecipeId,
+                  decoration: const InputDecoration(
+                    labelText: 'Select Saved Recipe',
+                    hintText: 'Optional - choose a saved recipe',
+                  ),
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('None'),
+                    ),
+                    ...ref.watch(drinkRecipesProvider).map((recipe) => DropdownMenuItem(
+                          value: recipe.id,
+                          child: Text(recipe.name),
+                        )),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedDrinkRecipeId = value;
+                      if (value != null) {
+                        final recipe = ref.read(drinkRecipeByIdProvider(value));
+                        if (recipe != null) {
+                          _loadDrinkRecipe(recipe);
+                        }
+                      } else {
+                        // Clear fields
+                        _drinkNameController.clear();
+                        _drinkBaseType = null;
+                        _drinkMilkType = null;
+                        _drinkMilkAmountController.clear();
+                        _drinkIce = false;
+                        _drinkSyrups.clear();
+                        _drinkSweeteners.clear();
+                        _drinkOtherAdditions.clear();
+                        _drinkInstructionsController.clear();
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                // Drink name
+                TextFormField(
+                  controller: _drinkNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Drink Name',
+                    hintText: 'e.g., Vanilla Latte, Iced Coffee',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Base type dropdown
+                DropdownButtonFormField<String>(
+                  value: _drinkBaseType,
+                  decoration: const InputDecoration(
+                    labelText: 'Base Type',
+                    hintText: 'Optional',
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('None')),
+                    DropdownMenuItem(value: 'Espresso', child: Text('Espresso')),
+                    DropdownMenuItem(value: 'Drip', child: Text('Drip')),
+                    DropdownMenuItem(value: 'Pour Over', child: Text('Pour Over')),
+                    DropdownMenuItem(value: 'French Press', child: Text('French Press')),
+                    DropdownMenuItem(value: 'Cold Brew', child: Text('Cold Brew')),
+                  ],
+                  onChanged: (value) => setState(() => _drinkBaseType = value),
+                ),
+                const SizedBox(height: 12),
+                // Milk type and amount
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _drinkMilkType,
+                        decoration: const InputDecoration(
+                          labelText: 'Milk Type',
+                          hintText: 'Optional',
+                        ),
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('None')),
+                          ...milkTypes.map((type) => DropdownMenuItem(
+                                value: type,
+                                child: Text(type),
+                              )),
+                        ],
+                        onChanged: (value) => setState(() => _drinkMilkType = value),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _drinkMilkAmountController,
+                        decoration: const InputDecoration(
+                          labelText: 'Amount (ml)',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Ice checkbox
+                CheckboxListTile(
+                  title: const Text('Iced'),
+                  value: _drinkIce,
+                  onChanged: (value) => setState(() => _drinkIce = value ?? false),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                const SizedBox(height: 12),
+                // Syrups
+                Text('Syrups', style: AppTextStyles.sectionHeader),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: commonSyrups.map((syrup) {
+                    final isSelected = _drinkSyrups.contains(syrup);
+                    return FilterChip(
+                      label: Text(syrup),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _drinkSyrups.add(syrup);
+                          } else {
+                            _drinkSyrups.remove(syrup);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                // Sweeteners
+                Text('Sweeteners', style: AppTextStyles.sectionHeader),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: sweeteners.map((sweetener) {
+                    final isSelected = _drinkSweeteners.contains(sweetener);
+                    return FilterChip(
+                      label: Text(sweetener),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _drinkSweeteners.add(sweetener);
+                          } else {
+                            _drinkSweeteners.remove(sweetener);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                // Other additions
+                Text('Other Additions', style: AppTextStyles.sectionHeader),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: drinkAdditions.map((addition) {
+                    final isSelected = _drinkOtherAdditions.contains(addition);
+                    return FilterChip(
+                      label: Text(addition),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            _drinkOtherAdditions.add(addition);
+                          } else {
+                            _drinkOtherAdditions.remove(addition);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                // Instructions
+                TextFormField(
+                  controller: _drinkInstructionsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Preparation Notes',
+                    hintText: 'Optional instructions',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                // Save as new recipe button
+                if (_drinkNameController.text.isNotEmpty)
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final user = ref.read(userProfileProvider);
+                      if (user == null) return;
+
+                      final newRecipe = DrinkRecipe(
+                        id: const Uuid().v4(),
+                        userId: user.id,
+                        name: _drinkNameController.text,
+                        baseType: _drinkBaseType,
+                        milkType: _drinkMilkType,
+                        milkAmountMl: _drinkMilkAmountController.text.isEmpty
+                            ? null
+                            : double.tryParse(_drinkMilkAmountController.text),
+                        ice: _drinkIce,
+                        syrups: List.from(_drinkSyrups),
+                        sweeteners: List.from(_drinkSweeteners),
+                        otherAdditions: List.from(_drinkOtherAdditions),
+                        instructions: _drinkInstructionsController.text.isEmpty
+                            ? null
+                            : _drinkInstructionsController.text,
+                      );
+
+                      await ref
+                          .read(drinkRecipesProvider.notifier)
+                          .createRecipe(newRecipe);
+
+                      setState(() {
+                        _selectedDrinkRecipeId = newRecipe.id;
+                      });
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Recipe saved!')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.save),
+                    label: const Text('Save as New Recipe'),
+                  ),
+              ],
+            ),
+
             if (_currentFieldVisibility['rating'] == true) ...[
               const SizedBox(height: 24),
               // Rating Section
@@ -1048,6 +1313,20 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  void _loadDrinkRecipe(DrinkRecipe recipe) {
+    setState(() {
+      _drinkNameController.text = recipe.name;
+      _drinkBaseType = recipe.baseType;
+      _drinkMilkType = recipe.milkType;
+      _drinkMilkAmountController.text = recipe.milkAmountMl?.toString() ?? '';
+      _drinkIce = recipe.ice;
+      _drinkSyrups = List.from(recipe.syrups);
+      _drinkSweeteners = List.from(recipe.sweeteners);
+      _drinkOtherAdditions = List.from(recipe.otherAdditions);
+      _drinkInstructionsController.text = recipe.instructions ?? '';
+    });
   }
 
   bool _shouldShowEnvironmentalConditions() {
@@ -1495,6 +1774,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       photoPaths: _photoPaths,
       isBest: _isBest,
       equipmentSetupId: _selectedEquipmentId,
+      drinkRecipeId: _selectedDrinkRecipeId,
       fieldVisibility: _currentFieldVisibility,
     );
 
@@ -1593,6 +1873,12 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
 
     // Dispose SCA cupping defects controller (other SCA fields use sliders, not controllers)
     _cuppingDefectsController.dispose();
+
+    // Dispose drink recipe controllers
+    _drinkNameController.dispose();
+    _drinkMilkAmountController.dispose();
+    _drinkInstructionsController.dispose();
+    _brewTimeFormattedController.dispose();
 
     super.dispose();
   }
