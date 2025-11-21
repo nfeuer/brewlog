@@ -455,7 +455,7 @@ class _BagDetailScreenState extends ConsumerState<BagDetailScreen> {
               value,
               style: TextStyle(
                 fontSize: 14,
-                color: highlight ? AppTheme.primaryBrown : AppTheme.textPrimary,
+                color: highlight ? AppTheme.primaryBrown : AppTheme.textDark,
                 fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
               ),
               textAlign: TextAlign.end,
