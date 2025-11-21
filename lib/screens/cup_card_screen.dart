@@ -1484,7 +1484,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       cuppingSweetness: _cuppingSweetness,
       cuppingCleanCup: _cuppingCleanCup,
       cuppingUniformity: _cuppingUniformity,
-      cuppingOverall: _calculateScaOverall() > 0 ? _calculateScaOverall() : null,
+      cuppingOverall: _calculateScaOverall() > 0 ? _calculateScaOverall().toDouble() : null,
       cuppingDefects: _cuppingDefectsController.text.isEmpty
           ? null
           : _cuppingDefectsController.text,
