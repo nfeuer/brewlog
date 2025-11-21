@@ -554,32 +554,33 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ],
                   ),
                 ],
-                if (fieldVisibility['brewTime'] == true ||
-                    fieldVisibility['bloomTime'] == true) ...[
+                if (fieldVisibility['brewTime'] == true) ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      if (fieldVisibility['brewTime'] == true)
-                        Expanded(
-                          child: TextFormField(
-                            controller: _brewTimeController,
-                            decoration: const InputDecoration(
-                                labelText: 'Brew Time (sec)'),
-                            keyboardType: TextInputType.number,
-                          ),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _brewTimeController,
+                          decoration: const InputDecoration(
+                              labelText: 'Brew Time (sec)'),
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            // Auto-update minutes:seconds field
+                            setState(() {});
+                          },
                         ),
-                      if (fieldVisibility['brewTime'] == true &&
-                          fieldVisibility['bloomTime'] == true)
-                        const SizedBox(width: 12),
-                      if (fieldVisibility['bloomTime'] == true)
-                        Expanded(
-                          child: TextFormField(
-                            controller: _bloomTimeController,
-                            decoration: const InputDecoration(
-                                labelText: 'Bloom Time (sec)'),
-                            keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Time (mm:ss)',
+                            hintText: _formatSecondsToMinSec(_brewTimeController.text),
                           ),
+                          style: const TextStyle(color: AppTheme.textGray),
                         ),
+                      ),
                     ],
                   ),
                 ],
@@ -630,14 +631,36 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   ],
                   // Pour over-specific fields
                   if (_isPourOverBrew()) ...[
-                    if (fieldVisibility['bloomAmount'] == true) ...[
-                      TextFormField(
-                        controller: _bloomAmountController,
-                        decoration: const InputDecoration(
-                          labelText: 'Bloom Water Amount',
-                          suffixText: 'g',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    if (fieldVisibility['bloomAmount'] == true ||
+                        fieldVisibility['bloomTime'] == true) ...[
+                      Row(
+                        children: [
+                          if (fieldVisibility['bloomAmount'] == true)
+                            Expanded(
+                              child: TextFormField(
+                                controller: _bloomAmountController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Bloom Water Amount',
+                                  suffixText: 'g',
+                                ),
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              ),
+                            ),
+                          if (fieldVisibility['bloomAmount'] == true &&
+                              fieldVisibility['bloomTime'] == true)
+                            const SizedBox(width: 12),
+                          if (fieldVisibility['bloomTime'] == true)
+                            Expanded(
+                              child: TextFormField(
+                                controller: _bloomTimeController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Bloom Time',
+                                  suffixText: 'sec',
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -1061,9 +1084,23 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         fieldVisibility['pressureBars'] == true ||
         fieldVisibility['yieldGrams'] == true ||
         fieldVisibility['bloomAmount'] == true ||
+        fieldVisibility['bloomTime'] == true ||
         fieldVisibility['pourSchedule'] == true ||
         fieldVisibility['tds'] == true ||
         fieldVisibility['extractionYield'] == true;
+  }
+
+  String _formatSecondsToMinSec(String? secondsText) {
+    if (secondsText == null || secondsText.isEmpty) {
+      return '';
+    }
+    final seconds = int.tryParse(secondsText);
+    if (seconds == null) {
+      return '';
+    }
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   bool _shouldShowEnvironmentalConditions() {
