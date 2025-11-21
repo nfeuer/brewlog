@@ -160,7 +160,7 @@ class _PourScheduleTimerState extends State<PourScheduleTimer> {
                 style: const TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.w300,
-                  fontFeatureSettings: [FontFeature.tabularFigures()],
+                  fontFeatures: [FontFeature.tabularFigures()],
                 ),
               ),
             ),
