@@ -1586,18 +1586,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     _humidityController.dispose();
     _altitudeController.dispose();
 
-    // Dispose SCA cupping score controllers
-    _cuppingFragranceController.dispose();
-    _cuppingAromaController.dispose();
-    _cuppingFlavorController.dispose();
-    _cuppingAftertasteController.dispose();
-    _cuppingAcidityController.dispose();
-    _cuppingBodyController.dispose();
-    _cuppingBalanceController.dispose();
-    _cuppingSweetnessController.dispose();
-    _cuppingCleanCupController.dispose();
-    _cuppingUniformityController.dispose();
-    _cuppingOverallController.dispose();
+    // Dispose SCA cupping defects controller (other SCA fields use sliders, not controllers)
     _cuppingDefectsController.dispose();
 
     super.dispose();
