@@ -97,9 +97,9 @@ const Map<String, bool> defaultFieldVisibility = {
   'finalVolume': true,
   'ratio': true,
   'brewTime': false,
-  'bloomTime': false,
 
   // Advanced Brewing Parameters (brew-type specific, hidden by default)
+  'bloomTime': false,
   'preInfusionTime': false,
   'pressureBars': false,
   'yieldGrams': false,
@@ -173,9 +173,9 @@ const List<CupFieldDefinition> cupFields = [
   CupFieldDefinition(key: 'gramsUsed', displayName: 'Grams Used', section: 'Brew Parameters'),
   CupFieldDefinition(key: 'finalVolume', displayName: 'Final Volume', section: 'Brew Parameters'),
   CupFieldDefinition(key: 'brewTime', displayName: 'Brew Time', section: 'Brew Parameters'),
-  CupFieldDefinition(key: 'bloomTime', displayName: 'Bloom Time', section: 'Brew Parameters'),
 
   // Advanced Brewing Parameters section (brew-type specific)
+  CupFieldDefinition(key: 'bloomTime', displayName: 'Bloom Time', section: 'Advanced Brewing'),
   CupFieldDefinition(key: 'preInfusionTime', displayName: 'Pre-Infusion Time', section: 'Advanced Brewing'),
   CupFieldDefinition(key: 'pressureBars', displayName: 'Pressure (bars)', section: 'Advanced Brewing'),
   CupFieldDefinition(key: 'yieldGrams', displayName: 'Yield (grams)', section: 'Advanced Brewing'),
