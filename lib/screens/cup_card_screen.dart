@@ -62,6 +62,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   final _gramsUsedController = TextEditingController();
   final _finalVolumeController = TextEditingController();
   final _brewTimeController = TextEditingController();
+  final _brewTimeFormattedController = TextEditingController();
   final _bloomTimeController = TextEditingController();
   final _tastingNotesController = TextEditingController();
 
@@ -125,6 +126,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _gramsUsedController.text = cup.gramsUsed?.toString() ?? '';
         _finalVolumeController.text = cup.finalVolumeMl?.toString() ?? '';
         _brewTimeController.text = cup.brewTimeSeconds?.toString() ?? '';
+        _brewTimeFormattedController.text = _formatSecondsToMinSec(cup.brewTimeSeconds?.toString() ?? '');
         _bloomTimeController.text = cup.bloomTimeSeconds?.toString() ?? '';
 
         // Load advanced brewing parameters
@@ -566,17 +568,17 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
                             // Auto-update minutes:seconds field
-                            setState(() {});
+                            _brewTimeFormattedController.text = _formatSecondsToMinSec(value);
                           },
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
+                          controller: _brewTimeFormattedController,
                           readOnly: true,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Time (mm:ss)',
-                            hintText: _formatSecondsToMinSec(_brewTimeController.text),
                           ),
                           style: const TextStyle(color: AppTheme.textGray),
                         ),

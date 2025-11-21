@@ -84,28 +84,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Centered username
-                  GestureDetector(
-                    onTap: _isEditing ? () => _showEditNameDialog(context, ref, user.username) : null,
-                    child: Text(
-                      user.username ?? 'Coffee Enthusiast',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
-                    ),
+                  // Centered username with edit button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: GestureDetector(
+                          onTap: _isEditing ? () => _showEditNameDialog(context, ref, user.username) : null,
+                          child: Text(
+                            user.username ?? 'Coffee Enthusiast',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                      if (_isEditing)
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 18),
+                          color: AppTheme.primaryBrown,
+                          onPressed: () => _showEditNameDialog(context, ref, user.username),
+                          padding: const EdgeInsets.only(left: 4),
+                          constraints: const BoxConstraints(),
+                        ),
+                    ],
                   ),
-                  // Bio section
+                  // Bio section with edit button
                   if (user.bio != null && user.bio!.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    GestureDetector(
-                      onTap: _isEditing ? () => _showEditBioDialog(context, ref, user.bio) : null,
-                      child: Text(
-                        user.bio!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey[600],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: _isEditing ? () => _showEditBioDialog(context, ref, user.bio) : null,
+                            child: Text(
+                              user.bio!,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey[600],
+                                  ),
+                              textAlign: TextAlign.center,
                             ),
-                        textAlign: TextAlign.center,
-                      ),
+                          ),
+                        ),
+                        if (_isEditing)
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 16),
+                            color: Colors.grey[600],
+                            onPressed: () => _showEditBioDialog(context, ref, user.bio),
+                            padding: const EdgeInsets.only(left: 4),
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
                     ),
                   ] else if (_isEditing) ...[
                     const SizedBox(height: 4),
