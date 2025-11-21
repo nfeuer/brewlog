@@ -280,6 +280,7 @@ const List<String> processingMethods = [
   'Anaerobic',
   'Carbonic Maceration',
   'Double Fermentation',
+  'Thermal Shock',
 ];
 
 // Roast levels

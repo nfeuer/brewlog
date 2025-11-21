@@ -244,7 +244,7 @@ class Cup extends HiveObject {
     }
   }
 
-  // Auto-calculate SCA cupping total score (sum of all cupping scores)
+  // Auto-calculate SCA cupping total score (sum of all cupping scores, excluding Overall which is the calculated sum)
   void _updateCuppingTotal() {
     final scores = [
       cuppingFragrance,
@@ -257,7 +257,7 @@ class Cup extends HiveObject {
       cuppingSweetness,
       cuppingCleanCup,
       cuppingUniformity,
-      cuppingOverall,
+      // Note: cuppingOverall is excluded as it represents the calculated total
     ];
 
     // Only calculate if at least one score is provided
