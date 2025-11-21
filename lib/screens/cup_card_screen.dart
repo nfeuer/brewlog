@@ -98,6 +98,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   double? _rating;
   List<String> _selectedFlavorTags = [];
   List<String> _photoPaths = [];
+  bool _showScaCuppingFields = false;
   bool _isBest = false;
 
   @override
@@ -151,6 +152,20 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _cuppingUniformityController.text = cup.cuppingUniformity?.toString() ?? '';
         _cuppingOverallController.text = cup.cuppingOverall?.toString() ?? '';
         _cuppingDefectsController.text = cup.cuppingDefects ?? '';
+
+        // Show SCA section if any scores are present
+        _showScaCuppingFields = cup.cuppingFragrance != null ||
+            cup.cuppingAroma != null ||
+            cup.cuppingFlavor != null ||
+            cup.cuppingAftertaste != null ||
+            cup.cuppingAcidity != null ||
+            cup.cuppingBody != null ||
+            cup.cuppingBalance != null ||
+            cup.cuppingSweetness != null ||
+            cup.cuppingCleanCup != null ||
+            cup.cuppingUniformity != null ||
+            cup.cuppingOverall != null ||
+            (cup.cuppingDefects != null && cup.cuppingDefects!.isNotEmpty);
 
         // Load rating in user's current preferred scale
         _rating = cup.getRating(ratingScale);
@@ -720,15 +735,25 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
             // SCA Cupping Scores Section
             if (_shouldShowCuppingScores()) ...[
               const SizedBox(height: 24),
-              _buildSection(
-                'SCA Cupping Scores',
-                [
-                  const Text(
-                    'Score each attribute from 0-10',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 12),
-                  if (fieldVisibility['cuppingFragrance'] == true) ...[
+              CheckboxListTile(
+                title: Text('SCA Cupping Scores', style: AppTextStyles.sectionHeader),
+                subtitle: const Text('Toggle to show/hide cupping score fields'),
+                value: _showScaCuppingFields,
+                onChanged: (value) {
+                  setState(() {
+                    _showScaCuppingFields = value ?? false;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+              ),
+              if (_showScaCuppingFields) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Score each attribute from 0-10',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                if (fieldVisibility['cuppingFragrance'] == true) ...[
                     TextFormField(
                       controller: _cuppingFragranceController,
                       decoration: const InputDecoration(
@@ -860,7 +885,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ),
                   ],
                 ],
-              ),
+              ],
             ],
 
             if (fieldVisibility['rating'] == true) ...[
