@@ -237,6 +237,7 @@ class HiveTypeIds {
   static const viewPreference = 6;
   static const bagStatus = 7;
   static const equipmentSetup = 8;
+  static const drinkRecipe = 9;
 }
 
 // Common equipment types
@@ -331,3 +332,60 @@ const List<String> coffeeCertifications = [
   'UTZ Certified',
   'Cup of Excellence',
 ];
+
+// Drink recipe - milk types
+const List<String> milkTypes = [
+  'Whole Milk',
+  'Skim Milk',
+  '2% Milk',
+  'Half and Half',
+  'Heavy Cream',
+  'Oat Milk',
+  'Almond Milk',
+  'Soy Milk',
+  'Coconut Milk',
+  'Cashew Milk',
+];
+
+// Drink recipe - common syrups
+const List<String> commonSyrups = [
+  'Vanilla',
+  'Caramel',
+  'Hazelnut',
+  'Mocha',
+  'White Chocolate',
+  'Peppermint',
+  'Irish Cream',
+  'Cinnamon',
+  'Maple',
+  'Lavender',
+];
+
+// Drink recipe - sweeteners
+const List<String> sweeteners = [
+  'Sugar',
+  'Brown Sugar',
+  'Honey',
+  'Agave',
+  'Stevia',
+  'Monk Fruit',
+  'Simple Syrup',
+  'Maple Syrup',
+];
+
+// Drink recipe - other additions
+const List<String> drinkAdditions = [
+  'Whipped Cream',
+  'Cocoa Powder',
+  'Cinnamon Powder',
+  'Nutmeg',
+  'Chocolate Shavings',
+  'Caramel Drizzle',
+  'Whiskey',
+  'Irish Cream Liqueur',
+  'Rum',
+  'Tonic Water',
+  'Lemon',
+  'Orange Peel',
+];
+

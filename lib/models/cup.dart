@@ -169,6 +169,12 @@ class Cup extends HiveObject {
   @HiveField(49)
   String? cuppingDefects; // Notes on any defects
 
+  @HiveField(50)
+  Map<String, bool>? fieldVisibility; // Per-cup field visibility preferences
+
+  @HiveField(51)
+  String? drinkRecipeId; // Reference to a saved drink recipe
+
   Cup({
     required this.id,
     required this.bagId,
@@ -220,6 +226,8 @@ class Cup extends HiveObject {
     this.cuppingOverall,
     this.cuppingTotal,
     this.cuppingDefects,
+    this.fieldVisibility,
+    this.drinkRecipeId,
   })  : flavorTags = flavorTags ?? [],
         photoPaths = photoPaths ?? [],
         createdAt = createdAt ?? DateTime.now(),
@@ -377,6 +385,8 @@ class Cup extends HiveObject {
       'cuppingOverall': cuppingOverall,
       'cuppingTotal': cuppingTotal,
       'cuppingDefects': cuppingDefects,
+      'fieldVisibility': fieldVisibility,
+      'drinkRecipeId': drinkRecipeId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -432,6 +442,10 @@ class Cup extends HiveObject {
       cuppingOverall: json['cuppingOverall']?.toDouble(),
       cuppingTotal: json['cuppingTotal']?.toDouble(),
       cuppingDefects: json['cuppingDefects'] as String?,
+      fieldVisibility: json['fieldVisibility'] != null
+          ? Map<String, bool>.from(json['fieldVisibility'] as Map)
+          : null,
+      drinkRecipeId: json['drinkRecipeId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );

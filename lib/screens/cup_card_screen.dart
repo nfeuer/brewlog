@@ -103,6 +103,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   bool _isBest = false;
   List<PourEntry> _pourEntries = [];
   bool _usePourTimer = false;
+  Map<String, bool> _currentFieldVisibility = {};
 
   @override
   void initState() {
@@ -117,6 +118,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       if (cup != null) {
         // Get user's current rating scale to load the rating in correct scale
         final ratingScale = ref.read(ratingScaleProvider);
+
+        // Load per-cup field visibility or use defaults
+        _currentFieldVisibility = cup.fieldVisibility != null
+            ? Map<String, bool>.from(cup.fieldVisibility!)
+            : Map<String, bool>.from(ref.read(cupFieldVisibilityProvider));
 
         _selectedBrewType = cup.brewType;
         _selectedEquipmentId = cup.equipmentSetupId;
@@ -195,23 +201,28 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
           _openDate = bag.openDate;
         }
       }
-    } else if (widget.bagId != null) {
-      // Load bag info for new cup
-      final bag = ref.read(bagProvider(widget.bagId!));
-      if (bag != null) {
-        _customTitleController.text = bag.customTitle;
-        _coffeeNameController.text = bag.coffeeName;
-        _roasterController.text = bag.roaster;
-        _farmerController.text = bag.farmer ?? '';
-        _varietyController.text = bag.variety ?? '';
-        _elevationController.text = bag.elevation ?? '';
-        _beanAromaController.text = bag.beanAroma ?? '';
-        _priceController.text = bag.price?.toString() ?? '';
-        _bagSizeController.text = bag.bagSizeGrams?.toString() ?? '';
-        _restDaysController.text = bag.recommendedRestDays?.toString() ?? '';
-        _datePurchased = bag.datePurchased;
-        _roastDate = bag.roastDate;
-        _openDate = bag.openDate;
+    } else {
+      // Creating a new cup - use default field visibility
+      _currentFieldVisibility = Map<String, bool>.from(ref.read(cupFieldVisibilityProvider));
+
+      if (widget.bagId != null) {
+        // Load bag info for new cup
+        final bag = ref.read(bagProvider(widget.bagId!));
+        if (bag != null) {
+          _customTitleController.text = bag.customTitle;
+          _coffeeNameController.text = bag.coffeeName;
+          _roasterController.text = bag.roaster;
+          _farmerController.text = bag.farmer ?? '';
+          _varietyController.text = bag.variety ?? '';
+          _elevationController.text = bag.elevation ?? '';
+          _beanAromaController.text = bag.beanAroma ?? '';
+          _priceController.text = bag.price?.toString() ?? '';
+          _bagSizeController.text = bag.bagSizeGrams?.toString() ?? '';
+          _restDaysController.text = bag.recommendedRestDays?.toString() ?? '';
+          _datePurchased = bag.datePurchased;
+          _roastDate = bag.roastDate;
+          _openDate = bag.openDate;
+        }
       }
     }
   }
@@ -221,7 +232,6 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     final ratingScale = ref.watch(ratingScaleProvider);
     final allBrewTypes = ref.watch(allBrewTypesProvider);
     final allEquipment = ref.watch(equipmentProvider);
-    final fieldVisibility = ref.watch(cupFieldVisibilityProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -270,28 +280,28 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   validator: (value) =>
                       value?.isEmpty == true ? 'Required' : null,
                 ),
-                if (fieldVisibility['farmer'] == true) ...[
+                if (_currentFieldVisibility['farmer'] == true) ...[
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _farmerController,
                     decoration: const InputDecoration(labelText: 'Farmer'),
                   ),
                 ],
-                if (fieldVisibility['variety'] == true) ...[
+                if (_currentFieldVisibility['variety'] == true) ...[
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _varietyController,
                     decoration: const InputDecoration(labelText: 'Variety'),
                   ),
                 ],
-                if (fieldVisibility['elevation'] == true) ...[
+                if (_currentFieldVisibility['elevation'] == true) ...[
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _elevationController,
                     decoration: const InputDecoration(labelText: 'Elevation'),
                   ),
                 ],
-                if (fieldVisibility['beanAroma'] == true) ...[
+                if (_currentFieldVisibility['beanAroma'] == true) ...[
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _beanAromaController,
@@ -451,7 +461,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       setState(() => _selectedBrewType = value),
                   validator: (value) => value == null ? 'Required' : null,
                 ),
-                if (fieldVisibility['equipment'] == true) ...[
+                if (_currentFieldVisibility['equipment'] == true) ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -504,14 +514,14 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ],
                   ),
                 ],
-                if (fieldVisibility['grindLevel'] == true) ...[
+                if (_currentFieldVisibility['grindLevel'] == true) ...[
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _grindLevelController,
                     decoration: const InputDecoration(labelText: 'Grind Level'),
                   ),
                 ],
-                if (fieldVisibility['waterTemp'] == true) ...[
+                if (_currentFieldVisibility['waterTemp'] == true) ...[
                   const SizedBox(height: 24),
                   TemperatureDial(
                     initialValue: _waterTempController.text.isEmpty
@@ -524,12 +534,12 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     },
                   ),
                 ],
-                if (fieldVisibility['gramsUsed'] == true ||
-                    fieldVisibility['finalVolume'] == true) ...[
+                if (_currentFieldVisibility['gramsUsed'] == true ||
+                    _currentFieldVisibility['finalVolume'] == true) ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      if (fieldVisibility['gramsUsed'] == true)
+                      if (_currentFieldVisibility['gramsUsed'] == true)
                         Expanded(
                           child: TextFormField(
                             controller: _gramsUsedController,
@@ -538,10 +548,10 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                             keyboardType: TextInputType.number,
                           ),
                         ),
-                      if (fieldVisibility['gramsUsed'] == true &&
-                          fieldVisibility['finalVolume'] == true)
+                      if (_currentFieldVisibility['gramsUsed'] == true &&
+                          _currentFieldVisibility['finalVolume'] == true)
                         const SizedBox(width: 12),
-                      if (fieldVisibility['finalVolume'] == true)
+                      if (_currentFieldVisibility['finalVolume'] == true)
                         Expanded(
                           child: TextFormField(
                             controller: _finalVolumeController,
@@ -553,7 +563,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ],
                   ),
                 ],
-                if (fieldVisibility['brewTime'] == true) ...[
+                if (_currentFieldVisibility['brewTime'] == true) ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -594,7 +604,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                 [
                   // Espresso-specific fields
                   if (_isEspressoBrew()) ...[
-                    if (fieldVisibility['preInfusionTime'] == true) ...[
+                    if (_currentFieldVisibility['preInfusionTime'] == true) ...[
                       TextFormField(
                         controller: _preInfusionTimeController,
                         decoration: const InputDecoration(
@@ -605,7 +615,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
-                    if (fieldVisibility['pressureBars'] == true) ...[
+                    if (_currentFieldVisibility['pressureBars'] == true) ...[
                       TextFormField(
                         controller: _pressureBarsController,
                         decoration: const InputDecoration(
@@ -616,7 +626,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
-                    if (fieldVisibility['yieldGrams'] == true) ...[
+                    if (_currentFieldVisibility['yieldGrams'] == true) ...[
                       TextFormField(
                         controller: _yieldGramsController,
                         decoration: const InputDecoration(
@@ -630,11 +640,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   ],
                   // Pour over-specific fields
                   if (_isPourOverBrew()) ...[
-                    if (fieldVisibility['bloomAmount'] == true ||
-                        fieldVisibility['bloomTime'] == true) ...[
+                    if (_currentFieldVisibility['bloomAmount'] == true ||
+                        _currentFieldVisibility['bloomTime'] == true) ...[
                       Row(
                         children: [
-                          if (fieldVisibility['bloomAmount'] == true)
+                          if (_currentFieldVisibility['bloomAmount'] == true)
                             Expanded(
                               child: TextFormField(
                                 controller: _bloomAmountController,
@@ -645,10 +655,10 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               ),
                             ),
-                          if (fieldVisibility['bloomAmount'] == true &&
-                              fieldVisibility['bloomTime'] == true)
+                          if (_currentFieldVisibility['bloomAmount'] == true &&
+                              _currentFieldVisibility['bloomTime'] == true)
                             const SizedBox(width: 12),
-                          if (fieldVisibility['bloomTime'] == true)
+                          if (_currentFieldVisibility['bloomTime'] == true)
                             Expanded(
                               child: TextFormField(
                                 controller: _bloomTimeController,
@@ -663,7 +673,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
-                    if (fieldVisibility['pourSchedule'] == true) ...[
+                    if (_currentFieldVisibility['pourSchedule'] == true) ...[
                       Row(
                         children: [
                           const Text('Pour Schedule'),
@@ -714,7 +724,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ],
                   ],
                   // TDS and Extraction (for all brew types, hidden by default)
-                  if (fieldVisibility['tds'] == true) ...[
+                  if (_currentFieldVisibility['tds'] == true) ...[
                     TextFormField(
                       controller: _tdsController,
                       decoration: const InputDecoration(
@@ -726,7 +736,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (fieldVisibility['extractionYield'] == true) ...[
+                  if (_currentFieldVisibility['extractionYield'] == true) ...[
                     TextFormField(
                       controller: _extractionYieldController,
                       decoration: const InputDecoration(
@@ -746,7 +756,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               _buildSection(
                 'Environmental Conditions',
                 [
-                  if (fieldVisibility['roomTemp'] == true) ...[
+                  if (_currentFieldVisibility['roomTemp'] == true) ...[
                     TextFormField(
                       controller: _roomTempController,
                       decoration: const InputDecoration(
@@ -757,7 +767,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (fieldVisibility['humidity'] == true) ...[
+                  if (_currentFieldVisibility['humidity'] == true) ...[
                     TextFormField(
                       controller: _humidityController,
                       decoration: const InputDecoration(
@@ -768,7 +778,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (fieldVisibility['altitude'] == true) ...[
+                  if (_currentFieldVisibility['altitude'] == true) ...[
                     TextFormField(
                       controller: _altitudeController,
                       decoration: const InputDecoration(
@@ -779,7 +789,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  if (fieldVisibility['timeOfDay'] == true) ...[
+                  if (_currentFieldVisibility['timeOfDay'] == true) ...[
                     DropdownButtonFormField<String>(
                       value: _timeOfDay,
                       decoration: const InputDecoration(labelText: 'Time of Day'),
@@ -818,47 +828,47 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 12),
-                if (fieldVisibility['cuppingFragrance'] == true)
+                if (_currentFieldVisibility['cuppingFragrance'] == true)
                   _buildScaSlider('Fragrance/Aroma (Dry)', _cuppingFragrance, (value) {
                     setState(() => _cuppingFragrance = value);
                   }),
-                if (fieldVisibility['cuppingAroma'] == true)
+                if (_currentFieldVisibility['cuppingAroma'] == true)
                   _buildScaSlider('Aroma (Wet)', _cuppingAroma, (value) {
                     setState(() => _cuppingAroma = value);
                   }),
-                if (fieldVisibility['cuppingFlavor'] == true)
+                if (_currentFieldVisibility['cuppingFlavor'] == true)
                   _buildScaSlider('Flavor', _cuppingFlavor, (value) {
                     setState(() => _cuppingFlavor = value);
                   }),
-                if (fieldVisibility['cuppingAftertaste'] == true)
+                if (_currentFieldVisibility['cuppingAftertaste'] == true)
                   _buildScaSlider('Aftertaste', _cuppingAftertaste, (value) {
                     setState(() => _cuppingAftertaste = value);
                   }),
-                if (fieldVisibility['cuppingAcidity'] == true)
+                if (_currentFieldVisibility['cuppingAcidity'] == true)
                   _buildScaSlider('Acidity', _cuppingAcidity, (value) {
                     setState(() => _cuppingAcidity = value);
                   }),
-                if (fieldVisibility['cuppingBody'] == true)
+                if (_currentFieldVisibility['cuppingBody'] == true)
                   _buildScaSlider('Body', _cuppingBody, (value) {
                     setState(() => _cuppingBody = value);
                   }),
-                if (fieldVisibility['cuppingBalance'] == true)
+                if (_currentFieldVisibility['cuppingBalance'] == true)
                   _buildScaSlider('Balance', _cuppingBalance, (value) {
                     setState(() => _cuppingBalance = value);
                   }),
-                if (fieldVisibility['cuppingSweetness'] == true)
+                if (_currentFieldVisibility['cuppingSweetness'] == true)
                   _buildScaSlider('Sweetness', _cuppingSweetness, (value) {
                     setState(() => _cuppingSweetness = value);
                   }),
-                if (fieldVisibility['cuppingCleanCup'] == true)
+                if (_currentFieldVisibility['cuppingCleanCup'] == true)
                   _buildScaSlider('Clean Cup', _cuppingCleanCup, (value) {
                     setState(() => _cuppingCleanCup = value);
                   }),
-                if (fieldVisibility['cuppingUniformity'] == true)
+                if (_currentFieldVisibility['cuppingUniformity'] == true)
                   _buildScaSlider('Uniformity', _cuppingUniformity, (value) {
                     setState(() => _cuppingUniformity = value);
                   }),
-                if (fieldVisibility['cuppingOverall'] == true) ...[
+                if (_currentFieldVisibility['cuppingOverall'] == true) ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -867,7 +877,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        _calculateScaOverall().toStringAsFixed(1),
+                        _calculateScaOverall().toString(),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -878,7 +888,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   ),
                   const SizedBox(height: 12),
                 ],
-                if (fieldVisibility['cuppingDefects'] == true) ...[
+                if (_currentFieldVisibility['cuppingDefects'] == true) ...[
                   TextFormField(
                     controller: _cuppingDefectsController,
                     decoration: const InputDecoration(
@@ -891,7 +901,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               ],
             ],
 
-            if (fieldVisibility['rating'] == true) ...[
+            if (_currentFieldVisibility['rating'] == true) ...[
               const SizedBox(height: 24),
               // Rating Section
               _buildSection(
@@ -908,14 +918,14 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               ),
             ],
 
-            if (fieldVisibility['tastingNotes'] == true ||
-                fieldVisibility['flavorTags'] == true) ...[
+            if (_currentFieldVisibility['tastingNotes'] == true ||
+                _currentFieldVisibility['flavorTags'] == true) ...[
               const SizedBox(height: 24),
               // Tasting Notes Section
               _buildSection(
                 'Tasting Notes',
                 [
-                  if (fieldVisibility['tastingNotes'] == true)
+                  if (_currentFieldVisibility['tastingNotes'] == true)
                     TextFormField(
                       controller: _tastingNotesController,
                       decoration: const InputDecoration(
@@ -924,8 +934,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       ),
                       maxLines: 4,
                     ),
-                  if (fieldVisibility['flavorTags'] == true) ...[
-                    if (fieldVisibility['tastingNotes'] == true)
+                  if (_currentFieldVisibility['flavorTags'] == true) ...[
+                    if (_currentFieldVisibility['tastingNotes'] == true)
                       const SizedBox(height: 16),
                     Text('Flavor Tags', style: AppTextStyles.sectionHeader),
                     const SizedBox(height: 8),
@@ -954,7 +964,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               ),
             ],
 
-            if (fieldVisibility['photos'] == true) ...[
+            if (_currentFieldVisibility['photos'] == true) ...[
               const SizedBox(height: 24),
               // Photos Section
               _buildSection(
@@ -975,7 +985,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
             const SizedBox(height: 24),
 
             // Best Recipe Toggle
-            if (fieldVisibility['bestRecipe'] == true)
+            if (_currentFieldVisibility['bestRecipe'] == true)
               CheckboxListTile(
                 title: const Text('Mark as Best Recipe'),
                 subtitle: const Text('This will be your reference cup for this bag'),
@@ -1017,15 +1027,14 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   }
 
   bool _shouldShowAdvancedBrewingParams() {
-    final fieldVisibility = ref.watch(cupFieldVisibilityProvider);
-    return fieldVisibility['preInfusionTime'] == true ||
-        fieldVisibility['pressureBars'] == true ||
-        fieldVisibility['yieldGrams'] == true ||
-        fieldVisibility['bloomAmount'] == true ||
-        fieldVisibility['bloomTime'] == true ||
-        fieldVisibility['pourSchedule'] == true ||
-        fieldVisibility['tds'] == true ||
-        fieldVisibility['extractionYield'] == true;
+    return _currentFieldVisibility['preInfusionTime'] == true ||
+        _currentFieldVisibility['pressureBars'] == true ||
+        _currentFieldVisibility['yieldGrams'] == true ||
+        _currentFieldVisibility['bloomAmount'] == true ||
+        _currentFieldVisibility['bloomTime'] == true ||
+        _currentFieldVisibility['pourSchedule'] == true ||
+        _currentFieldVisibility['tds'] == true ||
+        _currentFieldVisibility['extractionYield'] == true;
   }
 
   String _formatSecondsToMinSec(String? secondsText) {
@@ -1042,27 +1051,25 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   }
 
   bool _shouldShowEnvironmentalConditions() {
-    final fieldVisibility = ref.watch(cupFieldVisibilityProvider);
-    return fieldVisibility['roomTemp'] == true ||
-        fieldVisibility['humidity'] == true ||
-        fieldVisibility['altitude'] == true ||
-        fieldVisibility['timeOfDay'] == true;
+    return _currentFieldVisibility['roomTemp'] == true ||
+        _currentFieldVisibility['humidity'] == true ||
+        _currentFieldVisibility['altitude'] == true ||
+        _currentFieldVisibility['timeOfDay'] == true;
   }
 
   bool _shouldShowCuppingScores() {
-    final fieldVisibility = ref.watch(cupFieldVisibilityProvider);
-    return fieldVisibility['cuppingFragrance'] == true ||
-        fieldVisibility['cuppingAroma'] == true ||
-        fieldVisibility['cuppingFlavor'] == true ||
-        fieldVisibility['cuppingAftertaste'] == true ||
-        fieldVisibility['cuppingAcidity'] == true ||
-        fieldVisibility['cuppingBody'] == true ||
-        fieldVisibility['cuppingBalance'] == true ||
-        fieldVisibility['cuppingSweetness'] == true ||
-        fieldVisibility['cuppingCleanCup'] == true ||
-        fieldVisibility['cuppingUniformity'] == true ||
-        fieldVisibility['cuppingOverall'] == true ||
-        fieldVisibility['cuppingDefects'] == true;
+    return _currentFieldVisibility['cuppingFragrance'] == true ||
+        _currentFieldVisibility['cuppingAroma'] == true ||
+        _currentFieldVisibility['cuppingFlavor'] == true ||
+        _currentFieldVisibility['cuppingAftertaste'] == true ||
+        _currentFieldVisibility['cuppingAcidity'] == true ||
+        _currentFieldVisibility['cuppingBody'] == true ||
+        _currentFieldVisibility['cuppingBalance'] == true ||
+        _currentFieldVisibility['cuppingSweetness'] == true ||
+        _currentFieldVisibility['cuppingCleanCup'] == true ||
+        _currentFieldVisibility['cuppingUniformity'] == true ||
+        _currentFieldVisibility['cuppingOverall'] == true ||
+        _currentFieldVisibility['cuppingDefects'] == true;
   }
 
   Widget _buildSection(String title, List<Widget> children) {
@@ -1085,7 +1092,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
           children: [
             Text(label, style: const TextStyle(fontSize: 14)),
             Text(
-              value?.toStringAsFixed(1) ?? '0.0',
+              value?.toInt().toString() ?? '0',
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -1098,7 +1105,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
           value: value ?? 0.0,
           min: 0,
           max: 10,
-          divisions: 100,
+          divisions: 10,
           onChanged: onChanged,
           activeColor: AppTheme.primaryBrown,
         ),
@@ -1107,7 +1114,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     );
   }
 
-  double _calculateScaOverall() {
+  int _calculateScaOverall() {
     double total = 0;
     int count = 0;
 
@@ -1131,7 +1138,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       }
     }
 
-    return count > 0 ? total : 0;
+    return count > 0 ? total.toInt() : 0;
   }
 
   Widget _buildPhotoThumbnail(String path) {
@@ -1232,8 +1239,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   }
 
   void _showFieldVisibilityDialog(BuildContext context) async {
-    final currentVisibility = ref.read(cupFieldVisibilityProvider);
-    final tempVisibility = Map<String, bool>.from(currentVisibility);
+    final tempVisibility = Map<String, bool>.from(_currentFieldVisibility);
 
     // SCA field keys for master toggle
     final scaFields = [
@@ -1338,15 +1344,13 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () async {
-                  // Save preferences
-                  await ref
-                      .read(userProfileProvider.notifier)
-                      .updateCupFieldVisibility(tempVisibility);
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    showSuccess(context, 'Field visibility updated');
-                  }
+                onPressed: () {
+                  // Update per-cup field visibility
+                  setState(() {
+                    _currentFieldVisibility = tempVisibility;
+                  });
+                  Navigator.pop(context);
+                  showSuccess(context, 'Field visibility updated for this cup');
                 },
                 child: const Text('Save'),
               ),
@@ -1491,6 +1495,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       photoPaths: _photoPaths,
       isBest: _isBest,
       equipmentSetupId: _selectedEquipmentId,
+      fieldVisibility: _currentFieldVisibility,
     );
 
     // Update rating
