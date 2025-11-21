@@ -104,33 +104,73 @@ class CupSummaryCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Rating
-                  if (rating != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: getRatingColor(rating, ratingMax),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star, size: 14, color: Colors.white),
-                          const SizedBox(width: 4),
-                          Text(
-                            formatRating(rating, ratingMax),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                  // Rating and SCA score
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        // Regular rating
+                        if (rating != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: getRatingColor(rating, ratingMax),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star, size: 14, color: Colors.white),
+                                const SizedBox(width: 4),
+                                Text(
+                                  formatRating(rating, ratingMax),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        // SCA Cupping Total Score
+                        if (cup.cuppingTotal != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryBrown.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.primaryBrown.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.assessment, size: 14, color: AppTheme.primaryBrown),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'SCA: ${cup.cuppingTotal!.toStringAsFixed(1)}/110',
+                                  style: TextStyle(
+                                    color: AppTheme.primaryBrown,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
 
                   // Copy button
                   if (onCopy != null)
@@ -143,40 +183,6 @@ class CupSummaryCard extends StatelessWidget {
                     ),
                 ],
               ),
-
-              // SCA Cupping Total Score
-              if (cup.cuppingTotal != null) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBrown.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppTheme.primaryBrown.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.assessment, size: 14, color: AppTheme.primaryBrown),
-                      const SizedBox(width: 4),
-                      Text(
-                        'SCA: ${cup.cuppingTotal!.toStringAsFixed(1)}/110',
-                        style: TextStyle(
-                          color: AppTheme.primaryBrown,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
 
               // Photos indicator
               if (cup.photoPaths.isNotEmpty) ...[
