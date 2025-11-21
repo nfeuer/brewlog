@@ -38,6 +38,7 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
   // New bean detail controllers
   final _regionController = TextEditingController();
   final _roastProfileController = TextEditingController();
+  final _customProcessingMethodController = TextEditingController();
 
   String? _labelPhotoPath;
   DateTime? _datePurchased;
@@ -46,7 +47,7 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
   DateTime? _harvestDate;
 
   // New bean detail fields
-  String? _processingMethod;
+  List<String> _processingMethods = [];
   String? _roastLevel;
   String? _beanSize;
   List<String> _certifications = [];
@@ -79,8 +80,9 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
     // Load new bean detail fields
     _regionController.text = bag.region ?? '';
     _roastProfileController.text = bag.roastProfile ?? '';
+    _customProcessingMethodController.text = bag.customProcessingMethod ?? '';
     _harvestDate = bag.harvestDate;
-    _processingMethod = bag.processingMethod;
+    _processingMethods = bag.processingMethods ?? [];
     _roastLevel = bag.roastLevel;
     _beanSize = bag.beanSize;
     _certifications = bag.certifications ?? [];
@@ -148,18 +150,18 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
                   decoration: const InputDecoration(labelText: 'Farmer'),
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _processingMethod,
-                  decoration: const InputDecoration(labelText: 'Processing Method'),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('Not specified')),
-                    ...processingMethods.map((method) => DropdownMenuItem(
-                          value: method,
-                          child: Text(method),
-                        )),
-                  ],
-                  onChanged: (value) => setState(() => _processingMethod = value),
-                ),
+                _buildProcessingMethodsField(),
+                if (_processingMethods.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _customProcessingMethodController,
+                    decoration: const InputDecoration(
+                      labelText: 'Custom Processing Method',
+                      hintText: 'Optional additional processing details',
+                    ),
+                    maxLines: 2,
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _regionController,
@@ -396,6 +398,36 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
     );
   }
 
+  Widget _buildProcessingMethodsField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Processing Methods', style: AppTextStyles.label),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: processingMethods.map((method) {
+            final isSelected = _processingMethods.contains(method);
+            return FilterChip(
+              label: Text(method),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _processingMethods.add(method);
+                  } else {
+                    _processingMethods.remove(method);
+                  }
+                });
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCertificationsField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,7 +535,8 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
       openDate: _openDate,
       recommendedRestDays: _restDaysController.text.isEmpty ? null : int.tryParse(_restDaysController.text),
       // New bean detail fields
-      processingMethod: _processingMethod,
+      processingMethods: _processingMethods.isEmpty ? null : _processingMethods,
+      customProcessingMethod: _customProcessingMethodController.text.isEmpty ? null : _customProcessingMethodController.text,
       region: _regionController.text.isEmpty ? null : _regionController.text,
       harvestDate: _harvestDate,
       roastLevel: _roastLevel,
@@ -550,6 +583,7 @@ class _BagFormScreenState extends ConsumerState<BagFormScreen> {
     _restDaysController.dispose();
     _regionController.dispose();
     _roastProfileController.dispose();
+    _customProcessingMethodController.dispose();
     super.dispose();
   }
 }

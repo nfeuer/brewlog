@@ -84,7 +84,7 @@ class CoffeeBag extends HiveObject {
 
   // Additional Bean Details
   @HiveField(24)
-  String? processingMethod; // e.g., Washed, Natural, Honey, Anaerobic
+  List<String>? processingMethods; // Multiple selections: Washed, Natural, Honey, Anaerobic
 
   @HiveField(25)
   String? region; // Region/country/farm location
@@ -104,6 +104,9 @@ class CoffeeBag extends HiveObject {
   @HiveField(30)
   List<String>? certifications; // Organic, Fair Trade, etc.
 
+  @HiveField(31)
+  String? customProcessingMethod; // Custom processing method text
+
   CoffeeBag({
     required this.id,
     required this.userId,
@@ -122,7 +125,8 @@ class CoffeeBag extends HiveObject {
     this.openDate,
     this.finishedDate,
     this.recommendedRestDays,
-    this.processingMethod,
+    this.processingMethods,
+    this.customProcessingMethod,
     this.region,
     this.harvestDate,
     this.roastLevel,
@@ -185,7 +189,8 @@ class CoffeeBag extends HiveObject {
       'openDate': openDate?.toIso8601String(),
       'finishedDate': finishedDate?.toIso8601String(),
       'recommendedRestDays': recommendedRestDays,
-      'processingMethod': processingMethod,
+      'processingMethods': processingMethods,
+      'customProcessingMethod': customProcessingMethod,
       'region': region,
       'harvestDate': harvestDate?.toIso8601String(),
       'roastLevel': roastLevel,
@@ -229,7 +234,10 @@ class CoffeeBag extends HiveObject {
           ? DateTime.parse(json['finishedDate'] as String)
           : null,
       recommendedRestDays: json['recommendedRestDays'] as int?,
-      processingMethod: json['processingMethod'] as String?,
+      processingMethods: json['processingMethods'] != null
+          ? List<String>.from(json['processingMethods'])
+          : (json['processingMethod'] != null ? [json['processingMethod'] as String] : null), // Migration from old field
+      customProcessingMethod: json['customProcessingMethod'] as String?,
       region: json['region'] as String?,
       harvestDate: json['harvestDate'] != null
           ? DateTime.parse(json['harvestDate'] as String)
@@ -270,7 +278,8 @@ class CoffeeBag extends HiveObject {
     DateTime? openDate,
     DateTime? finishedDate,
     int? recommendedRestDays,
-    String? processingMethod,
+    List<String>? processingMethods,
+    String? customProcessingMethod,
     String? region,
     DateTime? harvestDate,
     String? roastLevel,
@@ -301,7 +310,8 @@ class CoffeeBag extends HiveObject {
       openDate: openDate ?? this.openDate,
       finishedDate: finishedDate ?? this.finishedDate,
       recommendedRestDays: recommendedRestDays ?? this.recommendedRestDays,
-      processingMethod: processingMethod ?? this.processingMethod,
+      processingMethods: processingMethods ?? this.processingMethods,
+      customProcessingMethod: customProcessingMethod ?? this.customProcessingMethod,
       region: region ?? this.region,
       harvestDate: harvestDate ?? this.harvestDate,
       roastLevel: roastLevel ?? this.roastLevel,

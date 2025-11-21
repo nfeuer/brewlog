@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
+import '../services/photo_service.dart';
 import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
@@ -35,16 +37,71 @@ class ProfileScreen extends ConsumerWidget {
               padding: AppStyles.cardPadding,
               child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppTheme.primaryBrown,
-                    child: Icon(Icons.person, size: 40, color: Colors.white),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppTheme.primaryBrown,
+                        backgroundImage: user.profilePicturePath != null
+                            ? FileImage(File(user.profilePicturePath!))
+                            : null,
+                        child: user.profilePicturePath == null
+                            ? const Icon(Icons.person, size: 40, color: Colors.white)
+                            : null,
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: AppTheme.primaryBrown,
+                          child: IconButton(
+                            icon: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                            padding: EdgeInsets.zero,
+                            onPressed: () => _showProfilePictureOptions(context, ref),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    user.username ?? 'Coffee Enthusiast',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        user.username ?? 'Coffee Enthusiast',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 18),
+                        onPressed: () => _showEditNameDialog(context, ref, user.username),
+                      ),
+                    ],
                   ),
+                  if (user.bio != null && user.bio!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: () => _showEditBioDialog(context, ref, user.bio),
+                      child: Text(
+                        user.bio!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey[600],
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: () => _showEditBioDialog(context, ref, null),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add bio'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Chip(
                     label: Text(
@@ -62,7 +119,17 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Stats dashboard
-          Text('Statistics', style: AppTextStyles.sectionHeader),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Statistics', style: AppTextStyles.sectionHeader),
+              TextButton.icon(
+                onPressed: () => _recalculateStats(context, ref),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Recalculate'),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           Card(
             child: Padding(
@@ -383,5 +450,164 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showEditNameDialog(BuildContext context, WidgetRef ref, String? currentName) {
+    final controller = TextEditingController(text: currentName);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Name'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Name',
+            hintText: 'Enter your name',
+          ),
+          autofocus: true,
+          maxLength: 50,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty) {
+                ref.read(userProfileProvider.notifier).updateUsername(newName);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditBioDialog(BuildContext context, WidgetRef ref, String? currentBio) {
+    final controller = TextEditingController(text: currentBio);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Bio'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Bio',
+            hintText: 'Short bio (max 25 characters)',
+            helperText: 'Keep it short and sweet!',
+          ),
+          autofocus: true,
+          maxLength: 25,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newBio = controller.text.trim();
+              ref.read(userProfileProvider.notifier).updateBio(newBio.isEmpty ? null : newBio);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showProfilePictureOptions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () async {
+                Navigator.pop(context);
+                final photoService = PhotoService();
+                try {
+                  final photoPath = await photoService.takePhoto();
+                  if (photoPath != null) {
+                    ref.read(userProfileProvider.notifier).updateProfilePicture(photoPath);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    showError(context, 'Failed to take photo: $e');
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () async {
+                Navigator.pop(context);
+                final photoService = PhotoService();
+                try {
+                  final photoPath = await photoService.pickPhoto();
+                  if (photoPath != null) {
+                    ref.read(userProfileProvider.notifier).updateProfilePicture(photoPath);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    showError(context, 'Failed to pick photo: $e');
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Remove Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                ref.read(userProfileProvider.notifier).updateProfilePicture(null);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _recalculateStats(BuildContext context, WidgetRef ref) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Recalculating statistics...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      await ref.read(userProfileProvider.notifier).recalculateStats();
+      if (context.mounted) {
+        Navigator.pop(context); // Close progress dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Statistics recalculated successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close progress dialog
+        showError(context, 'Failed to recalculate stats: $e');
+      }
+    }
   }
 }

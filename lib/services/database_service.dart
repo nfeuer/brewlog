@@ -106,6 +106,30 @@ class DatabaseService {
     }
   }
 
+  /// Recalculate user statistics from actual data
+  Future<UserStats> recalculateUserStats() async {
+    final newStats = UserStats();
+
+    // Count total bags
+    final bags = getAllBags();
+    newStats.totalBagsPurchased = bags.length;
+
+    // Iterate through all cups to calculate stats
+    final allCups = _cupsBox.values
+        .map((json) => Cup.fromJson(Map<String, dynamic>.from(json as Map)))
+        .toList();
+
+    for (final cup in allCups) {
+      newStats.addCup(
+        brewType: cup.brewType,
+        gramsUsed: cup.gramsUsed,
+        mlConsumed: cup.finalVolumeMl,
+      );
+    }
+
+    return newStats;
+  }
+
   // ============================================================================
   // COFFEE BAG OPERATIONS
   // ============================================================================
