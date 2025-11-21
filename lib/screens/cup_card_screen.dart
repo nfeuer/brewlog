@@ -80,18 +80,17 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   final _humidityController = TextEditingController();
   final _altitudeController = TextEditingController();
 
-  // SCA cupping score controllers
-  final _cuppingFragranceController = TextEditingController();
-  final _cuppingAromaController = TextEditingController();
-  final _cuppingFlavorController = TextEditingController();
-  final _cuppingAftertasteController = TextEditingController();
-  final _cuppingAcidityController = TextEditingController();
-  final _cuppingBodyController = TextEditingController();
-  final _cuppingBalanceController = TextEditingController();
-  final _cuppingSweetnessController = TextEditingController();
-  final _cuppingCleanCupController = TextEditingController();
-  final _cuppingUniformityController = TextEditingController();
-  final _cuppingOverallController = TextEditingController();
+  // SCA cupping score values (using sliders, 1-10 scale)
+  double? _cuppingFragrance;
+  double? _cuppingAroma;
+  double? _cuppingFlavor;
+  double? _cuppingAftertaste;
+  double? _cuppingAcidity;
+  double? _cuppingBody;
+  double? _cuppingBalance;
+  double? _cuppingSweetness;
+  double? _cuppingCleanCup;
+  double? _cuppingUniformity;
   final _cuppingDefectsController = TextEditingController();
 
   String? _selectedBrewType;
@@ -146,17 +145,16 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _timeOfDay = cup.timeOfDay;
 
         // Load SCA cupping scores
-        _cuppingFragranceController.text = cup.cuppingFragrance?.toString() ?? '';
-        _cuppingAromaController.text = cup.cuppingAroma?.toString() ?? '';
-        _cuppingFlavorController.text = cup.cuppingFlavor?.toString() ?? '';
-        _cuppingAftertasteController.text = cup.cuppingAftertaste?.toString() ?? '';
-        _cuppingAcidityController.text = cup.cuppingAcidity?.toString() ?? '';
-        _cuppingBodyController.text = cup.cuppingBody?.toString() ?? '';
-        _cuppingBalanceController.text = cup.cuppingBalance?.toString() ?? '';
-        _cuppingSweetnessController.text = cup.cuppingSweetness?.toString() ?? '';
-        _cuppingCleanCupController.text = cup.cuppingCleanCup?.toString() ?? '';
-        _cuppingUniformityController.text = cup.cuppingUniformity?.toString() ?? '';
-        _cuppingOverallController.text = cup.cuppingOverall?.toString() ?? '';
+        _cuppingFragrance = cup.cuppingFragrance;
+        _cuppingAroma = cup.cuppingAroma;
+        _cuppingFlavor = cup.cuppingFlavor;
+        _cuppingAftertaste = cup.cuppingAftertaste;
+        _cuppingAcidity = cup.cuppingAcidity;
+        _cuppingBody = cup.cuppingBody;
+        _cuppingBalance = cup.cuppingBalance;
+        _cuppingSweetness = cup.cuppingSweetness;
+        _cuppingCleanCup = cup.cuppingCleanCup;
+        _cuppingUniformity = cup.cuppingUniformity;
         _cuppingDefectsController.text = cup.cuppingDefects ?? '';
 
         // Show SCA section if any scores are present
@@ -170,7 +168,6 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
             cup.cuppingSweetness != null ||
             cup.cuppingCleanCup != null ||
             cup.cuppingUniformity != null ||
-            cup.cuppingOverall != null ||
             (cup.cuppingDefects != null && cup.cuppingDefects!.isNotEmpty);
 
         // Load rating in user's current preferred scale
@@ -821,124 +818,63 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 12),
-                if (fieldVisibility['cuppingFragrance'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingFragranceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Fragrance/Aroma (Dry)',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingAroma'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingAromaController,
-                    decoration: const InputDecoration(
-                      labelText: 'Aroma (Wet)',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingFlavor'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingFlavorController,
-                    decoration: const InputDecoration(
-                      labelText: 'Flavor',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingAftertaste'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingAftertasteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Aftertaste',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingAcidity'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingAcidityController,
-                    decoration: const InputDecoration(
-                      labelText: 'Acidity',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingBody'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingBodyController,
-                    decoration: const InputDecoration(
-                      labelText: 'Body',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingBalance'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingBalanceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Balance',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingSweetness'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingSweetnessController,
-                    decoration: const InputDecoration(
-                      labelText: 'Sweetness',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingCleanCup'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingCleanCupController,
-                    decoration: const InputDecoration(
-                      labelText: 'Clean Cup',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (fieldVisibility['cuppingUniformity'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingUniformityController,
-                    decoration: const InputDecoration(
-                      labelText: 'Uniformity',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                if (fieldVisibility['cuppingFragrance'] == true)
+                  _buildScaSlider('Fragrance/Aroma (Dry)', _cuppingFragrance, (value) {
+                    setState(() => _cuppingFragrance = value);
+                  }),
+                if (fieldVisibility['cuppingAroma'] == true)
+                  _buildScaSlider('Aroma (Wet)', _cuppingAroma, (value) {
+                    setState(() => _cuppingAroma = value);
+                  }),
+                if (fieldVisibility['cuppingFlavor'] == true)
+                  _buildScaSlider('Flavor', _cuppingFlavor, (value) {
+                    setState(() => _cuppingFlavor = value);
+                  }),
+                if (fieldVisibility['cuppingAftertaste'] == true)
+                  _buildScaSlider('Aftertaste', _cuppingAftertaste, (value) {
+                    setState(() => _cuppingAftertaste = value);
+                  }),
+                if (fieldVisibility['cuppingAcidity'] == true)
+                  _buildScaSlider('Acidity', _cuppingAcidity, (value) {
+                    setState(() => _cuppingAcidity = value);
+                  }),
+                if (fieldVisibility['cuppingBody'] == true)
+                  _buildScaSlider('Body', _cuppingBody, (value) {
+                    setState(() => _cuppingBody = value);
+                  }),
+                if (fieldVisibility['cuppingBalance'] == true)
+                  _buildScaSlider('Balance', _cuppingBalance, (value) {
+                    setState(() => _cuppingBalance = value);
+                  }),
+                if (fieldVisibility['cuppingSweetness'] == true)
+                  _buildScaSlider('Sweetness', _cuppingSweetness, (value) {
+                    setState(() => _cuppingSweetness = value);
+                  }),
+                if (fieldVisibility['cuppingCleanCup'] == true)
+                  _buildScaSlider('Clean Cup', _cuppingCleanCup, (value) {
+                    setState(() => _cuppingCleanCup = value);
+                  }),
+                if (fieldVisibility['cuppingUniformity'] == true)
+                  _buildScaSlider('Uniformity', _cuppingUniformity, (value) {
+                    setState(() => _cuppingUniformity = value);
+                  }),
                 if (fieldVisibility['cuppingOverall'] == true) ...[
-                  TextFormField(
-                    controller: _cuppingOverallController,
-                    decoration: const InputDecoration(
-                      labelText: 'Overall',
-                      hintText: '0-10',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Overall (Calculated Total)',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        _calculateScaOverall().toStringAsFixed(1),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBrown,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -1138,6 +1074,64 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         ...children,
       ],
     );
+  }
+
+  Widget _buildScaSlider(String label, double? value, Function(double) onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 14)),
+            Text(
+              value?.toStringAsFixed(1) ?? '0.0',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryBrown,
+              ),
+            ),
+          ],
+        ),
+        Slider(
+          value: value ?? 0.0,
+          min: 0,
+          max: 10,
+          divisions: 100,
+          onChanged: onChanged,
+          activeColor: AppTheme.primaryBrown,
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  double _calculateScaOverall() {
+    double total = 0;
+    int count = 0;
+
+    final scores = [
+      _cuppingFragrance,
+      _cuppingAroma,
+      _cuppingFlavor,
+      _cuppingAftertaste,
+      _cuppingAcidity,
+      _cuppingBody,
+      _cuppingBalance,
+      _cuppingSweetness,
+      _cuppingCleanCup,
+      _cuppingUniformity,
+    ];
+
+    for (final score in scores) {
+      if (score != null && score > 0) {
+        total += score;
+        count++;
+      }
+    }
+
+    return count > 0 ? total : 0;
   }
 
   Widget _buildPhotoThumbnail(String path) {
@@ -1476,39 +1470,17 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
           : int.tryParse(_altitudeController.text),
       timeOfDay: _timeOfDay,
       // SCA cupping scores
-      cuppingFragrance: _cuppingFragranceController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingFragranceController.text),
-      cuppingAroma: _cuppingAromaController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingAromaController.text),
-      cuppingFlavor: _cuppingFlavorController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingFlavorController.text),
-      cuppingAftertaste: _cuppingAftertasteController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingAftertasteController.text),
-      cuppingAcidity: _cuppingAcidityController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingAcidityController.text),
-      cuppingBody: _cuppingBodyController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingBodyController.text),
-      cuppingBalance: _cuppingBalanceController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingBalanceController.text),
-      cuppingSweetness: _cuppingSweetnessController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingSweetnessController.text),
-      cuppingCleanCup: _cuppingCleanCupController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingCleanCupController.text),
-      cuppingUniformity: _cuppingUniformityController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingUniformityController.text),
-      cuppingOverall: _cuppingOverallController.text.isEmpty
-          ? null
-          : double.tryParse(_cuppingOverallController.text),
+      cuppingFragrance: _cuppingFragrance,
+      cuppingAroma: _cuppingAroma,
+      cuppingFlavor: _cuppingFlavor,
+      cuppingAftertaste: _cuppingAftertaste,
+      cuppingAcidity: _cuppingAcidity,
+      cuppingBody: _cuppingBody,
+      cuppingBalance: _cuppingBalance,
+      cuppingSweetness: _cuppingSweetness,
+      cuppingCleanCup: _cuppingCleanCup,
+      cuppingUniformity: _cuppingUniformity,
+      cuppingOverall: _calculateScaOverall() > 0 ? _calculateScaOverall() : null,
       cuppingDefects: _cuppingDefectsController.text.isEmpty
           ? null
           : _cuppingDefectsController.text,
