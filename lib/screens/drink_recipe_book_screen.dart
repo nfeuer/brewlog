@@ -155,7 +155,7 @@ class _DrinkRecipeBookScreenState extends ConsumerState<DrinkRecipeBookScreen> {
   }
 }
 
-class _RecipeCard extends StatefulWidget {
+class _RecipeCard extends ConsumerStatefulWidget {
   final DrinkRecipe recipe;
   final VoidCallback onDelete;
 
@@ -165,11 +165,73 @@ class _RecipeCard extends StatefulWidget {
   });
 
   @override
-  State<_RecipeCard> createState() => _RecipeCardState();
+  ConsumerState<_RecipeCard> createState() => _RecipeCardState();
 }
 
-class _RecipeCardState extends State<_RecipeCard> {
+class _RecipeCardState extends ConsumerState<_RecipeCard> {
   bool _isExpanded = false;
+
+  void _showEditNameDialog(BuildContext context) {
+    final nameController = TextEditingController(text: widget.recipe.name);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Recipe Name'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(
+            labelText: 'Recipe Name',
+            hintText: 'Enter new name',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (nameController.text.trim().isEmpty) {
+                showError(context, 'Recipe name cannot be empty');
+                return;
+              }
+
+              // Update recipe name
+              final updatedRecipe = DrinkRecipe(
+                id: widget.recipe.id,
+                userId: widget.recipe.userId,
+                name: nameController.text.trim(),
+                baseType: widget.recipe.baseType,
+                espressoShot: widget.recipe.espressoShot,
+                milkType: widget.recipe.milkType,
+                milkAmountMl: widget.recipe.milkAmountMl,
+                ice: widget.recipe.ice,
+                syrups: widget.recipe.syrups,
+                sweeteners: widget.recipe.sweeteners,
+                otherAdditions: widget.recipe.otherAdditions,
+                instructions: widget.recipe.instructions,
+                createdAt: widget.recipe.createdAt,
+                updatedAt: DateTime.now(),
+                usageCount: widget.recipe.usageCount,
+              );
+
+              await ref
+                  .read(drinkRecipesProvider.notifier)
+                  .updateRecipe(updatedRecipe);
+
+              if (mounted) {
+                Navigator.pop(context);
+                showSuccess(context, 'Recipe name updated');
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,9 +241,35 @@ class _RecipeCardState extends State<_RecipeCard> {
         children: [
           ListTile(
             leading: const Icon(Icons.local_cafe, color: AppTheme.primaryBrown),
-            title: Text(
-              widget.recipe.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.recipe.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (widget.recipe.usageCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.purple.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '${widget.recipe.usageCount}×',
+                      style: const TextStyle(
+                        color: Colors.purple,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             subtitle: Text(
               widget.recipe.summary,
@@ -213,8 +301,28 @@ class _RecipeCardState extends State<_RecipeCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Edit button at the top
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showEditNameDialog(context),
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Edit Name'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBrown,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   if (widget.recipe.baseType != null) ...[
-                    _buildDetailRow('Base Type', widget.recipe.baseType!),
+                    _buildDetailRow(
+                      'Base Type',
+                      widget.recipe.espressoShot != null
+                          ? '${widget.recipe.espressoShot} ${widget.recipe.baseType}'
+                          : widget.recipe.baseType!,
+                    ),
                     const SizedBox(height: 8),
                   ],
                   if (widget.recipe.milkType != null) ...[
