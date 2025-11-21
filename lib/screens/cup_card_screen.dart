@@ -536,6 +536,86 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       ),
                     ],
                   ),
+                  // Equipment details expand/collapse
+                  if (_selectedEquipmentId != null) ...[
+                    const SizedBox(height: 12),
+                    ExpansionTile(
+                      title: const Text('Equipment Details'),
+                      tilePadding: EdgeInsets.zero,
+                      childrenPadding: const EdgeInsets.only(left: 16, bottom: 12),
+                      children: [
+                        Builder(
+                          builder: (context) {
+                            final equipment = ref.watch(equipmentByIdProvider(_selectedEquipmentId!));
+                            if (equipment == null) {
+                              return const Text('Equipment not found');
+                            }
+
+                            final details = <Widget>[];
+
+                            // Only show fields that have values
+                            if (equipment.grinderBrand != null || equipment.grinderModel != null) {
+                              details.add(_buildEquipmentDetailRow(
+                                Icons.blender,
+                                'Grinder',
+                                equipment.grinderDisplayName,
+                              ));
+                            }
+                            if (equipment.brewerBrand != null || equipment.brewerModel != null) {
+                              details.add(_buildEquipmentDetailRow(
+                                Icons.coffee_maker,
+                                'Brewer',
+                                equipment.brewerDisplayName,
+                              ));
+                            }
+                            if (equipment.kettleBrand != null) {
+                              details.add(_buildEquipmentDetailRow(
+                                Icons.hot_tub,
+                                'Kettle',
+                                equipment.kettleBrand!,
+                              ));
+                            }
+                            if (equipment.scaleBrand != null) {
+                              details.add(_buildEquipmentDetailRow(
+                                Icons.scale,
+                                'Scale',
+                                '${equipment.scaleBrand}${equipment.scaleAccuracy != null ? " (±${equipment.scaleAccuracy}g)" : ""}',
+                              ));
+                            }
+                            if (equipment.waterType != null) {
+                              details.add(_buildEquipmentDetailRow(
+                                Icons.water_drop,
+                                'Water',
+                                equipment.waterType!,
+                              ));
+                            }
+                            if (equipment.filterType != null) {
+                              details.add(_buildEquipmentDetailRow(
+                                Icons.filter_alt,
+                                'Filter',
+                                equipment.filterType!,
+                              ));
+                            }
+
+                            if (details.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.only(bottom: 8),
+                                child: Text(
+                                  'No equipment details available',
+                                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                                ),
+                              );
+                            }
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: details,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
                 if (_currentFieldVisibility['grindLevel'] == true) ...[
                   const SizedBox(height: 12),
@@ -1327,6 +1407,31 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       _drinkOtherAdditions = List.from(recipe.otherAdditions);
       _drinkInstructionsController.text = recipe.instructions ?? '';
     });
+  }
+
+  Widget _buildEquipmentDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppTheme.primaryBrown),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   bool _shouldShowEnvironmentalConditions() {
