@@ -158,7 +158,7 @@ class CupSummaryCard extends StatelessWidget {
                                 Icon(Icons.assessment, size: 14, color: AppTheme.primaryBrown),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'SCA: ${cup.cuppingTotal!.toStringAsFixed(1)}/110',
+                                  'SCA: ${cup.cuppingTotal!.toInt()}/110',
                                   style: TextStyle(
                                     color: AppTheme.primaryBrown,
                                     fontSize: 12,

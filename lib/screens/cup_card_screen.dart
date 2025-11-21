@@ -867,7 +867,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        _calculateScaOverall().toStringAsFixed(1),
+                        _calculateScaOverall().toString(),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -1085,7 +1085,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
           children: [
             Text(label, style: const TextStyle(fontSize: 14)),
             Text(
-              value?.toStringAsFixed(1) ?? '0.0',
+              value?.toInt().toString() ?? '0',
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -1098,7 +1098,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
           value: value ?? 0.0,
           min: 0,
           max: 10,
-          divisions: 100,
+          divisions: 10,
           onChanged: onChanged,
           activeColor: AppTheme.primaryBrown,
         ),
@@ -1107,7 +1107,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     );
   }
 
-  double _calculateScaOverall() {
+  int _calculateScaOverall() {
     double total = 0;
     int count = 0;
 
@@ -1131,7 +1131,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       }
     }
 
-    return count > 0 ? total : 0;
+    return count > 0 ? total.toInt() : 0;
   }
 
   Widget _buildPhotoThumbnail(String path) {
