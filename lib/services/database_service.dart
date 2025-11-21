@@ -264,6 +264,11 @@ class DatabaseService {
     // Update bag stats
     await recalculateBagStats(cup.bagId);
 
+    // Increment drink recipe usage count if recipe was used
+    if (cup.drinkRecipeId != null) {
+      await incrementDrinkRecipeUsage(cup.drinkRecipeId!);
+    }
+
     return cup.id;
   }
 
@@ -299,6 +304,14 @@ class DatabaseService {
 
     // Update bag stats
     await recalculateBagStats(cup.bagId);
+
+    // Increment drink recipe usage count if recipe was added or changed
+    if (oldCup != null && cup.drinkRecipeId != null) {
+      // Only increment if recipe was newly added or changed to a different recipe
+      if (oldCup.drinkRecipeId != cup.drinkRecipeId) {
+        await incrementDrinkRecipeUsage(cup.drinkRecipeId!);
+      }
+    }
   }
 
   /// Delete cup
@@ -573,6 +586,15 @@ class DatabaseService {
   /// Delete drink recipe
   Future<void> deleteDrinkRecipe(String recipeId) async {
     await _drinkRecipesBox.delete(recipeId);
+  }
+
+  /// Increment usage count for a drink recipe
+  Future<void> incrementDrinkRecipeUsage(String recipeId) async {
+    final recipe = getDrinkRecipe(recipeId);
+    if (recipe == null) return;
+
+    recipe.usageCount++;
+    await updateDrinkRecipe(recipe);
   }
 
   // ============================================================================

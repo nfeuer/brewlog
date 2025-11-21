@@ -168,6 +168,37 @@ class CupSummaryCard extends StatelessWidget {
                               ],
                             ),
                           ),
+                        // Drink Recipe indicator
+                        if (cup.drinkRecipeId != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.purple.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.menu_book, size: 14, color: Colors.purple),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Recipe',
+                                  style: TextStyle(
+                                    color: Colors.purple,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ),

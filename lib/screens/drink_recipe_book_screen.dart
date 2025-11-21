@@ -179,9 +179,35 @@ class _RecipeCardState extends State<_RecipeCard> {
         children: [
           ListTile(
             leading: const Icon(Icons.local_cafe, color: AppTheme.primaryBrown),
-            title: Text(
-              widget.recipe.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.recipe.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (widget.recipe.usageCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.purple.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '${widget.recipe.usageCount}×',
+                      style: const TextStyle(
+                        color: Colors.purple,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             subtitle: Text(
               widget.recipe.summary,

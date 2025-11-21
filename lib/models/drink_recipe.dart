@@ -44,6 +44,9 @@ class DrinkRecipe extends HiveObject {
   @HiveField(12)
   DateTime updatedAt;
 
+  @HiveField(13)
+  int usageCount; // Number of times this recipe has been used
+
   DrinkRecipe({
     required this.id,
     required this.userId,
@@ -58,6 +61,7 @@ class DrinkRecipe extends HiveObject {
     this.instructions,
     DateTime? createdAt,
     DateTime? updatedAt,
+    this.usageCount = 0,
   })  : syrups = syrups ?? [],
         sweeteners = sweeteners ?? [],
         otherAdditions = otherAdditions ?? [],
@@ -85,6 +89,7 @@ class DrinkRecipe extends HiveObject {
       'instructions': instructions,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'usageCount': usageCount,
     };
   }
 
@@ -103,6 +108,7 @@ class DrinkRecipe extends HiveObject {
       instructions: json['instructions'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      usageCount: json['usageCount'] as int? ?? 0,
     );
   }
 
