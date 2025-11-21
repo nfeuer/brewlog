@@ -48,6 +48,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -71,6 +73,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -94,6 +98,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -117,6 +123,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: visibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -141,6 +149,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
         stats: state!.stats,
         customBrewTypes: [...state!.customBrewTypes, brewType],
         cupFieldVisibility: state!.cupFieldVisibility,
+        profilePicturePath: state!.profilePicturePath,
+        bio: state!.bio,
         createdAt: state!.createdAt,
         updatedAt: DateTime.now(),
       );
@@ -165,6 +175,85 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Update bio
+  Future<void> updateBio(String? bio) async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: bio,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Update profile picture
+  Future<void> updateProfilePicture(String? picturePath) async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: picturePath,
+      bio: state!.bio,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Recalculate statistics from actual data
+  Future<void> recalculateStats() async {
+    if (state == null) return;
+
+    final newStats = await _db.recalculateUserStats();
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: newStats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );

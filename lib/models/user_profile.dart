@@ -106,6 +106,13 @@ class UserProfile extends HiveObject {
   @HiveField(12)
   Map<String, bool>? cupFieldVisibility;
 
+  // Profile customization
+  @HiveField(13)
+  String? profilePicturePath;
+
+  @HiveField(14)
+  String? bio; // Short bio (max 25 characters)
+
   UserProfile({
     required this.id,
     this.username,
@@ -120,6 +127,8 @@ class UserProfile extends HiveObject {
     DateTime? updatedAt,
     List<String>? customBrewTypes,
     this.cupFieldVisibility,
+    this.profilePicturePath,
+    this.bio,
   })  : defaultVisibleFields = defaultVisibleFields ?? [],
         stats = stats ?? UserStats(),
         createdAt = createdAt ?? DateTime.now(),
@@ -163,6 +172,8 @@ class UserProfile extends HiveObject {
       },
       'customBrewTypes': customBrewTypes,
       'cupFieldVisibility': cupFieldVisibility,
+      'profilePicturePath': profilePicturePath,
+      'bio': bio,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -193,6 +204,8 @@ class UserProfile extends HiveObject {
       cupFieldVisibility: json['cupFieldVisibility'] != null
           ? Map<String, bool>.from(json['cupFieldVisibility'])
           : null,
+      profilePicturePath: json['profilePicturePath'] as String?,
+      bio: json['bio'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );

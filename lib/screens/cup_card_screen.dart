@@ -16,6 +16,7 @@ import '../utils/theme.dart';
 import '../widgets/rating_input.dart';
 import '../widgets/photo_viewer.dart';
 import '../widgets/temperature_dial.dart';
+import '../widgets/pour_schedule_timer.dart';
 import 'equipment_form_screen.dart';
 
 class CupCardScreen extends ConsumerStatefulWidget {
@@ -98,7 +99,10 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   double? _rating;
   List<String> _selectedFlavorTags = [];
   List<String> _photoPaths = [];
+  bool _showScaCuppingFields = false;
   bool _isBest = false;
+  List<PourEntry> _pourEntries = [];
+  bool _usePourTimer = false;
 
   @override
   void initState() {
@@ -129,6 +133,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _yieldGramsController.text = cup.yieldGrams?.toString() ?? '';
         _bloomAmountController.text = cup.bloomAmountGrams?.toString() ?? '';
         _pourScheduleController.text = cup.pourSchedule ?? '';
+        _parsePourSchedule(cup.pourSchedule);
         _tdsController.text = cup.tds?.toString() ?? '';
         _extractionYieldController.text = cup.extractionYield?.toString() ?? '';
 
@@ -151,6 +156,20 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _cuppingUniformityController.text = cup.cuppingUniformity?.toString() ?? '';
         _cuppingOverallController.text = cup.cuppingOverall?.toString() ?? '';
         _cuppingDefectsController.text = cup.cuppingDefects ?? '';
+
+        // Show SCA section if any scores are present
+        _showScaCuppingFields = cup.cuppingFragrance != null ||
+            cup.cuppingAroma != null ||
+            cup.cuppingFlavor != null ||
+            cup.cuppingAftertaste != null ||
+            cup.cuppingAcidity != null ||
+            cup.cuppingBody != null ||
+            cup.cuppingBalance != null ||
+            cup.cuppingSweetness != null ||
+            cup.cuppingCleanCup != null ||
+            cup.cuppingUniformity != null ||
+            cup.cuppingOverall != null ||
+            (cup.cuppingDefects != null && cup.cuppingDefects!.isNotEmpty);
 
         // Load rating in user's current preferred scale
         _rating = cup.getRating(ratingScale);
@@ -622,14 +641,42 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       const SizedBox(height: 12),
                     ],
                     if (fieldVisibility['pourSchedule'] == true) ...[
-                      TextFormField(
-                        controller: _pourScheduleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Pour Schedule',
-                          hintText: 'e.g., 0:00-50g, 0:45-100g, 1:30-final',
-                        ),
-                        maxLines: 2,
+                      Row(
+                        children: [
+                          const Text('Pour Schedule'),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _usePourTimer = !_usePourTimer;
+                              });
+                            },
+                            icon: Icon(_usePourTimer ? Icons.timer : Icons.text_fields),
+                            label: Text(_usePourTimer ? 'Use Text' : 'Use Timer'),
+                          ),
+                        ],
                       ),
+                      if (_usePourTimer) ...[
+                        PourScheduleTimer(
+                          initialEntries: _pourEntries,
+                          onStop: (entries, totalSeconds) {
+                            setState(() {
+                              _pourEntries = entries;
+                              _brewTimeController.text = totalSeconds.toString();
+                              _pourScheduleController.text = _formatPourEntries(entries);
+                            });
+                          },
+                        ),
+                      ] else ...[
+                        TextFormField(
+                          controller: _pourScheduleController,
+                          decoration: const InputDecoration(
+                            labelText: 'Pour Schedule (Text)',
+                            hintText: 'e.g., 0:00-50g, 0:45-100g, 1:30-final',
+                          ),
+                          maxLines: 2,
+                        ),
+                      ],
                       const SizedBox(height: 12),
                     ],
                   ],
@@ -720,15 +767,25 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
             // SCA Cupping Scores Section
             if (_shouldShowCuppingScores()) ...[
               const SizedBox(height: 24),
-              _buildSection(
-                'SCA Cupping Scores',
-                [
-                  const Text(
-                    'Score each attribute from 0-10',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 12),
-                  if (fieldVisibility['cuppingFragrance'] == true) ...[
+              CheckboxListTile(
+                title: Text('SCA Cupping Scores', style: AppTextStyles.sectionHeader),
+                subtitle: const Text('Toggle to show/hide cupping score fields'),
+                value: _showScaCuppingFields,
+                onChanged: (value) {
+                  setState(() {
+                    _showScaCuppingFields = value ?? false;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+              ),
+              if (_showScaCuppingFields) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Score each attribute from 0-10',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                if (fieldVisibility['cuppingFragrance'] == true) ...[
                     TextFormField(
                       controller: _cuppingFragranceController,
                       decoration: const InputDecoration(
@@ -860,7 +917,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ),
                   ],
                 ],
-              ),
+              ],
             ],
 
             if (fieldVisibility['rating'] == true) ...[
@@ -1399,6 +1456,26 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         Navigator.pop(context);
       }
     }
+  }
+
+  void _parsePourSchedule(String? schedule) {
+    if (schedule == null || schedule.isEmpty) {
+      _usePourTimer = false;
+      _pourEntries = [];
+      return;
+    }
+
+    // Check if it's timer format (has entries with timestamps)
+    if (schedule.contains(':')) {
+      _usePourTimer = true;
+      // Simple parsing - entries are formatted like "00:45 - 50g"
+      // This allows backward compatibility with text entries
+    }
+  }
+
+  String _formatPourEntries(List<PourEntry> entries) {
+    if (entries.isEmpty) return '';
+    return entries.map((e) => e.toString()).join(', ');
   }
 
   @override
