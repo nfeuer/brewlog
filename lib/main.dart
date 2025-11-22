@@ -2,12 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:app_links/app_links.dart';
 
 import 'services/database_service.dart';
 import 'services/firebase_service.dart';
 import 'services/sample_data_service.dart';
+import 'services/share_service.dart';
 import 'screens/home_screen.dart';
 import 'utils/theme.dart';
+import 'models/drink_recipe.dart';
+import 'providers/drink_recipes_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,12 +73,132 @@ Future<void> _generateSampleDataIfNeeded() async {
   }
 }
 
-class BrewLogApp extends StatelessWidget {
+class BrewLogApp extends ConsumerStatefulWidget {
   const BrewLogApp({super.key});
+
+  @override
+  ConsumerState<BrewLogApp> createState() => _BrewLogAppState();
+}
+
+class _BrewLogAppState extends ConsumerState<BrewLogApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+  late AppLinks _appLinks;
+
+  @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+
+  Future<void> _initDeepLinks() async {
+    _appLinks = AppLinks();
+
+    // Handle links when app is already running
+    _appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    });
+
+    // Handle initial link if app was opened from a deep link
+    try {
+      final uri = await _appLinks.getInitialAppLink();
+      if (uri != null) {
+        _handleDeepLink(uri);
+      }
+    } catch (e) {
+      print('Error getting initial app link: $e');
+    }
+  }
+
+  void _handleDeepLink(Uri uri) {
+    print('Received deep link: $uri');
+
+    final deepLinkData = ShareService.parseDeepLink(uri.toString());
+    if (deepLinkData == null) {
+      print('Invalid deep link format');
+      return;
+    }
+
+    final String type = deepLinkData['type'];
+    final String jsonData = deepLinkData['data'];
+
+    if (type == 'drink_recipe') {
+      final DrinkRecipe? recipe = ShareService.decodeDrinkRecipe(jsonData);
+      if (recipe != null) {
+        _showImportRecipeDialog(recipe);
+      }
+    } else if (type == 'cup') {
+      // Cup import not yet implemented
+      _showMessage('Cup sharing is not yet implemented');
+    }
+  }
+
+  void _showImportRecipeDialog(DrinkRecipe recipe) {
+    final context = _navigatorKey.currentContext;
+    if (context == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Recipe'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Import this drink recipe?'),
+            const SizedBox(height: 16),
+            Text(
+              recipe.name ?? 'Unnamed Recipe',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            if (recipe.summary.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                recipe.summary,
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await ref.read(drinkRecipesProvider.notifier).addRecipe(recipe);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _showMessage('Recipe "${recipe.name ?? "Unnamed"}" imported successfully');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  _showMessage('Failed to import recipe: $e');
+                }
+              }
+            },
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMessage(String message) {
+    final context = _navigatorKey.currentContext;
+    if (context == null) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'BrewLog',
       theme: AppTheme.lightTheme,
       home: const HomeScreen(),

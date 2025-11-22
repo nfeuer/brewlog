@@ -4,6 +4,8 @@ import '../models/drink_recipe.dart';
 import '../providers/drink_recipes_provider.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
+import 'share_drink_recipe_screen.dart';
+import 'scan_qr_screen.dart';
 
 class DrinkRecipeBookScreen extends ConsumerStatefulWidget {
   const DrinkRecipeBookScreen({super.key});
@@ -68,6 +70,19 @@ class _DrinkRecipeBookScreenState extends ConsumerState<DrinkRecipeBookScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Drink Recipe Book'),
+        backgroundColor: AppTheme.primaryBrown,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ScanQRScreen(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.qr_code_scanner),
+        label: const Text('Import Recipe'),
         backgroundColor: AppTheme.primaryBrown,
       ),
       body: Column(
@@ -301,19 +316,40 @@ class _RecipeCardState extends ConsumerState<_RecipeCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Edit button at the top
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showEditNameDialog(context),
-                      icon: const Icon(Icons.edit, size: 18),
-                      label: const Text('Edit Name'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryBrown,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  // Action buttons at the top
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ShareDrinkRecipeScreen(
+                                recipe: widget.recipe,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.share, size: 18),
+                        label: const Text('Share'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primaryBrown,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: () => _showEditNameDialog(context),
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text('Edit Name'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryBrown,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   if (widget.recipe.baseType != null) ...[
