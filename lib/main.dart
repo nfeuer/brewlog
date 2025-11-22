@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -45,22 +46,26 @@ void main() async {
     ),
   );
 
-  // Generate sample data in the background (non-blocking)
-  _generateSampleDataIfNeeded();
+  // Generate sample data in debug mode only (non-blocking)
+  // This will NOT run in production release builds
+  if (kDebugMode) {
+    _generateSampleDataIfNeeded();
+  }
 }
 
 /// Generate sample data in the background without blocking app startup
+/// Only runs in debug mode - production builds start with a clean database
 Future<void> _generateSampleDataIfNeeded() async {
   try {
     final sampleDataService = SampleDataService();
     final hasSampleData = await sampleDataService.hasSampleData();
     if (!hasSampleData) {
-      print('Generating sample data for testing...');
+      print('🧪 DEBUG MODE: Generating sample data for testing...');
       await sampleDataService.generateSampleData();
-      print('Sample data generated!');
+      print('✅ Sample data generated!');
     }
   } catch (e) {
-    print('Error generating sample data: $e');
+    print('❌ Error generating sample data: $e');
   }
 }
 
