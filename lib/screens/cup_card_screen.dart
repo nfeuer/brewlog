@@ -1922,6 +1922,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       return;
     }
 
+    // Get grinder settings from selected equipment (for sharing)
+    final equipment = _selectedEquipmentId != null
+        ? ref.read(equipmentByIdProvider(_selectedEquipmentId!))
+        : null;
+
     // Create or update cup
     final cupId = widget.cupId ?? uuid.v4();
     final cup = Cup(
@@ -1930,6 +1935,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       userId: user.id,
       brewType: _selectedBrewType!,
       grindLevel: _grindLevelController.text.isEmpty ? null : _grindLevelController.text,
+      grinderMinSetting: equipment?.grinderMinSetting,
+      grinderMaxSetting: equipment?.grinderMaxSetting,
+      grinderStepSize: equipment?.grinderStepSize,
       waterTempCelsius: _waterTempController.text.isEmpty
           ? null
           : double.tryParse(_waterTempController.text),

@@ -175,6 +175,15 @@ class Cup extends HiveObject {
   @HiveField(51)
   String? drinkRecipeId; // Reference to a saved drink recipe
 
+  @HiveField(52)
+  double? grinderMinSetting; // For sharing: min grind size used
+
+  @HiveField(53)
+  double? grinderMaxSetting; // For sharing: max grind size used
+
+  @HiveField(54)
+  double? grinderStepSize; // For sharing: step size used
+
   Cup({
     required this.id,
     required this.bagId,
@@ -228,6 +237,9 @@ class Cup extends HiveObject {
     this.cuppingDefects,
     this.fieldVisibility,
     this.drinkRecipeId,
+    this.grinderMinSetting,
+    this.grinderMaxSetting,
+    this.grinderStepSize,
   })  : flavorTags = flavorTags ?? [],
         photoPaths = photoPaths ?? [],
         createdAt = createdAt ?? DateTime.now(),
@@ -387,6 +399,9 @@ class Cup extends HiveObject {
       'cuppingDefects': cuppingDefects,
       'fieldVisibility': fieldVisibility,
       'drinkRecipeId': drinkRecipeId,
+      'grinderMinSetting': grinderMinSetting,
+      'grinderMaxSetting': grinderMaxSetting,
+      'grinderStepSize': grinderStepSize,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -446,6 +461,9 @@ class Cup extends HiveObject {
           ? Map<String, bool>.from(json['fieldVisibility'] as Map)
           : null,
       drinkRecipeId: json['drinkRecipeId'] as String?,
+      grinderMinSetting: json['grinderMinSetting']?.toDouble(),
+      grinderMaxSetting: json['grinderMaxSetting']?.toDouble(),
+      grinderStepSize: json['grinderStepSize']?.toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -592,6 +610,9 @@ class Cup extends HiveObject {
       cuppingOverall: cuppingOverall,
       cuppingTotal: cuppingTotal,
       cuppingDefects: cuppingDefects,
+      grinderMinSetting: grinderMinSetting,
+      grinderMaxSetting: grinderMaxSetting,
+      grinderStepSize: grinderStepSize,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
