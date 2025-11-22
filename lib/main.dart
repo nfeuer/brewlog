@@ -13,9 +13,13 @@ import 'utils/theme.dart';
 import 'models/drink_recipe.dart';
 import 'models/cup.dart';
 import 'models/coffee_bag.dart';
+import 'models/shared_cup.dart';
 import 'providers/drink_recipes_provider.dart';
 import 'providers/bags_provider.dart';
 import 'providers/cups_provider.dart';
+import 'providers/shared_cups_provider.dart';
+import 'providers/user_provider.dart';
+import 'package:uuid/uuid.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -196,178 +200,78 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
     final context = _navigatorKey.currentContext;
     if (context == null) return;
 
-    // Get user's bags
-    final bags = ref.read(bagsProvider);
-
-    if (bags.isEmpty) {
-      // No bags available
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('No Bags Available'),
-          content: const Text(
-            'You need to have at least one coffee bag to import tasting notes. '
-            'Please add a bag first, then try importing again.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    // Show bag selection dialog
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Import Tasting Notes'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Select which bag to add these tasting notes to:'),
-              const SizedBox(height: 16),
-              // Cup preview
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tasting Notes',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Brew Type: ${cup.brewType}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                    if (cup.score1to5 != null) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.star, color: Colors.amber, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${cup.score1to5}/5',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (cup.tastingNotes != null && cup.tastingNotes!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        cup.tastingNotes!,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Add to bag:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+        title: const Text('Import Shared Cup'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Add this cup to your Shared tab?'),
+            const SizedBox(height: 16),
+            Text(
+              'Brew Type: ${cup.brewType}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            if (cup.score1to5 != null) ...[
               const SizedBox(height: 8),
-              // Bag selection dropdown
-              ...bags.map((bag) => ListTile(
-                    title: Text(bag.coffeeName),
-                    subtitle: bag.roaster != null ? Text(bag.roaster!) : null,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await _importCupToBag(cup, bag);
-                    },
-                  )),
+              Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.amber, size: 16),
+                  const SizedBox(width: 4),
+                  Text('${cup.score1to5}/5'),
+                ],
+              ),
             ],
-          ),
+            if (cup.tastingNotes != null && cup.tastingNotes!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                cup.tastingNotes!,
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _importSharedCup(cup);
+            },
+            child: const Text('Import'),
+          ),
         ],
       ),
     );
   }
 
-  Future<void> _importCupToBag(Cup cup, CoffeeBag bag) async {
-    final context = _navigatorKey.currentContext;
-    if (context == null) return;
-
+  Future<void> _importSharedCup(Cup cup) async {
     try {
-      // Create a new cup with the selected bagId
-      final importedCup = Cup(
-        id: cup.id, // Will get a new ID when added
-        userId: cup.userId, // Will be set to current user
-        bagId: bag.id, // Use the selected bag
-        brewType: cup.brewType,
-        grindLevel: cup.grindLevel,
-        waterTempCelsius: cup.waterTempCelsius,
-        gramsUsed: cup.gramsUsed,
-        finalVolumeMl: cup.finalVolumeMl,
-        brewTimeSeconds: cup.brewTimeSeconds,
-        bloomTimeSeconds: cup.bloomTimeSeconds,
-        score1to5: cup.score1to5,
-        score1to10: cup.score1to10,
-        score1to100: cup.score1to100,
-        tastingNotes: cup.tastingNotes,
-        flavorTags: cup.flavorTags,
-        photoPaths: [], // Photos don't transfer
-        isBest: cup.isBest,
-        createdAt: cup.createdAt,
-        updatedAt: DateTime.now(),
-        customTitle: cup.customTitle,
-        equipmentSetupId: cup.equipmentSetupId,
-        adaptationNotes: cup.adaptationNotes,
-        preInfusionTimeSeconds: cup.preInfusionTimeSeconds,
-        pressureBars: cup.pressureBars,
-        yieldGrams: cup.yieldGrams,
-        bloomAmountGrams: cup.bloomAmountGrams,
-        pourSchedule: cup.pourSchedule,
-        tds: cup.tds,
-        extractionYield: cup.extractionYield,
-        roomTempCelsius: cup.roomTempCelsius,
-        humidity: cup.humidity,
-        altitudeMeters: cup.altitudeMeters,
-        timeOfDay: cup.timeOfDay,
-        // Cupping scores
-        cuppingFragrance: cup.cuppingFragrance,
-        cuppingAroma: cup.cuppingAroma,
-        cuppingFlavor: cup.cuppingFlavor,
-        cuppingAftertaste: cup.cuppingAftertaste,
-        cuppingAcidity: cup.cuppingAcidity,
-        cuppingBody: cup.cuppingBody,
-        cuppingBalance: cup.cuppingBalance,
-        cuppingSweetness: cup.cuppingSweetness,
-        cuppingCleanCup: cup.cuppingCleanCup,
-        cuppingUniformity: cup.cuppingUniformity,
-        cuppingOverall: cup.cuppingOverall,
-        cuppingDefects: cup.cuppingDefects,
-        // Drink recipe
-        drinkRecipeId: cup.drinkRecipeId,
+      final user = ref.read(userProfileProvider);
+      const uuid = Uuid();
+
+      final sharedCup = SharedCup(
+        id: uuid.v4(),
+        originalCupId: cup.id,
+        originalUserId: cup.userId,
+        originalUsername: cup.sharedByUsername ?? 'Anonymous',
+        receivedByUserId: user.id,
+        cupData: cup,
+        sharedAt: DateTime.now(),
       );
 
-      // Add the cup
-      await ref.read(cupsNotifierProvider).createCup(importedCup);
+      await ref.read(sharedCupsProvider.notifier).addSharedCup(sharedCup);
 
-      _showMessage('Tasting notes imported to ${bag.coffeeName}');
+      _showMessage('Cup added to Shared tab successfully');
     } catch (e) {
-      _showMessage('Failed to import tasting notes: $e');
+      _showMessage('Failed to import shared cup: $e');
     }
   }
 
