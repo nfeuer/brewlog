@@ -32,39 +32,29 @@ class ShareCupScreen extends StatelessWidget {
           children: [
             // Cup info
             Text(
-              'Cup Tasting Notes',
+              'Share Tasting Notes',
               style: AppTextStyles.heading,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
 
-            // Coffee name and roaster
-            if (cup.coffeeName != null) ...[
-              Text(
-                cup.coffeeName!,
-                style: AppTextStyles.cardTitle,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-            ],
-            if (cup.roaster != null) ...[
-              Text(
-                'by ${cup.roaster}',
-                style: AppTextStyles.cardSubtitle,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-            ],
+            // Brew type
+            Text(
+              cup.brewType,
+              style: AppTextStyles.cardTitle,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
 
             // Rating if available
-            if (cup.rating != null) ...[
+            if (cup.score1to5 != null) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.star, color: Colors.amber, size: 20),
                   const SizedBox(width: 4),
                   Text(
-                    '${cup.rating}/5',
+                    '${cup.score1to5}/5',
                     style: AppTextStyles.cardSubtitle,
                   ),
                 ],
@@ -204,9 +194,7 @@ class ShareCupScreen extends StatelessWidget {
 
   Future<void> _shareViaLink(BuildContext context, String deepLink, Cup cup) async {
     try {
-      final String shareText = cup.coffeeName != null && cup.roaster != null
-          ? 'Check out my tasting notes for ${cup.coffeeName} by ${cup.roaster}!\n\n$deepLink'
-          : 'Check out my coffee tasting notes!\n\n$deepLink';
+      final String shareText = 'Check out my ${cup.brewType} tasting notes!\n\n$deepLink';
 
       await Share.share(
         shareText,

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../models/drink_recipe.dart';
 import '../models/cup.dart';
-import '../models/bag.dart';
+import '../models/coffee_bag.dart';
 import '../services/share_service.dart';
 import '../providers/drink_recipes_provider.dart';
 import '../providers/bags_provider.dart';
@@ -253,7 +253,7 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
 
     try {
       // Add the recipe
-      await ref.read(drinkRecipesProvider.notifier).addRecipe(recipe);
+      await ref.read(drinkRecipesProvider.notifier).createRecipe(recipe);
 
       if (mounted) {
         // Show success message
@@ -302,7 +302,7 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
     }
 
     // Show bag selection dialog
-    final Bag? selectedBag = await showDialog<Bag>(
+    final CoffeeBag? selectedBag = await showDialog<CoffeeBag>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Import Tasting Notes'),
@@ -323,30 +323,35 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (cup.coffeeName != null) ...[
-                    Text(
-                      cup.coffeeName!,
-                      style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
-                    ),
+                  Text(
+                    'Tasting Notes',
+                    style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Brew Type: ${cup.brewType}',
+                    style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
+                  ),
+                  if (cup.score1to5 != null) ...[
                     const SizedBox(height: 4),
-                  ],
-                  if (cup.roaster != null) ...[
-                    Text(
-                      cup.roaster!,
-                      style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                  if (cup.rating != null) ...[
                     Row(
                       children: [
                         const Icon(Icons.star, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
                         Text(
-                          '${cup.rating}/5',
+                          '${cup.score1to5}/5',
                           style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
                         ),
                       ],
+                    ),
+                  ],
+                  if (cup.tastingNotes != null && cup.tastingNotes!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      cup.tastingNotes!,
+                      style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ],
@@ -361,14 +366,14 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
             // Bag selection
             SizedBox(
               width: double.maxFinite,
-              child: DropdownButtonFormField<Bag>(
+              child: DropdownButtonFormField<CoffeeBag>(
                 decoration: const InputDecoration(
                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   border: OutlineInputBorder(),
                 ),
                 hint: const Text('Select a bag'),
                 items: bags.map((bag) {
-                  return DropdownMenuItem<Bag>(
+                  return DropdownMenuItem<CoffeeBag>(
                     value: bag,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,19 +383,18 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
                           bag.coffeeName,
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-                        if (bag.roaster != null)
-                          Text(
-                            bag.roaster!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
+                        Text(
+                          bag.roaster,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
                           ),
+                        ),
                       ],
                     ),
                   );
                 }).toList(),
-                onChanged: (Bag? bag) {
+                onChanged: (CoffeeBag? bag) {
                   if (bag != null) {
                     Navigator.pop(context, bag);
                   }
@@ -416,37 +420,55 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
         id: cup.id, // Will get a new ID when added
         userId: cup.userId, // Will be set to current user
         bagId: selectedBag.id, // Use the selected bag
-        brewMethod: cup.brewMethod,
-        waterAmount: cup.waterAmount,
-        coffeeAmount: cup.coffeeAmount,
-        brewTime: cup.brewTime,
-        waterTemp: cup.waterTemp,
-        grindSize: cup.grindSize,
+        brewType: cup.brewType,
+        grindLevel: cup.grindLevel,
+        waterTempCelsius: cup.waterTempCelsius,
+        gramsUsed: cup.gramsUsed,
+        finalVolumeMl: cup.finalVolumeMl,
+        brewTimeSeconds: cup.brewTimeSeconds,
+        bloomTimeSeconds: cup.bloomTimeSeconds,
+        score1to5: cup.score1to5,
+        score1to10: cup.score1to10,
+        score1to100: cup.score1to100,
         tastingNotes: cup.tastingNotes,
-        rating: cup.rating,
-        favorite: cup.favorite,
-        notes: cup.notes,
+        flavorTags: cup.flavorTags,
         photoPaths: [], // Photos don't transfer
+        isBest: cup.isBest,
         createdAt: cup.createdAt,
         updatedAt: DateTime.now(),
+        customTitle: cup.customTitle,
+        equipmentSetupId: cup.equipmentSetupId,
+        adaptationNotes: cup.adaptationNotes,
+        preInfusionTimeSeconds: cup.preInfusionTimeSeconds,
+        pressureBars: cup.pressureBars,
+        yieldGrams: cup.yieldGrams,
+        bloomAmountGrams: cup.bloomAmountGrams,
+        pourSchedule: cup.pourSchedule,
+        tds: cup.tds,
+        extractionYield: cup.extractionYield,
+        roomTempCelsius: cup.roomTempCelsius,
+        humidity: cup.humidity,
+        altitudeMeters: cup.altitudeMeters,
+        timeOfDay: cup.timeOfDay,
         // Cupping scores
-        fragranceAroma: cup.fragranceAroma,
-        flavor: cup.flavor,
-        aftertaste: cup.aftertaste,
-        acidity: cup.acidity,
-        body: cup.body,
-        balance: cup.balance,
-        uniformity: cup.uniformity,
-        cleanCup: cup.cleanCup,
-        sweetness: cup.sweetness,
-        overall: cup.overall,
-        defects: cup.defects,
+        cuppingFragrance: cup.cuppingFragrance,
+        cuppingAroma: cup.cuppingAroma,
+        cuppingFlavor: cup.cuppingFlavor,
+        cuppingAftertaste: cup.cuppingAftertaste,
+        cuppingAcidity: cup.cuppingAcidity,
+        cuppingBody: cup.cuppingBody,
+        cuppingBalance: cup.cuppingBalance,
+        cuppingSweetness: cup.cuppingSweetness,
+        cuppingCleanCup: cup.cuppingCleanCup,
+        cuppingUniformity: cup.cuppingUniformity,
+        cuppingOverall: cup.cuppingOverall,
+        cuppingDefects: cup.cuppingDefects,
         // Drink recipe
         drinkRecipeId: cup.drinkRecipeId,
       );
 
       // Add the cup
-      await ref.read(cupsNotifierProvider.notifier).addCup(importedCup);
+      await ref.read(cupsNotifierProvider).createCup(importedCup);
 
       if (mounted) {
         // Show success message
