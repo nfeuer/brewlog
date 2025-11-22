@@ -111,13 +111,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const SharedTab(),
         ],
       ),
-      floatingActionButton: Stack(
-        children: [
-          // QR Scanner button - bottom left
-          Positioned(
-            left: 16,
-            bottom: 16,
-            child: FloatingActionButton(
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(left: 32),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // QR Scanner button - bottom left
+            FloatingActionButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -129,19 +130,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               heroTag: 'qr_scanner',
               child: const Icon(Icons.qr_code_scanner),
             ),
-          ),
-          // New Bag button - bottom right (default position)
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: FloatingActionButton.extended(
+            // New Bag button - bottom right
+            FloatingActionButton.extended(
               onPressed: _createNewBag,
               label: const Text('New Bag'),
               icon: const Icon(Icons.add),
               heroTag: 'new_bag',
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
