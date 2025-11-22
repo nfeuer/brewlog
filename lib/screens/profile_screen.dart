@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
 import '../providers/drink_recipes_provider.dart';
+import '../providers/bags_provider.dart';
+import '../providers/cups_provider.dart';
 import '../services/photo_service.dart';
 import '../services/database_service.dart';
 import '../utils/constants.dart';
@@ -792,6 +794,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await DatabaseService().clearAllData();
 
       if (mounted) {
+        // Invalidate all Riverpod providers to force reload from database
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(bagsProvider);
+        ref.invalidate(cupsNotifierProvider);
+        ref.invalidate(equipmentProvider);
+        ref.invalidate(drinkRecipesProvider);
+
         Navigator.pop(context); // Close progress dialog
 
         // Show success message
