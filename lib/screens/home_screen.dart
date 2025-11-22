@@ -48,18 +48,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('BrewLog'),
-        leading: IconButton(
-          icon: const Icon(Icons.qr_code_scanner),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ScanQRScreen(),
-              ),
-            );
-          },
-          tooltip: 'Scan QR Code',
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -123,10 +111,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const SharedTab(),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createNewBag,
-        label: const Text('New Bag'),
-        icon: const Icon(Icons.add),
+      floatingActionButton: Stack(
+        children: [
+          // QR Scanner button - bottom left
+          Positioned(
+            left: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ScanQRScreen(),
+                  ),
+                );
+              },
+              heroTag: 'qr_scanner',
+              child: const Icon(Icons.qr_code_scanner),
+            ),
+          ),
+          // New Bag button - bottom right (default position)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: FloatingActionButton.extended(
+              onPressed: _createNewBag,
+              label: const Text('New Bag'),
+              icon: const Icon(Icons.add),
+              heroTag: 'new_bag',
+            ),
+          ),
+        ],
       ),
     );
   }
