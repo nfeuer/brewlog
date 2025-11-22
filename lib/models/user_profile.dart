@@ -113,6 +113,17 @@ class UserProfile extends HiveObject {
   @HiveField(14)
   String? bio; // Short bio (max 25 characters)
 
+  // Username prompt tracking
+  @HiveField(15)
+  bool hasBeenAskedForUsername;
+
+  @HiveField(16)
+  bool neverAskForUsername;
+
+  // Firebase authentication
+  @HiveField(17)
+  String? firebaseUid; // Firebase Auth user ID
+
   UserProfile({
     required this.id,
     this.username,
@@ -129,6 +140,9 @@ class UserProfile extends HiveObject {
     this.cupFieldVisibility,
     this.profilePicturePath,
     this.bio,
+    this.hasBeenAskedForUsername = false,
+    this.neverAskForUsername = false,
+    this.firebaseUid,
   })  : defaultVisibleFields = defaultVisibleFields ?? [],
         stats = stats ?? UserStats(),
         createdAt = createdAt ?? DateTime.now(),
@@ -174,6 +188,9 @@ class UserProfile extends HiveObject {
       'cupFieldVisibility': cupFieldVisibility,
       'profilePicturePath': profilePicturePath,
       'bio': bio,
+      'hasBeenAskedForUsername': hasBeenAskedForUsername,
+      'neverAskForUsername': neverAskForUsername,
+      'firebaseUid': firebaseUid,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -206,6 +223,9 @@ class UserProfile extends HiveObject {
           : null,
       profilePicturePath: json['profilePicturePath'] as String?,
       bio: json['bio'] as String?,
+      hasBeenAskedForUsername: json['hasBeenAskedForUsername'] as bool? ?? false,
+      neverAskForUsername: json['neverAskForUsername'] as bool? ?? false,
+      firebaseUid: json['firebaseUid'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );

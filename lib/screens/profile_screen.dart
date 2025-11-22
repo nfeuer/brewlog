@@ -13,6 +13,8 @@ import '../utils/theme.dart';
 import '../utils/helpers.dart';
 import 'equipment_screen.dart';
 import 'drink_recipe_book_screen.dart';
+import 'auth/login_screen.dart';
+import '../services/firebase_service.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -339,6 +341,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           const SizedBox(height: 24),
 
+          // Cloud Backup section
+          Text('Cloud Backup', style: AppTextStyles.sectionHeader),
+          const SizedBox(height: 12),
+          _buildCloudBackupSection(context, ref, user),
+
+          const SizedBox(height: 24),
+
           // Account section
           if (!user.isPaid) ...[
             Text('Upgrade', style: AppTextStyles.sectionHeader),
@@ -541,19 +550,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _showEditNameDialog(BuildContext context, WidgetRef ref, String? currentName) {
     final controller = TextEditingController(text: currentName);
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Name'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            hintText: 'Enter your name',
+        title: const Text('Edit Username'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Username',
+              hintText: 'coffeemaster',
+              helperText: 'Used when sharing recipes',
+            ),
+            autofocus: true,
+            maxLength: 20,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Username cannot be empty';
+              }
+              if (value.trim().length < 3) {
+                return 'Username must be at least 3 characters';
+              }
+              if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
+                return 'Only letters, numbers, and underscores allowed';
+              }
+              return null;
+            },
           ),
-          autofocus: true,
-          maxLength: 50,
         ),
         actions: [
           TextButton(
@@ -562,11 +588,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           TextButton(
             onPressed: () {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
+              if (formKey.currentState!.validate()) {
+                final newName = controller.text.trim();
                 ref.read(userProfileProvider.notifier).updateUsername(newName);
+                Navigator.pop(context);
               }
-              Navigator.pop(context);
             },
             child: const Text('Save'),
           ),
@@ -818,6 +844,190 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (mounted) {
         Navigator.pop(context); // Close progress dialog
         showError(context, 'Failed to clear data: $e');
+      }
+    }
+  }
+
+  Widget _buildCloudBackupSection(BuildContext context, WidgetRef ref, UserProfile user) {
+    final isLoggedIn = ref.watch(isLoggedInProvider);
+
+    if (isLoggedIn) {
+      // User is logged in - show account info and logout option
+      return Card(
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.cloud_done, color: Colors.green),
+              title: const Text('Connected'),
+              subtitle: Text(user.email ?? 'Logged in'),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.sync),
+              title: const Text('Sync Now'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _handleSyncNow(context, ref),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Logout'),
+              onTap: () => _handleLogout(context, ref),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // User is not logged in - show login prompt
+      return Card(
+        child: Padding(
+          padding: AppStyles.cardPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.cloud_off, color: AppTheme.textGray),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Not connected',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Login to backup your coffee data to the cloud and sync across devices.',
+                style: TextStyle(color: AppTheme.textGray, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _handleLogin(context, ref),
+                  icon: const Icon(Icons.login),
+                  label: const Text('Login / Sign Up'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBrown,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleLogin(BuildContext context, WidgetRef ref) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(),
+      ),
+    );
+
+    if (result == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Successfully logged in!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text(
+          'Are you sure you want to logout?\n\n'
+          'Your local data will remain on this device, but you won\'t be able to sync until you login again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        // Sign out from Firebase
+        final firebaseService = FirebaseService();
+        await firebaseService.signOut();
+
+        // Unlink Firebase account from local user
+        await ref.read(userProfileProvider.notifier).unlinkFirebaseAccount();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Logged out successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          showError(context, 'Failed to logout: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> _handleSyncNow(BuildContext context, WidgetRef ref) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Syncing data...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final firebaseService = FirebaseService();
+
+      // Sync user profile
+      final user = ref.read(userProfileProvider);
+      if (user != null) {
+        await firebaseService.syncUserProfile(user);
+      }
+
+      // TODO: Sync bags and cups
+      // This will be implemented in the next task
+
+      if (mounted) {
+        Navigator.pop(context); // Close progress dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sync complete!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close progress dialog
+        showError(context, 'Sync failed: $e');
       }
     }
   }

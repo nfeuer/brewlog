@@ -50,6 +50,9 @@ class DrinkRecipe extends HiveObject {
   @HiveField(14)
   String? espressoShot; // "Single" or "Double" for espresso-based drinks
 
+  @HiveField(15)
+  String? sharedByUsername; // Username of user who shared this recipe
+
   DrinkRecipe({
     required this.id,
     required this.userId,
@@ -66,6 +69,7 @@ class DrinkRecipe extends HiveObject {
     DateTime? updatedAt,
     this.usageCount = 0,
     this.espressoShot,
+    this.sharedByUsername,
   })  : syrups = syrups ?? [],
         sweeteners = sweeteners ?? [],
         otherAdditions = otherAdditions ?? [],
@@ -95,6 +99,7 @@ class DrinkRecipe extends HiveObject {
       'updatedAt': updatedAt.toIso8601String(),
       'usageCount': usageCount,
       'espressoShot': espressoShot,
+      'sharedByUsername': sharedByUsername,
     };
   }
 
@@ -115,6 +120,7 @@ class DrinkRecipe extends HiveObject {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       usageCount: json['usageCount'] as int? ?? 0,
       espressoShot: json['espressoShot'] as String?,
+      sharedByUsername: json['sharedByUsername'] as String?,
     );
   }
 

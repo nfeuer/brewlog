@@ -5,11 +5,18 @@ import '../models/cup.dart';
 /// Service for sharing data via QR codes and deep links
 class ShareService {
   /// Encode a DrinkRecipe to JSON string for sharing
-  static String encodeDrinkRecipe(DrinkRecipe recipe) {
+  static String encodeDrinkRecipe(DrinkRecipe recipe, {String? sharerUsername}) {
+    final recipeJson = recipe.toJson();
+
+    // Add the sharer's username if provided
+    if (sharerUsername != null) {
+      recipeJson['sharedByUsername'] = sharerUsername;
+    }
+
     final Map<String, dynamic> shareData = {
       'type': 'drink_recipe',
       'version': 1,
-      'data': recipe.toJson(),
+      'data': recipeJson,
     };
     return jsonEncode(shareData);
   }
@@ -45,11 +52,18 @@ class ShareService {
   }
 
   /// Encode a Cup to JSON string for sharing (without photos)
-  static String encodeCup(Cup cup) {
+  static String encodeCup(Cup cup, {String? sharerUsername}) {
+    final cupJson = cup.toJson();
+
+    // Add the sharer's username if provided
+    if (sharerUsername != null) {
+      cupJson['sharedByUsername'] = sharerUsername;
+    }
+
     final Map<String, dynamic> shareData = {
       'type': 'cup',
       'version': 1,
-      'data': cup.toJson(),
+      'data': cupJson,
     };
     return jsonEncode(shareData);
   }
@@ -89,14 +103,14 @@ class ShareService {
   }
 
   /// Create a deep link URL for sharing a DrinkRecipe
-  static String createDrinkRecipeDeepLink(DrinkRecipe recipe) {
-    final encodedData = Uri.encodeComponent(encodeDrinkRecipe(recipe));
+  static String createDrinkRecipeDeepLink(DrinkRecipe recipe, {String? sharerUsername}) {
+    final encodedData = Uri.encodeComponent(encodeDrinkRecipe(recipe, sharerUsername: sharerUsername));
     return 'brewlog://share/drink_recipe?data=$encodedData';
   }
 
   /// Create a deep link URL for sharing a Cup
-  static String createCupDeepLink(Cup cup) {
-    final encodedData = Uri.encodeComponent(encodeCup(cup));
+  static String createCupDeepLink(Cup cup, {String? sharerUsername}) {
+    final encodedData = Uri.encodeComponent(encodeCup(cup, sharerUsername: sharerUsername));
     return 'brewlog://share/cup?data=$encodedData';
   }
 
