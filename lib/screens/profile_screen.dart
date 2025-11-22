@@ -5,6 +5,7 @@ import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
 import '../providers/drink_recipes_provider.dart';
 import '../services/photo_service.dart';
+import '../services/database_service.dart';
 import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
@@ -20,6 +21,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isEditing = false;
+  int _clearDataPressCount = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -395,6 +397,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
           ],
+
+          const SizedBox(height: 40),
+
+          // Clear Data Button (for testing/development)
+          Center(
+            child: TextButton.icon(
+              onPressed: _handleClearDataPress,
+              icon: const Icon(Icons.delete_forever, size: 16),
+              label: Text(
+                _clearDataPressCount > 0
+                    ? 'Clear Data (${4 - _clearDataPressCount} more)'
+                    : 'Clear Data',
+                style: const TextStyle(fontSize: 12),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -670,6 +692,123 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (context.mounted) {
         Navigator.pop(context); // Close progress dialog
         showError(context, 'Failed to recalculate stats: $e');
+      }
+    }
+  }
+
+  void _handleClearDataPress() {
+    setState(() {
+      _clearDataPressCount++;
+    });
+
+    if (_clearDataPressCount >= 4) {
+      // Reset counter
+      _clearDataPressCount = 0;
+
+      // Show confirmation dialog
+      _showClearDataConfirmation();
+    } else {
+      // Reset counter after 3 seconds if they don't complete the sequence
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _clearDataPressCount = 0;
+          });
+        }
+      });
+    }
+  }
+
+  void _showClearDataConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Data'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to delete ALL data?',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 12),
+            Text('This will permanently delete:'),
+            SizedBox(height: 8),
+            Text('• All coffee bags'),
+            Text('• All cups and tasting notes'),
+            Text('• All drink recipes'),
+            Text('• All equipment setups'),
+            Text('• All user data'),
+            SizedBox(height: 12),
+            Text(
+              'This action cannot be undone!',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete Everything'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _clearAllData();
+    }
+  }
+
+  Future<void> _clearAllData() async {
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Clearing all data...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Clear all data from database
+      await DatabaseService().clearAllData();
+
+      if (mounted) {
+        Navigator.pop(context); // Close progress dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All data cleared. Starting fresh!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Refresh the screen by rebuilding
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close progress dialog
+        showError(context, 'Failed to clear data: $e');
       }
     }
   }
