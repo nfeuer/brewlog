@@ -541,19 +541,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _showEditNameDialog(BuildContext context, WidgetRef ref, String? currentName) {
     final controller = TextEditingController(text: currentName);
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Name'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            hintText: 'Enter your name',
+        title: const Text('Edit Username'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Username',
+              hintText: 'coffeemaster',
+              helperText: 'Used when sharing recipes',
+            ),
+            autofocus: true,
+            maxLength: 20,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Username cannot be empty';
+              }
+              if (value.trim().length < 3) {
+                return 'Username must be at least 3 characters';
+              }
+              if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
+                return 'Only letters, numbers, and underscores allowed';
+              }
+              return null;
+            },
           ),
-          autofocus: true,
-          maxLength: 50,
         ),
         actions: [
           TextButton(
@@ -562,11 +579,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           TextButton(
             onPressed: () {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
+              if (formKey.currentState!.validate()) {
+                final newName = controller.text.trim();
                 ref.read(userProfileProvider.notifier).updateUsername(newName);
+                Navigator.pop(context);
               }
-              Navigator.pop(context);
             },
             child: const Text('Save'),
           ),

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/cup.dart';
 import '../services/share_service.dart';
+import '../providers/user_provider.dart';
 import '../utils/theme.dart';
 
 /// Screen for sharing a Cup via QR code or deep link
-class ShareCupScreen extends StatelessWidget {
+class ShareCupScreen extends ConsumerWidget {
   final Cup cup;
 
   const ShareCupScreen({
@@ -16,9 +18,10 @@ class ShareCupScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final String qrData = ShareService.encodeCup(cup);
-    final String deepLink = ShareService.createCupDeepLink(cup);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProfileProvider);
+    final String qrData = ShareService.encodeCup(cup, sharerUsername: user?.username);
+    final String deepLink = ShareService.createCupDeepLink(cup, sharerUsername: user?.username);
     final int dataSize = ShareService.estimateDataSize(qrData);
 
     return Scaffold(

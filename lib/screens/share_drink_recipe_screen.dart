@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/drink_recipe.dart';
 import '../services/share_service.dart';
+import '../providers/user_provider.dart';
 import '../utils/theme.dart';
 
 /// Screen for sharing a DrinkRecipe via QR code or deep link
-class ShareDrinkRecipeScreen extends StatelessWidget {
+class ShareDrinkRecipeScreen extends ConsumerWidget {
   final DrinkRecipe recipe;
 
   const ShareDrinkRecipeScreen({
@@ -16,9 +18,10 @@ class ShareDrinkRecipeScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final String qrData = ShareService.encodeDrinkRecipe(recipe);
-    final String deepLink = ShareService.createDrinkRecipeDeepLink(recipe);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProfileProvider);
+    final String qrData = ShareService.encodeDrinkRecipe(recipe, sharerUsername: user?.username);
+    final String deepLink = ShareService.createDrinkRecipeDeepLink(recipe, sharerUsername: user?.username);
     final int dataSize = ShareService.estimateDataSize(qrData);
 
     return Scaffold(

@@ -19,6 +19,7 @@ import 'providers/bags_provider.dart';
 import 'providers/cups_provider.dart';
 import 'providers/shared_cups_provider.dart';
 import 'providers/user_provider.dart';
+import 'widgets/username_prompt_dialog.dart';
 import 'package:uuid/uuid.dart';
 
 void main() async {
@@ -96,6 +97,30 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
   void initState() {
     super.initState();
     _initDeepLinks();
+    _scheduleUsernamePrompt();
+  }
+
+  void _scheduleUsernamePrompt() {
+    // Wait a short delay to let the app load, then check if we should prompt
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+
+      final shouldPrompt = ref.read(shouldPromptForUsernameProvider);
+      if (shouldPrompt) {
+        _showUsernamePrompt();
+      }
+    });
+  }
+
+  void _showUsernamePrompt() {
+    final context = _navigatorKey.currentContext;
+    if (context == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Require user to make a choice
+      builder: (context) => const UsernamePromptDialog(),
+    );
   }
 
   Future<void> _initDeepLinks() async {
