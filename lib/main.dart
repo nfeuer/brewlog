@@ -12,7 +12,7 @@ import 'screens/home_screen.dart';
 import 'utils/theme.dart';
 import 'models/drink_recipe.dart';
 import 'models/cup.dart';
-import 'models/bag.dart';
+import 'models/coffee_bag.dart';
 import 'providers/drink_recipes_provider.dart';
 import 'providers/bags_provider.dart';
 import 'providers/cups_provider.dart';
@@ -173,7 +173,7 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
           ElevatedButton(
             onPressed: () async {
               try {
-                await ref.read(drinkRecipesProvider.notifier).addRecipe(recipe);
+                await ref.read(drinkRecipesProvider.notifier).createRecipe(recipe);
                 if (context.mounted) {
                   Navigator.pop(context);
                   _showMessage('Recipe "${recipe.name ?? "Unnamed"}" imported successfully');
@@ -243,30 +243,35 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (cup.coffeeName != null) ...[
-                      Text(
-                        cup.coffeeName!,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
+                    Text(
+                      'Tasting Notes',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Brew Type: ${cup.brewType}',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                    if (cup.score1to5 != null) ...[
                       const SizedBox(height: 4),
-                    ],
-                    if (cup.roaster != null) ...[
-                      Text(
-                        cup.roaster!,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                    if (cup.rating != null) ...[
                       Row(
                         children: [
                           const Icon(Icons.star, color: Colors.amber, size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            '${cup.rating}/5',
+                            '${cup.score1to5}/5',
                             style: TextStyle(color: Colors.grey[600], fontSize: 12),
                           ),
                         ],
+                      ),
+                    ],
+                    if (cup.tastingNotes != null && cup.tastingNotes!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        cup.tastingNotes!,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ],
@@ -300,7 +305,7 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
     );
   }
 
-  Future<void> _importCupToBag(Cup cup, Bag bag) async {
+  Future<void> _importCupToBag(Cup cup, CoffeeBag bag) async {
     final context = _navigatorKey.currentContext;
     if (context == null) return;
 
@@ -310,37 +315,55 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
         id: cup.id, // Will get a new ID when added
         userId: cup.userId, // Will be set to current user
         bagId: bag.id, // Use the selected bag
-        brewMethod: cup.brewMethod,
-        waterAmount: cup.waterAmount,
-        coffeeAmount: cup.coffeeAmount,
-        brewTime: cup.brewTime,
-        waterTemp: cup.waterTemp,
-        grindSize: cup.grindSize,
+        brewType: cup.brewType,
+        grindLevel: cup.grindLevel,
+        waterTempCelsius: cup.waterTempCelsius,
+        gramsUsed: cup.gramsUsed,
+        finalVolumeMl: cup.finalVolumeMl,
+        brewTimeSeconds: cup.brewTimeSeconds,
+        bloomTimeSeconds: cup.bloomTimeSeconds,
+        score1to5: cup.score1to5,
+        score1to10: cup.score1to10,
+        score1to100: cup.score1to100,
         tastingNotes: cup.tastingNotes,
-        rating: cup.rating,
-        favorite: cup.favorite,
-        notes: cup.notes,
+        flavorTags: cup.flavorTags,
         photoPaths: [], // Photos don't transfer
+        isBest: cup.isBest,
         createdAt: cup.createdAt,
         updatedAt: DateTime.now(),
+        customTitle: cup.customTitle,
+        equipmentSetupId: cup.equipmentSetupId,
+        adaptationNotes: cup.adaptationNotes,
+        preInfusionTimeSeconds: cup.preInfusionTimeSeconds,
+        pressureBars: cup.pressureBars,
+        yieldGrams: cup.yieldGrams,
+        bloomAmountGrams: cup.bloomAmountGrams,
+        pourSchedule: cup.pourSchedule,
+        tds: cup.tds,
+        extractionYield: cup.extractionYield,
+        roomTempCelsius: cup.roomTempCelsius,
+        humidity: cup.humidity,
+        altitudeMeters: cup.altitudeMeters,
+        timeOfDay: cup.timeOfDay,
         // Cupping scores
-        fragranceAroma: cup.fragranceAroma,
-        flavor: cup.flavor,
-        aftertaste: cup.aftertaste,
-        acidity: cup.acidity,
-        body: cup.body,
-        balance: cup.balance,
-        uniformity: cup.uniformity,
-        cleanCup: cup.cleanCup,
-        sweetness: cup.sweetness,
-        overall: cup.overall,
-        defects: cup.defects,
+        cuppingFragrance: cup.cuppingFragrance,
+        cuppingAroma: cup.cuppingAroma,
+        cuppingFlavor: cup.cuppingFlavor,
+        cuppingAftertaste: cup.cuppingAftertaste,
+        cuppingAcidity: cup.cuppingAcidity,
+        cuppingBody: cup.cuppingBody,
+        cuppingBalance: cup.cuppingBalance,
+        cuppingSweetness: cup.cuppingSweetness,
+        cuppingCleanCup: cup.cuppingCleanCup,
+        cuppingUniformity: cup.cuppingUniformity,
+        cuppingOverall: cup.cuppingOverall,
+        cuppingDefects: cup.cuppingDefects,
         // Drink recipe
         drinkRecipeId: cup.drinkRecipeId,
       );
 
       // Add the cup
-      await ref.read(cupsNotifierProvider.notifier).addCup(importedCup);
+      await ref.read(cupsNotifierProvider).createCup(importedCup);
 
       _showMessage('Tasting notes imported to ${bag.coffeeName}');
     } catch (e) {
