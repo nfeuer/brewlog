@@ -224,7 +224,7 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
             const Text('Import this drink recipe?'),
             const SizedBox(height: 16),
             Text(
-              recipe.name ?? 'Unnamed Recipe',
+              recipe.name,
               style: AppTextStyles.cardTitle,
             ),
             if (recipe.summary.isNotEmpty) ...[
@@ -259,7 +259,7 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Recipe "${recipe.name ?? "Unnamed"}" imported successfully'),
+            content: Text('Recipe "${recipe.name}" imported successfully'),
             backgroundColor: Colors.green,
           ),
         );
