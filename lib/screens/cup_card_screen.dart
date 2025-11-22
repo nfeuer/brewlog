@@ -20,6 +20,7 @@ import '../widgets/photo_viewer.dart';
 import '../widgets/temperature_dial.dart';
 import '../widgets/pour_schedule_timer.dart';
 import 'equipment_form_screen.dart';
+import 'share_cup_screen.dart';
 
 class CupCardScreen extends ConsumerStatefulWidget {
   final String? bagId;
@@ -268,6 +269,26 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                 ? 'Edit Cup'
                 : 'New Cup'),
         actions: [
+          // Share button (only shown when editing existing cup)
+          if (widget.cupId != null)
+            IconButton(
+              icon: const Icon(Icons.share),
+              tooltip: 'Share tasting notes',
+              onPressed: () {
+                // Get the current cup from state
+                final cups = ref.read(cupsNotifierProvider);
+                final currentCup = cups.firstWhere(
+                  (c) => c.id == widget.cupId,
+                  orElse: () => throw Exception('Cup not found'),
+                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ShareCupScreen(cup: currentCup),
+                  ),
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.visibility),
             tooltip: 'Configure visible fields',

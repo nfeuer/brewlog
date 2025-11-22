@@ -11,7 +11,11 @@ import 'services/share_service.dart';
 import 'screens/home_screen.dart';
 import 'utils/theme.dart';
 import 'models/drink_recipe.dart';
+import 'models/cup.dart';
+import 'models/bag.dart';
 import 'providers/drink_recipes_provider.dart';
+import 'providers/bags_provider.dart';
+import 'providers/cups_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -127,8 +131,10 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
         _showImportRecipeDialog(recipe);
       }
     } else if (type == 'cup') {
-      // Cup import not yet implemented
-      _showMessage('Cup sharing is not yet implemented');
+      final Cup? cup = ShareService.decodeCup(jsonData);
+      if (cup != null) {
+        _showImportCupDialog(cup);
+      }
     }
   }
 
@@ -184,6 +190,162 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
         ],
       ),
     );
+  }
+
+  void _showImportCupDialog(Cup cup) {
+    final context = _navigatorKey.currentContext;
+    if (context == null) return;
+
+    // Get user's bags
+    final bags = ref.read(bagsProvider);
+
+    if (bags.isEmpty) {
+      // No bags available
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('No Bags Available'),
+          content: const Text(
+            'You need to have at least one coffee bag to import tasting notes. '
+            'Please add a bag first, then try importing again.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Show bag selection dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Tasting Notes'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Select which bag to add these tasting notes to:'),
+              const SizedBox(height: 16),
+              // Cup preview
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (cup.coffeeName != null) ...[
+                      Text(
+                        cup.coffeeName!,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    if (cup.roaster != null) ...[
+                      Text(
+                        cup.roaster!,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    if (cup.rating != null) ...[
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${cup.rating}/5',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Add to bag:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              // Bag selection dropdown
+              ...bags.map((bag) => ListTile(
+                    title: Text(bag.coffeeName),
+                    subtitle: bag.roaster != null ? Text(bag.roaster!) : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _importCupToBag(cup, bag);
+                    },
+                  )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _importCupToBag(Cup cup, Bag bag) async {
+    final context = _navigatorKey.currentContext;
+    if (context == null) return;
+
+    try {
+      // Create a new cup with the selected bagId
+      final importedCup = Cup(
+        id: cup.id, // Will get a new ID when added
+        userId: cup.userId, // Will be set to current user
+        bagId: bag.id, // Use the selected bag
+        brewMethod: cup.brewMethod,
+        waterAmount: cup.waterAmount,
+        coffeeAmount: cup.coffeeAmount,
+        brewTime: cup.brewTime,
+        waterTemp: cup.waterTemp,
+        grindSize: cup.grindSize,
+        tastingNotes: cup.tastingNotes,
+        rating: cup.rating,
+        favorite: cup.favorite,
+        notes: cup.notes,
+        photoPaths: [], // Photos don't transfer
+        createdAt: cup.createdAt,
+        updatedAt: DateTime.now(),
+        // Cupping scores
+        fragranceAroma: cup.fragranceAroma,
+        flavor: cup.flavor,
+        aftertaste: cup.aftertaste,
+        acidity: cup.acidity,
+        body: cup.body,
+        balance: cup.balance,
+        uniformity: cup.uniformity,
+        cleanCup: cup.cleanCup,
+        sweetness: cup.sweetness,
+        overall: cup.overall,
+        defects: cup.defects,
+        // Drink recipe
+        drinkRecipeId: cup.drinkRecipeId,
+      );
+
+      // Add the cup
+      await ref.read(cupsNotifierProvider.notifier).addCup(importedCup);
+
+      _showMessage('Tasting notes imported to ${bag.coffeeName}');
+    } catch (e) {
+      _showMessage('Failed to import tasting notes: $e');
+    }
   }
 
   void _showMessage(String message) {
