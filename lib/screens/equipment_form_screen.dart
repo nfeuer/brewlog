@@ -47,6 +47,9 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
   double? _boilerTemp;
   double? _brewPressure;
   bool _isDefault = false;
+  double? _grinderMinSetting;
+  double? _grinderMaxSetting;
+  double? _grinderStepSize;
 
   @override
   void initState() {
@@ -78,6 +81,9 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
       _boilerTemp = equipment.boilerTemp;
       _brewPressure = equipment.brewPressure;
       _isDefault = equipment.isDefault;
+      _grinderMinSetting = equipment.grinderMinSetting;
+      _grinderMaxSetting = equipment.grinderMaxSetting;
+      _grinderStepSize = equipment.grinderStepSize;
     }
   }
 
@@ -146,6 +152,57 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
                 hintText: 'e.g., Click settings, grind size reference',
               ),
               maxLines: 2,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Grind Size Range',
+              style: AppTextStyles.sectionHeader.copyWith(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Min Setting',
+                      hintText: '0',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    initialValue: _grinderMinSetting?.toString(),
+                    onChanged: (value) => _grinderMinSetting = double.tryParse(value),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Max Setting',
+                      hintText: '50',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    initialValue: _grinderMaxSetting?.toString(),
+                    onChanged: (value) => _grinderMaxSetting = double.tryParse(value),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<double>(
+              value: _grinderStepSize,
+              decoration: const InputDecoration(
+                labelText: 'Step Size',
+                hintText: 'How grinder adjusts between settings',
+              ),
+              items: const [
+                DropdownMenuItem(value: null, child: Text('Default (1.0)')),
+                DropdownMenuItem(value: 1.0, child: Text('1.0 (Whole numbers)')),
+                DropdownMenuItem(value: 0.5, child: Text('0.5 (Half steps)')),
+                DropdownMenuItem(value: 0.25, child: Text('0.25 (Quarter steps)')),
+              ],
+              onChanged: (value) => setState(() => _grinderStepSize = value),
             ),
             const SizedBox(height: 24),
 
@@ -321,6 +378,9 @@ class _EquipmentFormScreenState extends ConsumerState<EquipmentFormScreen> {
       boilerTemp: _boilerTemp,
       brewPressure: _brewPressure,
       isDefault: _isDefault,
+      grinderMinSetting: _grinderMinSetting,
+      grinderMaxSetting: _grinderMaxSetting,
+      grinderStepSize: _grinderStepSize,
       createdAt: widget.equipment?.createdAt,
     );
 

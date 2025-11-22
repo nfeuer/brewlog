@@ -47,6 +47,7 @@ dependencies:
 
   # Interactive controls
   flutter_dial: ^0.1.6
+  wheel_slider: ^1.2.1
 
   # Utilities
   collection: ^1.18.0
