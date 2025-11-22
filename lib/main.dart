@@ -153,7 +153,7 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
             const Text('Import this drink recipe?'),
             const SizedBox(height: 16),
             Text(
-              recipe.name ?? 'Unnamed Recipe',
+              recipe.name,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             if (recipe.summary.isNotEmpty) ...[
@@ -176,7 +176,7 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
                 await ref.read(drinkRecipesProvider.notifier).createRecipe(recipe);
                 if (context.mounted) {
                   Navigator.pop(context);
-                  _showMessage('Recipe "${recipe.name ?? "Unnamed"}" imported successfully');
+                  _showMessage('Recipe "${recipe.name}" imported successfully');
                 }
               } catch (e) {
                 if (context.mounted) {

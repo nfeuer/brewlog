@@ -276,11 +276,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               tooltip: 'Share tasting notes',
               onPressed: () {
                 // Get the current cup from state
-                final cups = ref.read(cupsNotifierProvider);
-                final currentCup = cups.firstWhere(
-                  (c) => c.id == widget.cupId,
-                  orElse: () => throw Exception('Cup not found'),
-                );
+                final currentCup = ref.read(cupProvider(widget.cupId!));
+                if (currentCup == null) {
+                  showError(context, 'Cup not found');
+                  return;
+                }
                 Navigator.push(
                   context,
                   MaterialPageRoute(
