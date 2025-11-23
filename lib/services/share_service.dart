@@ -154,10 +154,18 @@ class ShareService {
       // Decode the cup data
       final Map<String, dynamic> cupData = shareData['data'];
 
-      // Remove the ID, userId, and bagId so the imported cup gets new ones
-      cupData.remove('id');
-      cupData.remove('userId');
-      cupData.remove('bagId');
+      // Preserve original IDs for SharedCup reference, but mark that they're from sharing
+      // The SharedCup model will store these separately as originalCupId/originalUserId
+      // If missing, use placeholder values (shouldn't happen with properly encoded data)
+      if (!cupData.containsKey('id')) {
+        cupData['id'] = 'shared-cup';
+      }
+      if (!cupData.containsKey('userId')) {
+        cupData['userId'] = 'shared-user';
+      }
+      if (!cupData.containsKey('bagId')) {
+        cupData['bagId'] = 'shared-bag';
+      }
 
       // Photos won't transfer via QR code (device-specific paths)
       cupData['photoPaths'] = [];
