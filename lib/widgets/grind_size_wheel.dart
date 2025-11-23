@@ -97,6 +97,7 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   late int _totalCount;
   late int _currentIndex;
   bool _showSettings = false;
+  int _wheelKey = 0; // Used to force WheelSlider rebuild when snapping to valid position
 
   // Always use 0.25 as the base interval for consistent spacing
   static const double _baseInterval = 0.25;
@@ -157,6 +158,19 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
 
       // Notify parent
       widget.onChanged(_currentValue);
+    } else {
+      // User landed on an invalid tick - snap to nearest valid position
+      final snappedValue = _snapToStepSize(newValue);
+      final snappedIndex = ((snappedValue - widget.minValue) / _baseInterval).round();
+
+      setState(() {
+        _currentIndex = snappedIndex;
+        _currentValue = snappedValue;
+        _wheelKey++; // Force WheelSlider to rebuild at the snapped position
+      });
+
+      // Notify parent
+      widget.onChanged(_currentValue);
     }
   }
 
@@ -173,7 +187,7 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -192,7 +206,6 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
                   color: Colors.brown,
                 ),
               ),
-              const SizedBox(height: 2),
               const Text(
                 'Grind Size',
                 style: TextStyle(
@@ -203,12 +216,13 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
 
           // Wheel slider with custom line rendering (oval/3D effect)
           SizedBox(
             height: 200,
             child: WheelSlider.customWidget(
+              key: ValueKey(_wheelKey), // Force rebuild when snapping to valid position
               totalCount: _totalCount,
               initValue: _currentIndex,
               onValueChanged: (value) => _onValueChanged(value as int),
@@ -271,7 +285,7 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
             ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
 
           // Range controls (optional)
           if (widget.showRangeControls) ...[
@@ -288,7 +302,7 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
               ),
             ),
             if (_showSettings) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               _buildRangeControls(),
             ],
           ],
