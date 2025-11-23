@@ -23,10 +23,11 @@ class ShareCupScreen extends ConsumerStatefulWidget {
 
 class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
   // Field visibility toggles for reducing QR code size
-  bool _includeEnvironmental = true;
-  bool _includeCuppingScores = true;
-  bool _includeAdvancedBrewing = true;
-  bool _includeTimingDetails = true;
+  // Default to false to keep QR codes scannable - most users don't need all fields
+  bool _includeEnvironmental = false;
+  bool _includeCuppingScores = false;
+  bool _includeAdvancedBrewing = false;
+  bool _includeTimingDetails = true; // Keep timing as it's commonly used
 
   Cup get _filteredCup {
     // Create a copy of the cup with optional fields removed based on settings
@@ -172,10 +173,60 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Data size info
-            Text(
-              'Data size: ${dataSize} bytes',
-              style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
+            // Data size info with color coding
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: dataSize > 10000
+                    ? Colors.red.shade50
+                    : dataSize > 7000
+                        ? Colors.orange.shade50
+                        : Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: dataSize > 10000
+                      ? Colors.red
+                      : dataSize > 7000
+                          ? Colors.orange
+                          : Colors.green,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    dataSize > 10000
+                        ? Icons.error_outline
+                        : dataSize > 7000
+                            ? Icons.warning_amber
+                            : Icons.check_circle_outline,
+                    size: 16,
+                    color: dataSize > 10000
+                        ? Colors.red
+                        : dataSize > 7000
+                            ? Colors.orange
+                            : Colors.green,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    dataSize > 10000
+                        ? 'Too large ($dataSize bytes) - disable more fields'
+                        : dataSize > 7000
+                            ? 'Large ($dataSize bytes) - may be hard to scan'
+                            : 'Optimal size ($dataSize bytes)',
+                    style: AppTextStyles.cardSubtitle.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: dataSize > 10000
+                          ? Colors.red.shade900
+                          : dataSize > 7000
+                              ? Colors.orange.shade900
+                              : Colors.green.shade900,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
