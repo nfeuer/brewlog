@@ -10,65 +10,7 @@ class SharedTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isPaid = ref.watch(isPaidUserProvider);
     final sharedCups = ref.watch(sharedCupsProvider);
-
-    if (!isPaid) {
-      return Center(
-        child: Padding(
-          padding: AppStyles.screenPadding,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.qr_code_2,
-                size: 64,
-                color: AppTheme.textGray.withOpacity(0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Premium Feature',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Upgrade to Premium to receive and share coffee recipes via QR codes',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textGray,
-                    ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Upgrade to Premium'),
-                      content: const Text(
-                        'Shared recipes feature requires Premium subscription. '
-                        'Upgrade to access cloud sync and QR code sharing.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  foregroundColor: Colors.black87,
-                ),
-                child: const Text('Upgrade Now'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
 
     if (sharedCups.isEmpty) {
       return Center(
@@ -78,28 +20,25 @@ class SharedTab extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.share_outlined,
-                size: 64,
-                color: AppTheme.textGray.withOpacity(0.5),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No Shared Recipes',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Scan a QR code from another user to receive their coffee recipe',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textGray,
-                    ),
+                Icons.qr_code_2,
+                size: 120,
+                color: AppTheme.primaryBrown.withOpacity(0.3),
               ),
               const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: () => _scanQRCode(context, ref),
-                icon: const Icon(Icons.qr_code_scanner),
-                label: const Text('Scan QR Code'),
+              Text(
+                'No Shared Items Yet',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppTheme.textDark,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Scan QR codes or use links\nto see shared recipes',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppTheme.textGray,
+                    ),
               ),
             ],
           ),

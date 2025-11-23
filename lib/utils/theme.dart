@@ -12,6 +12,9 @@ class AppTheme {
   static const Color textDark = Color(AppColors.textPrimary);
   static const Color textGray = Color(AppColors.textSecondary);
 
+  // Aliases for backwards compatibility
+  static const Color cardBackground = cardWhite;
+
   /// Light theme
   static ThemeData get lightTheme {
     return ThemeData(
@@ -201,6 +204,17 @@ class AppStyles {
 
 /// Common text styles
 class AppTextStyles {
+  static const TextStyle heading = TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    color: AppTheme.textDark,
+  );
+
+  static const TextStyle body = TextStyle(
+    fontSize: 14,
+    color: AppTheme.textDark,
+  );
+
   static const TextStyle cardTitle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,

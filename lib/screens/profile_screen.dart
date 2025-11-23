@@ -1,19 +1,36 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_profile.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
+import '../providers/drink_recipes_provider.dart';
+import '../providers/bags_provider.dart';
+import '../providers/cups_provider.dart';
+import '../services/photo_service.dart';
+import '../services/database_service.dart';
 import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
 import 'equipment_screen.dart';
+import 'drink_recipe_book_screen.dart';
+import 'auth/login_screen.dart';
+import '../services/firebase_service.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _isEditing = false;
+  int _clearDataPressCount = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(userProfileProvider);
     final stats = ref.watch(userStatsProvider);
     final hasEquipment = ref.watch(hasEquipmentProvider);
@@ -27,6 +44,17 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+            tooltip: _isEditing ? 'Done' : 'Edit Profile',
+          ),
+        ],
       ),
       body: ListView(
         padding: AppStyles.screenPadding,
@@ -37,16 +65,99 @@ class ProfileScreen extends ConsumerWidget {
               padding: AppStyles.cardPadding,
               child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 40,
-                    backgroundColor: AppTheme.primaryBrown,
-                    child: Icon(Icons.person, size: 40, color: Colors.white),
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppTheme.primaryBrown,
+                        backgroundImage: user.profilePicturePath != null
+                            ? FileImage(File(user.profilePicturePath!))
+                            : null,
+                        child: user.profilePicturePath == null
+                            ? const Icon(Icons.person, size: 40, color: Colors.white)
+                            : null,
+                      ),
+                      if (_isEditing)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: CircleAvatar(
+                            radius: 16,
+                            backgroundColor: AppTheme.primaryBrown,
+                            child: IconButton(
+                              icon: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                              padding: EdgeInsets.zero,
+                              onPressed: () => _showProfilePictureOptions(context, ref),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    user.username ?? 'Coffee Enthusiast',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  // Centered username with edit button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: GestureDetector(
+                          onTap: _isEditing ? () => _showEditNameDialog(context, ref, user.username) : null,
+                          child: Text(
+                            user.username ?? 'Coffee Enthusiast',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                      if (_isEditing)
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 18),
+                          color: AppTheme.primaryBrown,
+                          onPressed: () => _showEditNameDialog(context, ref, user.username),
+                          padding: const EdgeInsets.only(left: 4),
+                          constraints: const BoxConstraints(),
+                        ),
+                    ],
                   ),
+                  // Bio section with edit button
+                  if (user.bio != null && user.bio!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: _isEditing ? () => _showEditBioDialog(context, ref, user.bio) : null,
+                            child: Text(
+                              user.bio!,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.grey[600],
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                        if (_isEditing)
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 16),
+                            color: Colors.grey[600],
+                            onPressed: () => _showEditBioDialog(context, ref, user.bio),
+                            padding: const EdgeInsets.only(left: 4),
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
+                    ),
+                  ] else if (_isEditing) ...[
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: () => _showEditBioDialog(context, ref, null),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add bio'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Chip(
                     label: Text(
@@ -64,7 +175,17 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Stats dashboard
-          Text('Statistics', style: AppTextStyles.sectionHeader),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Statistics', style: AppTextStyles.sectionHeader),
+              TextButton.icon(
+                onPressed: () => _recalculateStats(context, ref),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Recalculate'),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           Card(
             child: Padding(
@@ -203,6 +324,21 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  leading: const Icon(Icons.menu_book),
+                  title: const Text('Drink Recipe Book'),
+                  subtitle: Text(ref.watch(hasDrinkRecipesProvider)
+                      ? 'View and manage your drink recipes'
+                      : 'No saved recipes yet'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const DrinkRecipeBookScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
                   leading: const Icon(Icons.feedback),
                   title: const Text('Send Feedback'),
                   subtitle: const Text('Share your thoughts with us'),
@@ -212,6 +348,13 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          // Cloud Backup section
+          Text('Cloud Backup', style: AppTextStyles.sectionHeader),
+          const SizedBox(height: 12),
+          _buildCloudBackupSection(context, ref, user),
 
           const SizedBox(height: 24),
 
@@ -275,6 +418,26 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ],
+
+          const SizedBox(height: 40),
+
+          // Clear Data Button (for testing/development)
+          Center(
+            child: TextButton.icon(
+              onPressed: _handleClearDataPress,
+              icon: const Icon(Icons.delete_forever, size: 16),
+              label: Text(
+                _clearDataPressCount > 0
+                    ? 'Clear Data (${4 - _clearDataPressCount} more)'
+                    : 'Clear Data',
+                style: const TextStyle(fontSize: 12),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -464,6 +627,490 @@ class ProfileScreen extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         showError(context, 'Failed to submit feedback. Please try again.');
+      }
+    }
+  }
+
+  void _showEditNameDialog(BuildContext context, WidgetRef ref, String? currentName) {
+    final controller = TextEditingController(text: currentName);
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Username'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Username',
+              hintText: 'coffeemaster',
+              helperText: 'Used when sharing recipes',
+            ),
+            autofocus: true,
+            maxLength: 20,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Username cannot be empty';
+              }
+              if (value.trim().length < 3) {
+                return 'Username must be at least 3 characters';
+              }
+              if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
+                return 'Only letters, numbers, and underscores allowed';
+              }
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                final newName = controller.text.trim();
+                ref.read(userProfileProvider.notifier).updateUsername(newName);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditBioDialog(BuildContext context, WidgetRef ref, String? currentBio) {
+    final controller = TextEditingController(text: currentBio);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Bio'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Bio',
+            hintText: 'Short bio (max 25 characters)',
+            helperText: 'Keep it short and sweet!',
+          ),
+          autofocus: true,
+          maxLength: 25,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newBio = controller.text.trim();
+              ref.read(userProfileProvider.notifier).updateBio(newBio.isEmpty ? null : newBio);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showProfilePictureOptions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () async {
+                Navigator.pop(context);
+                final photoService = PhotoService();
+                try {
+                  final photoPath = await photoService.takePhoto();
+                  if (photoPath != null) {
+                    ref.read(userProfileProvider.notifier).updateProfilePicture(photoPath);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    showError(context, 'Failed to take photo: $e');
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () async {
+                Navigator.pop(context);
+                final photoService = PhotoService();
+                try {
+                  final photoPath = await photoService.pickPhoto();
+                  if (photoPath != null) {
+                    ref.read(userProfileProvider.notifier).updateProfilePicture(photoPath);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    showError(context, 'Failed to pick photo: $e');
+                  }
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Remove Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                ref.read(userProfileProvider.notifier).updateProfilePicture(null);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _recalculateStats(BuildContext context, WidgetRef ref) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Recalculating statistics...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      await ref.read(userProfileProvider.notifier).recalculateStats();
+      if (context.mounted) {
+        Navigator.pop(context); // Close progress dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Statistics recalculated successfully')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close progress dialog
+        showError(context, 'Failed to recalculate stats: $e');
+      }
+    }
+  }
+
+  void _handleClearDataPress() {
+    setState(() {
+      _clearDataPressCount++;
+    });
+
+    if (_clearDataPressCount >= 4) {
+      // Reset counter
+      _clearDataPressCount = 0;
+
+      // Show confirmation dialog
+      _showClearDataConfirmation();
+    } else {
+      // Reset counter after 3 seconds if they don't complete the sequence
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _clearDataPressCount = 0;
+          });
+        }
+      });
+    }
+  }
+
+  void _showClearDataConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Data'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to delete ALL data?',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 12),
+            Text('This will permanently delete:'),
+            SizedBox(height: 8),
+            Text('• All coffee bags'),
+            Text('• All cups and tasting notes'),
+            Text('• All drink recipes'),
+            Text('• All equipment setups'),
+            Text('• All user data'),
+            SizedBox(height: 12),
+            Text(
+              'This action cannot be undone!',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Delete Everything'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _clearAllData();
+    }
+  }
+
+  Future<void> _clearAllData() async {
+    // Show progress dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Clearing all data...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Clear all data from database
+      await DatabaseService().clearAllData();
+
+      if (mounted) {
+        // Invalidate all Riverpod providers to force reload from database
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(bagsProvider);
+        ref.invalidate(cupsNotifierProvider);
+        ref.invalidate(equipmentProvider);
+        ref.invalidate(drinkRecipesProvider);
+
+        Navigator.pop(context); // Close progress dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All data cleared. Starting fresh!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Refresh the screen by rebuilding
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close progress dialog
+        showError(context, 'Failed to clear data: $e');
+      }
+    }
+  }
+
+  Widget _buildCloudBackupSection(BuildContext context, WidgetRef ref, UserProfile user) {
+    final isLoggedIn = ref.watch(isLoggedInProvider);
+
+    if (isLoggedIn) {
+      // User is logged in - show account info and logout option
+      return Card(
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.cloud_done, color: Colors.green),
+              title: const Text('Connected'),
+              subtitle: Text(user.email ?? 'Logged in'),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.sync),
+              title: const Text('Sync Now'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _handleSyncNow(context, ref),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Logout'),
+              onTap: () => _handleLogout(context, ref),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // User is not logged in - show login prompt
+      return Card(
+        child: Padding(
+          padding: AppStyles.cardPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.cloud_off, color: AppTheme.textGray),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Not connected',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Login to backup your coffee data to the cloud and sync across devices.',
+                style: TextStyle(color: AppTheme.textGray, fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _handleLogin(context, ref),
+                  icon: const Icon(Icons.login),
+                  label: const Text('Login / Sign Up'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryBrown,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleLogin(BuildContext context, WidgetRef ref) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(),
+      ),
+    );
+
+    if (result == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Successfully logged in!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text(
+          'Are you sure you want to logout?\n\n'
+          'Your local data will remain on this device, but you won\'t be able to sync until you login again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        // Sign out from Firebase
+        final firebaseService = FirebaseService();
+        await firebaseService.signOut();
+
+        // Unlink Firebase account from local user
+        await ref.read(userProfileProvider.notifier).unlinkFirebaseAccount();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Logged out successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          showError(context, 'Failed to logout: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> _handleSyncNow(BuildContext context, WidgetRef ref) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Syncing data...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final firebaseService = FirebaseService();
+
+      // Sync user profile
+      final user = ref.read(userProfileProvider);
+      if (user != null) {
+        await firebaseService.syncUserProfile(user);
+      }
+
+      // TODO: Sync bags and cups
+      // This will be implemented in the next task
+
+      if (mounted) {
+        Navigator.pop(context); // Close progress dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sync complete!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close progress dialog
+        showError(context, 'Sync failed: $e');
       }
     }
   }
