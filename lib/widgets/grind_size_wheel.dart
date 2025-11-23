@@ -33,7 +33,6 @@ class GrindSizeWheel extends StatefulWidget {
 }
 
 /// Helper to determine tick mark properties based on value
-/// Always renders ticks at 0.25 intervals for consistent spacing
 class _TickMarkHelper {
   static double getLineHeight(double value, double stepSize) {
     final remainder = value % 1.0;
@@ -43,18 +42,13 @@ class _TickMarkHelper {
       return 40.0;
     }
 
-    // Half steps (0.5) get medium height if stepSize allows
-    if ((remainder - 0.5).abs() < 0.01 && stepSize <= 0.5) {
+    // Half steps (0.5) get medium height
+    if ((remainder - 0.5).abs() < 0.01) {
       return 30.0;
     }
 
-    // Quarter steps get short height if stepSize allows
-    if (stepSize <= 0.25) {
-      return 20.0;
-    }
-
-    // For stepSize > 0.5, don't show fractional ticks
-    return 0.0;
+    // Quarter steps get short height
+    return 20.0;
   }
 
   static double getLineWidth(double value, double stepSize) {
@@ -66,16 +60,12 @@ class _TickMarkHelper {
     }
 
     // Half steps
-    if ((remainder - 0.5).abs() < 0.01 && stepSize <= 0.5) {
+    if ((remainder - 0.5).abs() < 0.01) {
       return 2.5;
     }
 
     // Quarter steps
-    if (stepSize <= 0.25) {
-      return 1.5;
-    }
-
-    return 2.5;
+    return 1.5;
   }
 
   static Color getLineColor(double value, double stepSize) {
@@ -87,16 +77,12 @@ class _TickMarkHelper {
     }
 
     // Half steps
-    if ((remainder - 0.5).abs() < 0.01 && stepSize <= 0.5) {
+    if ((remainder - 0.5).abs() < 0.01) {
       return Colors.brown.shade400;
     }
 
     // Quarter steps
-    if (stepSize <= 0.25) {
-      return Colors.brown.shade300;
-    }
-
-    return Colors.brown.shade400;
+    return Colors.brown.shade300;
   }
 
   /// Check if this tick should be selectable based on stepSize
@@ -173,10 +159,11 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   /// Calculate the visual width for a tick to maintain consistent spacing
   /// regardless of step size
   double _getTickSpacing(double stepSize) {
+    // Reduce spacing to make ticks more visible
     // Base spacing for 1.0 step size
-    const baseSpacing = 40.0;
-    // Scale spacing based on step size to maintain visual consistency
-    return baseSpacing / stepSize;
+    const baseSpacing = 8.0;
+    // Scale spacing inversely with step size (smaller steps = tighter spacing)
+    return baseSpacing * stepSize;
   }
 
   @override
@@ -221,7 +208,7 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
               totalCount: _totalCount,
               initValue: _currentIndex,
               onValueChanged: (value) => _onValueChanged(value as int),
-              // Haptics are handled manually in _onValueChanged based on hapticsEnabled setting
+              isVibrate: false, // Disable WheelSlider's built-in haptics - we handle them manually
               enableAnimation: false, // Disable animation to prevent initial scroll
               perspective: 0.005, // Reduced for more oval effect
               squeeze: 1.5, // Increased for more pronounced 3D curve
