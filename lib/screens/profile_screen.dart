@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../models/user_profile.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
@@ -484,6 +485,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               style: TextButton.styleFrom(
                 foregroundColor: Colors.grey,
               ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // App Version
+          Center(
+            child: FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final info = snapshot.data!;
+                  return Text(
+                    'Version ${info.version} (${info.buildNumber})',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade600,
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             ),
           ),
           const SizedBox(height: 24),

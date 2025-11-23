@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../models/drink_recipe.dart';
 import '../models/cup.dart';
+import '../models/coffee_bag.dart';
 
 /// Service for sharing cups and recipes via QR codes and deep links.
 ///
@@ -232,5 +233,126 @@ class ShareService {
   /// Estimate the size of encoded data in bytes
   static int estimateDataSize(String jsonString) {
     return utf8.encode(jsonString).length;
+  }
+
+  /// Remove null values from a JSON map recursively
+  static Map<String, dynamic> _removeNullValues(Map<String, dynamic> json) {
+    final result = <String, dynamic>{};
+    json.forEach((key, value) {
+      if (value != null) {
+        if (value is Map<String, dynamic>) {
+          final nested = _removeNullValues(value);
+          if (nested.isNotEmpty) {
+            result[key] = nested;
+          }
+        } else if (value is List) {
+          // Keep non-empty lists
+          if (value.isNotEmpty) {
+            result[key] = value;
+          }
+        } else {
+          result[key] = value;
+        }
+      }
+    });
+    return result;
+  }
+
+  /// Encode a Cup with its CoffeeBag data for sharing
+  /// This is the preferred method for sharing cups as it includes bag context
+  static String encodeCupWithBag(Cup cup, CoffeeBag? bag, {String? sharerUsername}) {
+    final cupJson = cup.toJson();
+
+    // Remove null values to reduce data size
+    final cleanedCupJson = _removeNullValues(cupJson);
+
+    // Add the sharer's username if provided
+    if (sharerUsername != null) {
+      cleanedCupJson['sharedByUsername'] = sharerUsername;
+    }
+
+    // Include selected bag fields if bag is provided
+    Map<String, dynamic>? bagData;
+    if (bag != null) {
+      bagData = _removeNullValues({
+        'coffeeName': bag.coffeeName,
+        'roaster': bag.roaster,
+        'roastLevel': bag.roastLevel,
+        'processingMethods': bag.processingMethods,
+        'beanAroma': bag.beanAroma,
+      });
+    }
+
+    final Map<String, dynamic> shareData = {
+      'type': 'cup_with_bag',
+      'version': 1,
+      'data': {
+        'cup': cleanedCupJson,
+        if (bagData != null && bagData.isNotEmpty) 'bag': bagData,
+      },
+    };
+    return jsonEncode(shareData);
+  }
+
+  /// Decode a Cup with bag data from JSON string
+  static Map<String, dynamic>? decodeCupWithBag(String jsonString) {
+    try {
+      final Map<String, dynamic> shareData = jsonDecode(jsonString);
+
+      // Support both new 'cup_with_bag' and legacy 'cup' formats
+      if (shareData['type'] != 'cup_with_bag' && shareData['type'] != 'cup') {
+        throw Exception('Invalid share data type: ${shareData['type']}');
+      }
+
+      // Check version compatibility
+      final int version = shareData['version'] ?? 1;
+      if (version > 1) {
+        throw Exception('Unsupported share data version: $version');
+      }
+
+      final Map<String, dynamic> data = shareData['data'];
+
+      // Handle both formats
+      Map<String, dynamic> cupData;
+      Map<String, dynamic>? bagData;
+
+      if (shareData['type'] == 'cup_with_bag') {
+        cupData = data['cup'];
+        bagData = data['bag'];
+      } else {
+        // Legacy format - just cup data
+        cupData = data;
+      }
+
+      // Preserve original IDs for SharedCup reference
+      if (!cupData.containsKey('id')) {
+        cupData['id'] = 'shared-cup';
+      }
+      if (!cupData.containsKey('userId')) {
+        cupData['userId'] = 'shared-user';
+      }
+      if (!cupData.containsKey('bagId')) {
+        cupData['bagId'] = 'shared-bag';
+      }
+
+      // Photos won't transfer via QR code
+      cupData['photoPaths'] = [];
+
+      final cup = Cup.fromJson(cupData);
+
+      return {
+        'cup': cup,
+        'bagData': bagData,
+      };
+    } catch (e) {
+      print('Error decoding cup with bag: $e');
+      return null;
+    }
+  }
+
+  /// Create a deep link URL for sharing a Cup with bag data
+  static String createCupWithBagDeepLink(Cup cup, CoffeeBag? bag, {String? sharerUsername}) {
+    final encodedData = Uri.encodeComponent(encodeCupWithBag(cup, bag, sharerUsername: sharerUsername));
+    return 'brewlog://share/cup?data=$encodedData';
   }
 }

@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models/cup.dart';
 import '../services/share_service.dart';
 import '../providers/user_provider.dart';
+import '../providers/bags_provider.dart';
 import '../utils/theme.dart';
 
 /// Screen for sharing a Cup via QR code or deep link
@@ -30,47 +31,56 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
   bool _includeTimingDetails = true; // Keep timing as it's commonly used
 
   Cup get _filteredCup {
-    // Create a copy of the cup with optional fields removed based on settings
+    // Create a minimal copy of the cup for QR code sharing
+    // Include essential brewing data - null values will be auto-excluded by ShareService
     return Cup(
       id: widget.cup.id,
       bagId: widget.cup.bagId,
       userId: widget.cup.userId,
       brewType: widget.cup.brewType,
+      // Default cup details (always included)
       grindLevel: widget.cup.grindLevel,
       waterTempCelsius: widget.cup.waterTempCelsius,
       gramsUsed: widget.cup.gramsUsed,
       finalVolumeMl: widget.cup.finalVolumeMl,
       ratio: widget.cup.ratio,
-      brewTimeSeconds: _includeTimingDetails ? widget.cup.brewTimeSeconds : null,
-      bloomTimeSeconds: _includeTimingDetails ? widget.cup.bloomTimeSeconds : null,
-      score1to5: widget.cup.score1to5,
-      score1to10: widget.cup.score1to10,
+      brewTimeSeconds: widget.cup.brewTimeSeconds,
+      bloomTimeSeconds: widget.cup.bloomTimeSeconds,
+      bloomAmountGrams: widget.cup.bloomAmountGrams,
+      pourSchedule: widget.cup.pourSchedule,
+      // Use score1to100 instead of score1to5 for better precision
+      score1to5: null,
+      score1to10: null,
       score1to100: widget.cup.score1to100,
-      tastingNotes: widget.cup.tastingNotes,
-      flavorTags: widget.cup.flavorTags,
+      // Limit tasting notes to 500 characters
+      tastingNotes: widget.cup.tastingNotes != null && widget.cup.tastingNotes!.length > 500
+          ? widget.cup.tastingNotes!.substring(0, 500)
+          : widget.cup.tastingNotes,
+      // Limit flavor tags to first 10
+      flavorTags: widget.cup.flavorTags.length > 10
+          ? widget.cup.flavorTags.sublist(0, 10)
+          : widget.cup.flavorTags,
       photoPaths: [], // Never include photos in QR
       isBest: widget.cup.isBest,
       shareCount: widget.cup.shareCount,
       sharedByUserId: widget.cup.sharedByUserId,
       sharedByUsername: widget.cup.sharedByUsername,
       createdAt: widget.cup.createdAt,
-      customTitle: widget.cup.customTitle,
-      equipmentSetupId: widget.cup.equipmentSetupId,
-      adaptationNotes: widget.cup.adaptationNotes,
-      // Advanced brewing parameters
+      customTitle: null, // Exclude to reduce size
+      equipmentSetupId: null, // Not useful for sharing
+      adaptationNotes: null, // Exclude to reduce size
+      // Advanced brewing parameters (conditional)
       preInfusionTimeSeconds: _includeAdvancedBrewing ? widget.cup.preInfusionTimeSeconds : null,
       pressureBars: _includeAdvancedBrewing ? widget.cup.pressureBars : null,
       yieldGrams: _includeAdvancedBrewing ? widget.cup.yieldGrams : null,
-      bloomAmountGrams: _includeAdvancedBrewing ? widget.cup.bloomAmountGrams : null,
-      pourSchedule: _includeAdvancedBrewing ? widget.cup.pourSchedule : null,
       tds: _includeAdvancedBrewing ? widget.cup.tds : null,
       extractionYield: _includeAdvancedBrewing ? widget.cup.extractionYield : null,
-      // Environmental conditions
+      // Environmental conditions (conditional)
       roomTempCelsius: _includeEnvironmental ? widget.cup.roomTempCelsius : null,
       humidity: _includeEnvironmental ? widget.cup.humidity : null,
       altitudeMeters: _includeEnvironmental ? widget.cup.altitudeMeters : null,
       timeOfDay: _includeEnvironmental ? widget.cup.timeOfDay : null,
-      // Cupping scores
+      // Cupping scores (conditional)
       cuppingFragrance: _includeCuppingScores ? widget.cup.cuppingFragrance : null,
       cuppingAroma: _includeCuppingScores ? widget.cup.cuppingAroma : null,
       cuppingFlavor: _includeCuppingScores ? widget.cup.cuppingFlavor : null,
@@ -84,20 +94,21 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
       cuppingOverall: _includeCuppingScores ? widget.cup.cuppingOverall : null,
       cuppingTotal: _includeCuppingScores ? widget.cup.cuppingTotal : null,
       cuppingDefects: _includeCuppingScores ? widget.cup.cuppingDefects : null,
-      fieldVisibility: widget.cup.fieldVisibility,
-      drinkRecipeId: widget.cup.drinkRecipeId,
-      grinderMinSetting: widget.cup.grinderMinSetting,
-      grinderMaxSetting: widget.cup.grinderMaxSetting,
-      grinderStepSize: widget.cup.grinderStepSize,
+      fieldVisibility: null, // Not needed for sharing
+      drinkRecipeId: null, // Not transferable
+      grinderMinSetting: null, // Exclude to reduce size
+      grinderMaxSetting: null, // Exclude to reduce size
+      grinderStepSize: null, // Exclude to reduce size
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProfileProvider);
+    final bag = ref.watch(bagProvider(widget.cup.bagId));
     final Cup cupToShare = _filteredCup;
-    final String qrData = ShareService.encodeCup(cupToShare, sharerUsername: user?.username);
-    final String deepLink = ShareService.createCupDeepLink(cupToShare, sharerUsername: user?.username);
+    final String qrData = ShareService.encodeCupWithBag(cupToShare, bag, sharerUsername: user?.username);
+    final String deepLink = ShareService.createCupWithBagDeepLink(cupToShare, bag, sharerUsername: user?.username);
     final int dataSize = ShareService.estimateDataSize(qrData);
 
     return Scaffold(
@@ -133,14 +144,14 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
             const SizedBox(height: 4),
 
             // Rating if available
-            if (widget.cup.score1to5 != null) ...[
+            if (widget.cup.score1to100 != null) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.star, color: Colors.amber, size: 20),
                   const SizedBox(width: 4),
                   Text(
-                    '${widget.cup.score1to5}/5',
+                    '${widget.cup.score1to100}/100',
                     style: AppTextStyles.cardSubtitle,
                   ),
                 ],
@@ -163,13 +174,45 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
                   ),
                 ],
               ),
-              child: QrImageView(
-                data: qrData,
-                version: QrVersions.auto,
-                size: 300,
-                backgroundColor: Colors.white,
-                errorCorrectionLevel: QrErrorCorrectLevel.H,
-              ),
+              child: dataSize > 10208
+                  ? Container(
+                      width: 300,
+                      height: 300,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.warning_amber, size: 48, color: Colors.red.shade700),
+                          const SizedBox(height: 16),
+                          Text(
+                            'QR Code Too Large',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red.shade900,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Use the ⚙️ button to disable more fields, or use "Share via Link" below.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : QrImageView(
+                      data: qrData,
+                      version: QrVersions.auto,
+                      size: 300,
+                      backgroundColor: Colors.white,
+                      errorCorrectionLevel: QrErrorCorrectLevel.H,
+                    ),
             ),
             const SizedBox(height: 16),
 
@@ -301,12 +344,12 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
                   const SizedBox(height: 12),
                   _buildHelpItem(
                     'Included',
-                    'Coffee details, brew method, grind size settings, tasting notes, rating, and all cupping scores',
+                    'Bag details (name, roaster, roast level, process, aroma), brew method, grind size, water temp, coffee/water amounts, timing, rating (1-100), tasting notes, and optional cupping scores',
                   ),
                   const SizedBox(height: 8),
                   _buildHelpItem(
                     'Not Included',
-                    'Photos (device-specific) and bag association (recipient chooses their own bag)',
+                    'Photos (device-specific). Null/empty fields are automatically excluded to reduce QR code size.',
                   ),
                 ],
               ),
