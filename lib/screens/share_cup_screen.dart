@@ -30,7 +30,8 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
   bool _includeTimingDetails = true; // Keep timing as it's commonly used
 
   Cup get _filteredCup {
-    // Create a copy of the cup with optional fields removed based on settings
+    // Create a minimal copy of the cup for QR code sharing
+    // Only include essential brewing data to keep QR code scannable
     return Cup(
       id: widget.cup.id,
       bagId: widget.cup.bagId,
@@ -43,20 +44,27 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
       ratio: widget.cup.ratio,
       brewTimeSeconds: _includeTimingDetails ? widget.cup.brewTimeSeconds : null,
       bloomTimeSeconds: _includeTimingDetails ? widget.cup.bloomTimeSeconds : null,
+      // Only include the 1-5 score format to reduce size
       score1to5: widget.cup.score1to5,
-      score1to10: widget.cup.score1to10,
-      score1to100: widget.cup.score1to100,
-      tastingNotes: widget.cup.tastingNotes,
-      flavorTags: widget.cup.flavorTags,
+      score1to10: null,
+      score1to100: null,
+      // Limit tasting notes to 500 characters
+      tastingNotes: widget.cup.tastingNotes != null && widget.cup.tastingNotes!.length > 500
+          ? widget.cup.tastingNotes!.substring(0, 500)
+          : widget.cup.tastingNotes,
+      // Limit flavor tags to first 10
+      flavorTags: widget.cup.flavorTags.length > 10
+          ? widget.cup.flavorTags.sublist(0, 10)
+          : widget.cup.flavorTags,
       photoPaths: [], // Never include photos in QR
       isBest: widget.cup.isBest,
       shareCount: widget.cup.shareCount,
       sharedByUserId: widget.cup.sharedByUserId,
       sharedByUsername: widget.cup.sharedByUsername,
       createdAt: widget.cup.createdAt,
-      customTitle: widget.cup.customTitle,
-      equipmentSetupId: widget.cup.equipmentSetupId,
-      adaptationNotes: widget.cup.adaptationNotes,
+      customTitle: null, // Exclude to reduce size
+      equipmentSetupId: null, // Not useful for sharing
+      adaptationNotes: null, // Exclude to reduce size
       // Advanced brewing parameters
       preInfusionTimeSeconds: _includeAdvancedBrewing ? widget.cup.preInfusionTimeSeconds : null,
       pressureBars: _includeAdvancedBrewing ? widget.cup.pressureBars : null,
@@ -84,11 +92,11 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
       cuppingOverall: _includeCuppingScores ? widget.cup.cuppingOverall : null,
       cuppingTotal: _includeCuppingScores ? widget.cup.cuppingTotal : null,
       cuppingDefects: _includeCuppingScores ? widget.cup.cuppingDefects : null,
-      fieldVisibility: widget.cup.fieldVisibility,
-      drinkRecipeId: widget.cup.drinkRecipeId,
-      grinderMinSetting: widget.cup.grinderMinSetting,
-      grinderMaxSetting: widget.cup.grinderMaxSetting,
-      grinderStepSize: widget.cup.grinderStepSize,
+      fieldVisibility: null, // Not needed for sharing
+      drinkRecipeId: null, // Not transferable
+      grinderMinSetting: null, // Exclude to reduce size
+      grinderMaxSetting: null, // Exclude to reduce size
+      grinderStepSize: null, // Exclude to reduce size
     );
   }
 
@@ -163,13 +171,45 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
                   ),
                 ],
               ),
-              child: QrImageView(
-                data: qrData,
-                version: QrVersions.auto,
-                size: 300,
-                backgroundColor: Colors.white,
-                errorCorrectionLevel: QrErrorCorrectLevel.H,
-              ),
+              child: dataSize > 10208
+                  ? Container(
+                      width: 300,
+                      height: 300,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.warning_amber, size: 48, color: Colors.red.shade700),
+                          const SizedBox(height: 16),
+                          Text(
+                            'QR Code Too Large',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red.shade900,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Use the ⚙️ button to disable more fields, or use "Share via Link" below.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                  : QrImageView(
+                      data: qrData,
+                      version: QrVersions.auto,
+                      size: 300,
+                      backgroundColor: Colors.white,
+                      errorCorrectionLevel: QrErrorCorrectLevel.H,
+                    ),
             ),
             const SizedBox(height: 16),
 
