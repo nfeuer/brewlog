@@ -175,10 +175,12 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
       return;
     }
 
-    // Try to decode as Cup
-    final Cup? cup = ShareService.decodeCup(data);
-    if (cup != null) {
-      await _importCup(cup);
+    // Try to decode as Cup with bag data (new format)
+    final cupWithBagData = ShareService.decodeCupWithBag(data);
+    if (cupWithBagData != null) {
+      final Cup cup = cupWithBagData['cup'] as Cup;
+      final Map<String, dynamic>? bagData = cupWithBagData['bagData'] as Map<String, dynamic>?;
+      await _importCup(cup, bagData: bagData);
       return;
     }
 
@@ -195,9 +197,11 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
           return;
         }
       } else if (type == 'cup') {
-        final Cup? cup = ShareService.decodeCup(jsonData);
-        if (cup != null) {
-          await _importCup(cup);
+        final cupWithBagData = ShareService.decodeCupWithBag(jsonData);
+        if (cupWithBagData != null) {
+          final Cup cup = cupWithBagData['cup'] as Cup;
+          final Map<String, dynamic>? bagData = cupWithBagData['bagData'] as Map<String, dynamic>?;
+          await _importCup(cup, bagData: bagData);
           return;
         }
       }
@@ -274,7 +278,7 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
     }
   }
 
-  Future<void> _importCup(Cup cup) async {
+  Future<void> _importCup(Cup cup, {Map<String, dynamic>? bagData}) async {
     if (!mounted) return;
 
     // Get user's bags
@@ -306,63 +310,90 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Import Tasting Notes'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Select which bag to add these tasting notes to:'),
-            const SizedBox(height: 16),
-            // Cup preview
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.cardBackground,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Tasting Notes',
-                    style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Brew Type: ${cup.brewType}',
-                    style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
-                  ),
-                  if (cup.score1to5 != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Select which bag to add these tasting notes to:'),
+              const SizedBox(height: 16),
+              // Cup preview with bag data if available
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBackground,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Show bag info if available
+                    if (bagData != null) ...[
+                      Text(
+                        'Shared Coffee',
+                        style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
+                      ),
+                      const SizedBox(height: 4),
+                      if (bagData['coffeeName'] != null)
                         Text(
-                          '${cup.score1to5}/5',
+                          bagData['coffeeName'] as String,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      if (bagData['roaster'] != null)
+                        Text(
+                          'by ${bagData['roaster']}',
                           style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
                         ),
-                      ],
+                      if (bagData['roastLevel'] != null)
+                        Text(
+                          'Roast: ${bagData['roastLevel']}',
+                          style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
+                        ),
+                      const SizedBox(height: 8),
+                      const Divider(),
+                      const SizedBox(height: 4),
+                    ],
+                    Text(
+                      'Tasting Notes',
+                      style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
                     ),
-                  ],
-                  if (cup.tastingNotes != null && cup.tastingNotes!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      cup.tastingNotes!,
+                      'Brew Type: ${cup.brewType}',
                       style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (cup.score1to100 != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${cup.score1to100}/100',
+                            style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (cup.tastingNotes != null && cup.tastingNotes!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        cup.tastingNotes!,
+                        style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Add to bag:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 16),
+              const Text(
+                'Add to bag:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
             // Bag selection
             SizedBox(
               width: double.maxFinite,

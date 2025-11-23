@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models/cup.dart';
 import '../services/share_service.dart';
 import '../providers/user_provider.dart';
+import '../providers/bags_provider.dart';
 import '../utils/theme.dart';
 
 /// Screen for sharing a Cup via QR code or deep link
@@ -31,23 +32,26 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
 
   Cup get _filteredCup {
     // Create a minimal copy of the cup for QR code sharing
-    // Only include essential brewing data to keep QR code scannable
+    // Include essential brewing data - null values will be auto-excluded by ShareService
     return Cup(
       id: widget.cup.id,
       bagId: widget.cup.bagId,
       userId: widget.cup.userId,
       brewType: widget.cup.brewType,
+      // Default cup details (always included)
       grindLevel: widget.cup.grindLevel,
       waterTempCelsius: widget.cup.waterTempCelsius,
       gramsUsed: widget.cup.gramsUsed,
       finalVolumeMl: widget.cup.finalVolumeMl,
       ratio: widget.cup.ratio,
-      brewTimeSeconds: _includeTimingDetails ? widget.cup.brewTimeSeconds : null,
-      bloomTimeSeconds: _includeTimingDetails ? widget.cup.bloomTimeSeconds : null,
-      // Only include the 1-5 score format to reduce size
-      score1to5: widget.cup.score1to5,
+      brewTimeSeconds: widget.cup.brewTimeSeconds,
+      bloomTimeSeconds: widget.cup.bloomTimeSeconds,
+      bloomAmountGrams: widget.cup.bloomAmountGrams,
+      pourSchedule: widget.cup.pourSchedule,
+      // Use score1to100 instead of score1to5 for better precision
+      score1to5: null,
       score1to10: null,
-      score1to100: null,
+      score1to100: widget.cup.score1to100,
       // Limit tasting notes to 500 characters
       tastingNotes: widget.cup.tastingNotes != null && widget.cup.tastingNotes!.length > 500
           ? widget.cup.tastingNotes!.substring(0, 500)
@@ -65,20 +69,18 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
       customTitle: null, // Exclude to reduce size
       equipmentSetupId: null, // Not useful for sharing
       adaptationNotes: null, // Exclude to reduce size
-      // Advanced brewing parameters
+      // Advanced brewing parameters (conditional)
       preInfusionTimeSeconds: _includeAdvancedBrewing ? widget.cup.preInfusionTimeSeconds : null,
       pressureBars: _includeAdvancedBrewing ? widget.cup.pressureBars : null,
       yieldGrams: _includeAdvancedBrewing ? widget.cup.yieldGrams : null,
-      bloomAmountGrams: _includeAdvancedBrewing ? widget.cup.bloomAmountGrams : null,
-      pourSchedule: _includeAdvancedBrewing ? widget.cup.pourSchedule : null,
       tds: _includeAdvancedBrewing ? widget.cup.tds : null,
       extractionYield: _includeAdvancedBrewing ? widget.cup.extractionYield : null,
-      // Environmental conditions
+      // Environmental conditions (conditional)
       roomTempCelsius: _includeEnvironmental ? widget.cup.roomTempCelsius : null,
       humidity: _includeEnvironmental ? widget.cup.humidity : null,
       altitudeMeters: _includeEnvironmental ? widget.cup.altitudeMeters : null,
       timeOfDay: _includeEnvironmental ? widget.cup.timeOfDay : null,
-      // Cupping scores
+      // Cupping scores (conditional)
       cuppingFragrance: _includeCuppingScores ? widget.cup.cuppingFragrance : null,
       cuppingAroma: _includeCuppingScores ? widget.cup.cuppingAroma : null,
       cuppingFlavor: _includeCuppingScores ? widget.cup.cuppingFlavor : null,
@@ -103,9 +105,10 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProfileProvider);
+    final bag = ref.watch(bagProvider(widget.cup.bagId));
     final Cup cupToShare = _filteredCup;
-    final String qrData = ShareService.encodeCup(cupToShare, sharerUsername: user?.username);
-    final String deepLink = ShareService.createCupDeepLink(cupToShare, sharerUsername: user?.username);
+    final String qrData = ShareService.encodeCupWithBag(cupToShare, bag, sharerUsername: user?.username);
+    final String deepLink = ShareService.createCupWithBagDeepLink(cupToShare, bag, sharerUsername: user?.username);
     final int dataSize = ShareService.estimateDataSize(qrData);
 
     return Scaffold(
@@ -141,14 +144,14 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
             const SizedBox(height: 4),
 
             // Rating if available
-            if (widget.cup.score1to5 != null) ...[
+            if (widget.cup.score1to100 != null) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.star, color: Colors.amber, size: 20),
                   const SizedBox(width: 4),
                   Text(
-                    '${widget.cup.score1to5}/5',
+                    '${widget.cup.score1to100}/100',
                     style: AppTextStyles.cardSubtitle,
                   ),
                 ],
@@ -341,12 +344,12 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
                   const SizedBox(height: 12),
                   _buildHelpItem(
                     'Included',
-                    'Coffee details, brew method, grind size settings, tasting notes, rating, and all cupping scores',
+                    'Bag details (name, roaster, roast level, process, aroma), brew method, grind size, water temp, coffee/water amounts, timing, rating (1-100), tasting notes, and optional cupping scores',
                   ),
                   const SizedBox(height: 8),
                   _buildHelpItem(
                     'Not Included',
-                    'Photos (device-specific) and bag association (recipient chooses their own bag)',
+                    'Photos (device-specific). Null/empty fields are automatically excluded to reduce QR code size.',
                   ),
                 ],
               ),
