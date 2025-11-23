@@ -98,7 +98,6 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   late int _totalCount;
   late int _currentIndex;
   bool _showSettings = false;
-  int _wheelKey = 0; // Used to force WheelSlider rebuild when snapping to valid position
   Timer? _snapTimer; // Timer to debounce snapping to valid position
 
   // Always use 0.25 as the base interval for consistent spacing
@@ -182,14 +181,16 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
         final snappedValue = _snapToStepSize(newValue);
         final snappedIndex = ((snappedValue - widget.minValue) / _baseInterval).round();
 
-        setState(() {
-          _currentIndex = snappedIndex;
-          _currentValue = snappedValue;
-          _wheelKey++; // Force WheelSlider to rebuild at the snapped position
-        });
+        // Only snap if we're still on an invalid position (user hasn't scrolled away)
+        if (_currentIndex == index) {
+          setState(() {
+            _currentIndex = snappedIndex;
+            _currentValue = snappedValue;
+          });
 
-        // Notify parent
-        widget.onChanged(_currentValue);
+          // Notify parent
+          widget.onChanged(_currentValue);
+        }
       });
     }
   }
@@ -206,11 +207,13 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
           // Display current value (removed icon, reduced spacing)
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -242,7 +245,6 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
           SizedBox(
             height: 200,
             child: WheelSlider.customWidget(
-              key: ValueKey(_wheelKey), // Force rebuild when snapping to valid position
               totalCount: _totalCount,
               initValue: _currentIndex,
               onValueChanged: (value) => _onValueChanged(value as int),
@@ -336,7 +338,8 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
                 color: Colors.grey,
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
