@@ -214,100 +214,107 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-          // Display current value (removed icon, reduced spacing)
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _currentValue.toStringAsFixed(
-                  widget.stepSize < 1 ? 2 : (widget.stepSize == 1 ? 0 : 1),
+            // Horizontal layout: number on left, dial on right
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left side: Display current value and label
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _currentValue.toStringAsFixed(
+                        widget.stepSize < 1 ? 2 : (widget.stepSize == 1 ? 0 : 1),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.w300,
+                        height: 1.0,
+                        color: Colors.brown,
+                      ),
+                    ),
+                    const Text(
+                      'details',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
-                style: const TextStyle(
-                  fontSize: 56,
-                  fontWeight: FontWeight.w300,
-                  height: 1.0,
-                  color: Colors.brown,
-                ),
-              ),
-              const Text(
-                'Grind Size',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
 
-          const SizedBox(height: 4),
+                const SizedBox(width: 24),
 
-          // Wheel slider with custom line rendering (oval/3D effect)
-          SizedBox(
-            height: 200,
-            child: WheelSlider.customWidget(
-              totalCount: _totalCount,
-              initValue: _currentIndex,
-              onValueChanged: (value) => _onValueChanged(value as int),
-              isVibrate: false, // Disable WheelSlider's built-in haptics - we handle them manually
-              enableAnimation: false, // Disable animation to prevent initial scroll
-              perspective: 0.005, // Reduced for more oval effect
-              squeeze: 1.5, // Increased for more pronounced 3D curve
-              showPointer: true,
-              pointerColor: Colors.brown.shade900,
-              pointerWidth: 3,
-              pointerHeight: 40,
-              horizontalListWidth: MediaQuery.of(context).size.width * 0.8,
-              horizontalListHeight: 200,
-              children: List.generate(_totalCount, (index) {
-                final value = widget.minValue + (index * _baseInterval);
-                final isWholeNumber = (value % 1.0).abs() < 0.01;
-                final isHalfStep = ((value % 1.0) - 0.5).abs() < 0.01;
-                final isQuarterStep = !isWholeNumber && !isHalfStep;
+                // Right side: Vertical wheel slider
+                SizedBox(
+                  width: 100,
+                  height: 300,
+                  child: WheelSlider.customWidget(
+                    totalCount: _totalCount,
+                    initValue: _currentIndex,
+                    onValueChanged: (value) => _onValueChanged(value as int),
+                    isVibrate: false,
+                    enableAnimation: false,
+                    perspective: 0.005,
+                    squeeze: 1.5,
+                    showPointer: true,
+                    pointerColor: Colors.brown.shade900,
+                    pointerWidth: 40,
+                    pointerHeight: 3,
+                    children: List.generate(_totalCount, (index) {
+                      final value = widget.minValue + (index * _baseInterval);
+                      final isWholeNumber = (value % 1.0).abs() < 0.01;
+                      final isHalfStep = ((value % 1.0) - 0.5).abs() < 0.01;
+                      final isQuarterStep = !isWholeNumber && !isHalfStep;
 
-                // Hide finer ticks based on stepSize to maintain spacing
-                bool shouldHide = false;
-                if (widget.stepSize >= 1.0 && !isWholeNumber) {
-                  shouldHide = true; // Hide half and quarter steps at 1.0 stepSize
-                } else if (widget.stepSize == 0.5 && isQuarterStep) {
-                  shouldHide = true; // Hide quarter steps at 0.5 stepSize
-                }
+                      // Hide finer ticks based on stepSize to maintain spacing
+                      bool shouldHide = false;
+                      if (widget.stepSize >= 1.0 && !isWholeNumber) {
+                        shouldHide = true;
+                      } else if (widget.stepSize == 0.5 && isQuarterStep) {
+                        shouldHide = true;
+                      }
 
-                if (shouldHide) {
-                  return const SizedBox(width: 0, height: 0);
-                }
+                      if (shouldHide) {
+                        return const SizedBox(width: 0, height: 0);
+                      }
 
-                final lineHeight = _TickMarkHelper.getLineHeight(value, widget.stepSize);
-                final lineWidth = _TickMarkHelper.getLineWidth(value, widget.stepSize);
-                final lineColor = _TickMarkHelper.getLineColor(value, widget.stepSize);
-                final showHalfLabel = widget.stepSize <= 0.5 && isHalfStep;
+                      final lineHeight = _TickMarkHelper.getLineWidth(value, widget.stepSize);
+                      final lineWidth = _TickMarkHelper.getLineHeight(value, widget.stepSize);
+                      final lineColor = _TickMarkHelper.getLineColor(value, widget.stepSize);
+                      final showHalfLabel = widget.stepSize <= 0.5 && isHalfStep;
 
-                return Container(
-                  height: lineHeight,
-                  width: lineWidth,
-                  decoration: BoxDecoration(
-                    color: lineColor,
-                    borderRadius: BorderRadius.circular(lineWidth / 2),
+                      return Container(
+                        height: lineHeight,
+                        width: lineWidth,
+                        decoration: BoxDecoration(
+                          color: lineColor,
+                          borderRadius: BorderRadius.circular(lineHeight / 2),
+                        ),
+                        alignment: Alignment.centerRight,
+                        child: (isWholeNumber || showHalfLabel)
+                            ? Padding(
+                                padding: const EdgeInsets.only(right: 45),
+                                child: Text(
+                                  value.toStringAsFixed(showHalfLabel ? 1 : 0),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.brown.shade700,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      );
+                    }),
                   ),
-                  alignment: Alignment.bottomCenter,
-                  child: (isWholeNumber || showHalfLabel)
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 45),
-                          child: Text(
-                            value.toStringAsFixed(showHalfLabel ? 1 : 0),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.brown.shade700,
-                            ),
-                          ),
-                        )
-                      : null,
-                );
-              }),
+                ),
+              ],
             ),
-          ),
 
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
 
           // Range controls (optional)
           if (widget.showRangeControls) ...[
