@@ -129,11 +129,6 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   bool _showDrinkRecipeSection = false;
   bool _showDrinkRecipeDetails = false;
 
-  // Grinder settings for GrindSizeWheel
-  double? _grinderMinSetting;
-  double? _grinderMaxSetting;
-  double? _grinderStepSize;
-
   @override
   void initState() {
     super.initState();
@@ -160,11 +155,13 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         _gramsUsedController.text = cup.gramsUsed?.toString() ?? '';
         _finalVolumeController.text = cup.finalVolumeMl?.toString() ?? '';
         _brewTimeController.text = cup.brewTimeSeconds?.toString() ?? '';
-        _brewTimeFormattedController.text = _formatSecondsToMinSec(cup.brewTimeSeconds?.toString() ?? '');
+        _brewTimeFormattedController.text =
+            _formatSecondsToMinSec(cup.brewTimeSeconds?.toString() ?? '');
         _bloomTimeController.text = cup.bloomTimeSeconds?.toString() ?? '';
 
         // Load advanced brewing parameters
-        _preInfusionTimeController.text = cup.preInfusionTimeSeconds?.toString() ?? '';
+        _preInfusionTimeController.text =
+            cup.preInfusionTimeSeconds?.toString() ?? '';
         _pressureBarsController.text = cup.pressureBars?.toString() ?? '';
         _yieldGramsController.text = cup.yieldGrams?.toString() ?? '';
         _bloomAmountController.text = cup.bloomAmountGrams?.toString() ?? '';
@@ -242,7 +239,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       }
     } else {
       // Creating a new cup - use default field visibility
-      _currentFieldVisibility = Map<String, bool>.from(ref.read(cupFieldVisibilityProvider));
+      _currentFieldVisibility =
+          Map<String, bool>.from(ref.read(cupFieldVisibilityProvider));
 
       if (widget.bagId != null) {
         // Load bag info for new cup
@@ -321,187 +319,199 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               _buildSection(
                 'Coffee Bag Info',
                 [
-                TextFormField(
-                  controller: _customTitleController,
-                  decoration: const InputDecoration(labelText: 'Custom Title'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _coffeeNameController,
-                  decoration: const InputDecoration(labelText: 'Coffee Name *'),
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Required' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _roasterController,
-                  decoration: const InputDecoration(labelText: 'Roaster *'),
-                  validator: (value) =>
-                      value?.isEmpty == true ? 'Required' : null,
-                ),
-                if (_currentFieldVisibility['farmer'] == true) ...[
+                  TextFormField(
+                    controller: _customTitleController,
+                    decoration:
+                        const InputDecoration(labelText: 'Custom Title'),
+                  ),
                   const SizedBox(height: 12),
                   TextFormField(
-                    controller: _farmerController,
-                    decoration: const InputDecoration(labelText: 'Farmer'),
+                    controller: _coffeeNameController,
+                    decoration:
+                        const InputDecoration(labelText: 'Coffee Name *'),
+                    validator: (value) =>
+                        value?.isEmpty == true ? 'Required' : null,
                   ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _roasterController,
+                    decoration: const InputDecoration(labelText: 'Roaster *'),
+                    validator: (value) =>
+                        value?.isEmpty == true ? 'Required' : null,
+                  ),
+                  if (_currentFieldVisibility['farmer'] == true) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _farmerController,
+                      decoration: const InputDecoration(labelText: 'Farmer'),
+                    ),
+                  ],
+                  if (_currentFieldVisibility['variety'] == true) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _varietyController,
+                      decoration: const InputDecoration(labelText: 'Variety'),
+                    ),
+                  ],
+                  if (_currentFieldVisibility['elevation'] == true) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _elevationController,
+                      decoration: const InputDecoration(labelText: 'Elevation'),
+                    ),
+                  ],
+                  if (_currentFieldVisibility['beanAroma'] == true) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _beanAromaController,
+                      decoration:
+                          const InputDecoration(labelText: 'Bean Aroma'),
+                      maxLines: 2,
+                    ),
+                  ],
+                  // Additional bag fields (only shown when creating new bag)
+                  if (widget.isNewBag) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _priceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Price',
+                        prefixText: '\$',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _bagSizeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Bag Size',
+                        suffixText: 'g',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _restDaysController,
+                      decoration: const InputDecoration(
+                        labelText: 'Recommended Rest Days',
+                        suffixText: 'days',
+                        hintText: 'Days to rest after roasting',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _datePurchased ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (date != null) {
+                          setState(() => _datePurchased = date);
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Date Purchased',
+                          suffixIcon: _datePurchased != null
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () =>
+                                      setState(() => _datePurchased = null),
+                                )
+                              : null,
+                        ),
+                        child: Text(
+                          _datePurchased != null
+                              ? '${_datePurchased!.year}-${_datePurchased!.month.toString().padLeft(2, '0')}-${_datePurchased!.day.toString().padLeft(2, '0')}'
+                              : 'Select date',
+                          style: _datePurchased != null
+                              ? null
+                              : TextStyle(color: Theme.of(context).hintColor),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _roastDate ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (date != null) {
+                          setState(() => _roastDate = date);
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Roast Date',
+                          suffixIcon: _roastDate != null
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () =>
+                                      setState(() => _roastDate = null),
+                                )
+                              : null,
+                        ),
+                        child: Text(
+                          _roastDate != null
+                              ? '${_roastDate!.year}-${_roastDate!.month.toString().padLeft(2, '0')}-${_roastDate!.day.toString().padLeft(2, '0')}'
+                              : 'Select date',
+                          style: _roastDate != null
+                              ? null
+                              : TextStyle(color: Theme.of(context).hintColor),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _openDate ?? DateTime.now(),
+                          firstDate: DateTime(2020),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (date != null) {
+                          setState(() => _openDate = date);
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Open Date',
+                          suffixIcon: _openDate != null
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () =>
+                                      setState(() => _openDate = null),
+                                )
+                              : null,
+                        ),
+                        child: Text(
+                          _openDate != null
+                              ? '${_openDate!.year}-${_openDate!.month.toString().padLeft(2, '0')}-${_openDate!.day.toString().padLeft(2, '0')}'
+                              : 'Select date',
+                          style: _openDate != null
+                              ? null
+                              : TextStyle(color: Theme.of(context).hintColor),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-                if (_currentFieldVisibility['variety'] == true) ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _varietyController,
-                    decoration: const InputDecoration(labelText: 'Variety'),
-                  ),
-                ],
-                if (_currentFieldVisibility['elevation'] == true) ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _elevationController,
-                    decoration: const InputDecoration(labelText: 'Elevation'),
-                  ),
-                ],
-                if (_currentFieldVisibility['beanAroma'] == true) ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _beanAromaController,
-                    decoration: const InputDecoration(labelText: 'Bean Aroma'),
-                    maxLines: 2,
-                  ),
-                ],
-                // Additional bag fields (only shown when creating new bag)
-                if (widget.isNewBag) ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _priceController,
-                    decoration: const InputDecoration(
-                      labelText: 'Price',
-                      prefixText: '\$',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _bagSizeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Bag Size',
-                      suffixText: 'g',
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _restDaysController,
-                    decoration: const InputDecoration(
-                      labelText: 'Recommended Rest Days',
-                      suffixText: 'days',
-                      hintText: 'Days to rest after roasting',
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _datePurchased ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        setState(() => _datePurchased = date);
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Date Purchased',
-                        suffixIcon: _datePurchased != null
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () => setState(() => _datePurchased = null),
-                              )
-                            : null,
-                      ),
-                      child: Text(
-                        _datePurchased != null
-                            ? '${_datePurchased!.year}-${_datePurchased!.month.toString().padLeft(2, '0')}-${_datePurchased!.day.toString().padLeft(2, '0')}'
-                            : 'Select date',
-                        style: _datePurchased != null
-                            ? null
-                            : TextStyle(color: Theme.of(context).hintColor),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _roastDate ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        setState(() => _roastDate = date);
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Roast Date',
-                        suffixIcon: _roastDate != null
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () => setState(() => _roastDate = null),
-                              )
-                            : null,
-                      ),
-                      child: Text(
-                        _roastDate != null
-                            ? '${_roastDate!.year}-${_roastDate!.month.toString().padLeft(2, '0')}-${_roastDate!.day.toString().padLeft(2, '0')}'
-                            : 'Select date',
-                        style: _roastDate != null
-                            ? null
-                            : TextStyle(color: Theme.of(context).hintColor),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _openDate ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (date != null) {
-                        setState(() => _openDate = date);
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: 'Open Date',
-                        suffixIcon: _openDate != null
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () => setState(() => _openDate = null),
-                              )
-                            : null,
-                      ),
-                      child: Text(
-                        _openDate != null
-                            ? '${_openDate!.year}-${_openDate!.month.toString().padLeft(2, '0')}-${_openDate!.day.toString().padLeft(2, '0')}'
-                            : 'Select date',
-                        style: _openDate != null
-                            ? null
-                            : TextStyle(color: Theme.of(context).hintColor),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
               ),
 
-            if (widget.bagId == null || widget.cupId != null) const SizedBox(height: 24),
+            if (widget.bagId == null || widget.cupId != null)
+              const SizedBox(height: 24),
 
             // Brew Parameters Section
             _buildSection(
@@ -556,7 +566,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => EquipmentFormScreen(userId: user.id),
+                              builder: (context) =>
+                                  EquipmentFormScreen(userId: user.id),
                             ),
                           );
                           if (result == true) {
@@ -578,11 +589,13 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     ExpansionTile(
                       title: const Text('Equipment Details'),
                       tilePadding: EdgeInsets.zero,
-                      childrenPadding: const EdgeInsets.only(left: 16, bottom: 12),
+                      childrenPadding:
+                          const EdgeInsets.only(left: 16, bottom: 12),
                       children: [
                         Builder(
                           builder: (context) {
-                            final equipment = ref.watch(equipmentByIdProvider(_selectedEquipmentId!));
+                            final equipment = ref.watch(
+                                equipmentByIdProvider(_selectedEquipmentId!));
                             if (equipment == null) {
                               return const Text('Equipment not found');
                             }
@@ -590,14 +603,16 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                             final details = <Widget>[];
 
                             // Only show fields that have values
-                            if (equipment.grinderBrand != null || equipment.grinderModel != null) {
+                            if (equipment.grinderBrand != null ||
+                                equipment.grinderModel != null) {
                               details.add(_buildEquipmentDetailRow(
                                 Icons.blender,
                                 'Grinder',
                                 equipment.grinderDisplayName,
                               ));
                             }
-                            if (equipment.brewerBrand != null || equipment.brewerModel != null) {
+                            if (equipment.brewerBrand != null ||
+                                equipment.brewerModel != null) {
                               details.add(_buildEquipmentDetailRow(
                                 Icons.coffee_maker,
                                 'Brewer',
@@ -638,7 +653,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                                 padding: EdgeInsets.only(bottom: 8),
                                 child: Text(
                                   'No equipment details available',
-                                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 14),
                                 ),
                               );
                             }
@@ -659,13 +675,19 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   Builder(
                     builder: (context) {
                       final equipment = _selectedEquipmentId != null
-                          ? ref.watch(equipmentByIdProvider(_selectedEquipmentId!))
+                          ? ref.watch(
+                              equipmentByIdProvider(_selectedEquipmentId!))
                           : null;
 
                       // Use override values if set, otherwise fall back to equipment settings
-                      final minValue = _grinderMinSetting ?? equipment?.grinderMinSetting ?? 0.0;
-                      final maxValue = _grinderMaxSetting ?? equipment?.grinderMaxSetting ?? 50.0;
-                      final stepSize = _grinderStepSize ?? equipment?.grinderStepSize ?? 1.0;
+                      final minValue = _grinderMinSetting ??
+                          equipment?.grinderMinSetting ??
+                          0.0;
+                      final maxValue = _grinderMaxSetting ??
+                          equipment?.grinderMaxSetting ??
+                          50.0;
+                      final stepSize =
+                          _grinderStepSize ?? equipment?.grinderStepSize ?? 1.0;
                       final hapticsEnabled = ref.watch(hapticsEnabledProvider);
 
                       return GrindSizeWheel(
@@ -675,8 +697,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         onChanged: (value) {
                           setState(() {
                             _grindLevelController.text = value?.toStringAsFixed(
-                              stepSize < 1 ? 2 : (stepSize == 1 ? 0 : 1),
-                            ) ?? '';
+                                  stepSize < 1 ? 2 : (stepSize == 1 ? 0 : 1),
+                                ) ??
+                                '';
                           });
                         },
                         minValue: minValue,
@@ -714,7 +737,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                             : double.tryParse(_waterTempController.text),
                         onChanged: (value) {
                           setState(() {
-                            _waterTempController.text = value?.toStringAsFixed(1) ?? '';
+                            _waterTempController.text =
+                                value?.toStringAsFixed(1) ?? '';
                           });
                         },
                         hapticsEnabled: hapticsEnabled,
@@ -743,8 +767,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         Expanded(
                           child: TextFormField(
                             controller: _finalVolumeController,
-                            decoration:
-                                const InputDecoration(labelText: 'Final Volume (ml)'),
+                            decoration: const InputDecoration(
+                                labelText: 'Final Volume (ml)'),
                             keyboardType: TextInputType.number,
                           ),
                         ),
@@ -763,7 +787,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           keyboardType: TextInputType.number,
                           onChanged: (value) {
                             // Auto-update minutes:seconds field
-                            _brewTimeFormattedController.text = _formatSecondsToMinSec(value);
+                            _brewTimeFormattedController.text =
+                                _formatSecondsToMinSec(value);
                           },
                         ),
                       ),
@@ -810,7 +835,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           labelText: 'Pressure',
                           suffixText: 'bars',
                         ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -821,7 +847,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           labelText: 'Yield',
                           suffixText: 'g',
                         ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -840,7 +867,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                                   labelText: 'Bloom Water Amount',
                                   suffixText: 'g',
                                 ),
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
                               ),
                             ),
                           if (_currentFieldVisibility['bloomAmount'] == true &&
@@ -872,28 +901,36 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                                 _usePourTimer = !_usePourTimer;
                               });
                             },
-                            icon: Icon(_usePourTimer ? Icons.timer : Icons.text_fields),
-                            label: Text(_usePourTimer ? 'Use Text' : 'Use Timer'),
+                            icon: Icon(_usePourTimer
+                                ? Icons.timer
+                                : Icons.text_fields),
+                            label:
+                                Text(_usePourTimer ? 'Use Text' : 'Use Timer'),
                           ),
                         ],
                       ),
                       if (_usePourTimer) ...[
                         PourScheduleTimer(
                           initialEntries: _pourEntries,
-                          onStop: (entries, totalSeconds, finalVolume, bloomAmount) {
+                          onStop: (entries, totalSeconds, finalVolume,
+                              bloomAmount) {
                             setState(() {
                               _pourEntries = entries;
-                              _brewTimeController.text = totalSeconds.toString();
-                              _pourScheduleController.text = _formatPourEntries(entries);
+                              _brewTimeController.text =
+                                  totalSeconds.toString();
+                              _pourScheduleController.text =
+                                  _formatPourEntries(entries);
 
                               // Populate Final Volume with last entry
                               if (finalVolume != null) {
-                                _finalVolumeController.text = finalVolume.toStringAsFixed(0);
+                                _finalVolumeController.text =
+                                    finalVolume.toStringAsFixed(0);
                               }
 
                               // Populate Bloom Water Amount with first entry
                               if (bloomAmount != null) {
-                                _bloomAmountController.text = bloomAmount.toStringAsFixed(0);
+                                _bloomAmountController.text =
+                                    bloomAmount.toStringAsFixed(0);
                               }
                             });
                           },
@@ -920,7 +957,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         suffixText: '%',
                         hintText: 'Requires refractometer',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -931,7 +969,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         labelText: 'Extraction Yield',
                         suffixText: '%',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                     ),
                   ],
                 ],
@@ -951,7 +990,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         labelText: 'Room Temperature',
                         suffixText: '°C',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -962,7 +1002,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         labelText: 'Humidity',
                         suffixText: '%',
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -980,9 +1021,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   if (_currentFieldVisibility['timeOfDay'] == true) ...[
                     DropdownButtonFormField<String>(
                       value: _timeOfDay,
-                      decoration: const InputDecoration(labelText: 'Time of Day'),
+                      decoration:
+                          const InputDecoration(labelText: 'Time of Day'),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('Not specified')),
+                        const DropdownMenuItem(
+                            value: null, child: Text('Not specified')),
                         ...timesOfDay.map((time) => DropdownMenuItem(
                               value: time,
                               child: Text(time),
@@ -995,7 +1038,6 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
               ),
             ],
 
-
             // Drink Recipe Section (Collapsible)
             const SizedBox(height: 24),
             Center(
@@ -1005,12 +1047,17 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     _showDrinkRecipeSection = !_showDrinkRecipeSection;
                   });
                 },
-                icon: Icon(_showDrinkRecipeSection ? Icons.expand_less : Icons.local_cafe),
-                label: Text(_showDrinkRecipeSection ? 'Hide Drink Recipe' : 'Make a Drink'),
+                icon: Icon(_showDrinkRecipeSection
+                    ? Icons.expand_less
+                    : Icons.local_cafe),
+                label: Text(_showDrinkRecipeSection
+                    ? 'Hide Drink Recipe'
+                    : 'Make a Drink'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.primaryBrown,
                   side: const BorderSide(color: AppTheme.primaryBrown),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
               ),
             ),
@@ -1031,16 +1078,19 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         value: null,
                         child: Text('None'),
                       ),
-                      ...ref.watch(drinkRecipesProvider).map((recipe) => DropdownMenuItem(
-                            value: recipe.id,
-                            child: Text(recipe.name),
-                          )),
+                      ...ref
+                          .watch(drinkRecipesProvider)
+                          .map((recipe) => DropdownMenuItem(
+                                value: recipe.id,
+                                child: Text(recipe.name),
+                              )),
                     ],
                     onChanged: (value) {
                       setState(() {
                         _selectedDrinkRecipeId = value;
                         if (value != null) {
-                          final recipe = ref.read(drinkRecipeByIdProvider(value));
+                          final recipe =
+                              ref.read(drinkRecipeByIdProvider(value));
                           if (recipe != null) {
                             _loadDrinkRecipe(recipe);
                           }
@@ -1075,7 +1125,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     value: _drinkBaseType ?? _selectedBrewType,
                     decoration: InputDecoration(
                       labelText: 'Base Type',
-                      hintText: _selectedBrewType != null ? 'Inherits from Brew Type: $_selectedBrewType' : 'Optional',
+                      hintText: _selectedBrewType != null
+                          ? 'Inherits from Brew Type: $_selectedBrewType'
+                          : 'Optional',
                     ),
                     items: [
                       if (_selectedBrewType != null)
@@ -1085,15 +1137,20 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         ),
                       // Only show static options that aren't already the selected brew type
                       if (_selectedBrewType?.toLowerCase() != 'espresso')
-                        const DropdownMenuItem(value: 'Espresso', child: Text('Espresso')),
+                        const DropdownMenuItem(
+                            value: 'Espresso', child: Text('Espresso')),
                       if (_selectedBrewType?.toLowerCase() != 'drip')
-                        const DropdownMenuItem(value: 'Drip', child: Text('Drip')),
+                        const DropdownMenuItem(
+                            value: 'Drip', child: Text('Drip')),
                       if (_selectedBrewType?.toLowerCase() != 'pour over')
-                        const DropdownMenuItem(value: 'Pour Over', child: Text('Pour Over')),
+                        const DropdownMenuItem(
+                            value: 'Pour Over', child: Text('Pour Over')),
                       if (_selectedBrewType?.toLowerCase() != 'french press')
-                        const DropdownMenuItem(value: 'French Press', child: Text('French Press')),
+                        const DropdownMenuItem(
+                            value: 'French Press', child: Text('French Press')),
                       if (_selectedBrewType?.toLowerCase() != 'cold brew')
-                        const DropdownMenuItem(value: 'Cold Brew', child: Text('Cold Brew')),
+                        const DropdownMenuItem(
+                            value: 'Cold Brew', child: Text('Cold Brew')),
                     ],
                     onChanged: (value) => setState(() {
                       _drinkBaseType = value;
@@ -1104,7 +1161,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                     }),
                   ),
                   // Espresso shot selection (only show if base type is Espresso)
-                  if ((_drinkBaseType ?? _selectedBrewType)?.toLowerCase() == 'espresso') ...[
+                  if ((_drinkBaseType ?? _selectedBrewType)?.toLowerCase() ==
+                      'espresso') ...[
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       value: _drinkEspressoShot,
@@ -1113,11 +1171,15 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         hintText: 'Optional',
                       ),
                       items: const [
-                        DropdownMenuItem(value: null, child: Text('Not specified')),
-                        DropdownMenuItem(value: 'Single', child: Text('Single')),
-                        DropdownMenuItem(value: 'Double', child: Text('Double')),
+                        DropdownMenuItem(
+                            value: null, child: Text('Not specified')),
+                        DropdownMenuItem(
+                            value: 'Single', child: Text('Single')),
+                        DropdownMenuItem(
+                            value: 'Double', child: Text('Double')),
                       ],
-                      onChanged: (value) => setState(() => _drinkEspressoShot = value),
+                      onChanged: (value) =>
+                          setState(() => _drinkEspressoShot = value),
                     ),
                   ],
                   const SizedBox(height: 12),
@@ -1133,13 +1195,15 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                             hintText: 'Optional',
                           ),
                           items: [
-                            const DropdownMenuItem(value: null, child: Text('None')),
+                            const DropdownMenuItem(
+                                value: null, child: Text('None')),
                             ...milkTypes.map((type) => DropdownMenuItem(
                                   value: type,
                                   child: Text(type),
                                 )),
                           ],
-                          onChanged: (value) => setState(() => _drinkMilkType = value),
+                          onChanged: (value) =>
+                              setState(() => _drinkMilkType = value),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1159,7 +1223,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   CheckboxListTile(
                     title: const Text('Iced'),
                     value: _drinkIce,
-                    onChanged: (value) => setState(() => _drinkIce = value ?? false),
+                    onChanged: (value) =>
+                        setState(() => _drinkIce = value ?? false),
                     contentPadding: EdgeInsets.zero,
                   ),
                   const SizedBox(height: 12),
@@ -1171,8 +1236,12 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           _showDrinkRecipeDetails = !_showDrinkRecipeDetails;
                         });
                       },
-                      icon: Icon(_showDrinkRecipeDetails ? Icons.visibility_off : Icons.visibility),
-                      label: Text(_showDrinkRecipeDetails ? 'Hide Details' : 'Show Syrups, Sweeteners & More'),
+                      icon: Icon(_showDrinkRecipeDetails
+                          ? Icons.visibility_off
+                          : Icons.visibility),
+                      label: Text(_showDrinkRecipeDetails
+                          ? 'Hide Details'
+                          : 'Show Syrups, Sweeteners & More'),
                     ),
                   ),
                   // Additional details (syrups, sweeteners, additions, instructions)
@@ -1233,7 +1302,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: drinkAdditions.map((addition) {
-                        final isSelected = _drinkOtherAdditions.contains(addition);
+                        final isSelected =
+                            _drinkOtherAdditions.contains(addition);
                         return FilterChip(
                           label: Text(addition),
                           selected: isSelected,
@@ -1277,14 +1347,16 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           milkType: _drinkMilkType,
                           milkAmountMl: _drinkMilkAmountController.text.isEmpty
                               ? null
-                              : double.tryParse(_drinkMilkAmountController.text),
+                              : double.tryParse(
+                                  _drinkMilkAmountController.text),
                           ice: _drinkIce,
                           syrups: List.from(_drinkSyrups),
                           sweeteners: List.from(_drinkSweeteners),
                           otherAdditions: List.from(_drinkOtherAdditions),
-                          instructions: _drinkInstructionsController.text.isEmpty
-                              ? null
-                              : _drinkInstructionsController.text,
+                          instructions:
+                              _drinkInstructionsController.text.isEmpty
+                                  ? null
+                                  : _drinkInstructionsController.text,
                         );
 
                         await ref
@@ -1325,8 +1397,10 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   if (_shouldShowCuppingScores()) ...[
                     const SizedBox(height: 24),
                     CheckboxListTile(
-                      title: Text('SCA Cupping Scores', style: AppTextStyles.sectionHeader),
-                      subtitle: const Text('Toggle to show/hide cupping score fields'),
+                      title: Text('SCA Cupping Scores',
+                          style: AppTextStyles.sectionHeader),
+                      subtitle: const Text(
+                          'Toggle to show/hide cupping score fields'),
                       value: _showScaCuppingFields,
                       onChanged: (value) {
                         setState(() {
@@ -1343,7 +1417,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       ),
                       const SizedBox(height: 12),
                       if (_currentFieldVisibility['cuppingFragrance'] == true)
-                        _buildScaSlider('Fragrance/Aroma (Dry)', _cuppingFragrance, (value) {
+                        _buildScaSlider(
+                            'Fragrance/Aroma (Dry)', _cuppingFragrance,
+                            (value) {
                           setState(() => _cuppingFragrance = value);
                         }),
                       if (_currentFieldVisibility['cuppingAroma'] == true)
@@ -1355,7 +1431,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           setState(() => _cuppingFlavor = value);
                         }),
                       if (_currentFieldVisibility['cuppingAftertaste'] == true)
-                        _buildScaSlider('Aftertaste', _cuppingAftertaste, (value) {
+                        _buildScaSlider('Aftertaste', _cuppingAftertaste,
+                            (value) {
                           setState(() => _cuppingAftertaste = value);
                         }),
                       if (_currentFieldVisibility['cuppingAcidity'] == true)
@@ -1371,7 +1448,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           setState(() => _cuppingBalance = value);
                         }),
                       if (_currentFieldVisibility['cuppingSweetness'] == true)
-                        _buildScaSlider('Sweetness', _cuppingSweetness, (value) {
+                        _buildScaSlider('Sweetness', _cuppingSweetness,
+                            (value) {
                           setState(() => _cuppingSweetness = value);
                         }),
                       if (_currentFieldVisibility['cuppingCleanCup'] == true)
@@ -1379,16 +1457,19 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           setState(() => _cuppingCleanCup = value);
                         }),
                       if (_currentFieldVisibility['cuppingUniformity'] == true)
-                        _buildScaSlider('Uniformity', _cuppingUniformity, (value) {
+                        _buildScaSlider('Uniformity', _cuppingUniformity,
+                            (value) {
                           setState(() => _cuppingUniformity = value);
                         }),
-                      if (_currentFieldVisibility['cuppingOverall'] == true) ...[
+                      if (_currentFieldVisibility['cuppingOverall'] ==
+                          true) ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
                               'Overall (Calculated Total)',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
                             ),
                             Text(
                               _calculateScaOverall().toString(),
@@ -1402,7 +1483,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         ),
                         const SizedBox(height: 12),
                       ],
-                      if (_currentFieldVisibility['cuppingDefects'] == true) ...[
+                      if (_currentFieldVisibility['cuppingDefects'] ==
+                          true) ...[
                         TextFormField(
                           controller: _cuppingDefectsController,
                           decoration: const InputDecoration(
@@ -1430,7 +1512,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       controller: _tastingNotesController,
                       decoration: const InputDecoration(
                         labelText: 'Notes',
-                        hintText: 'Describe the taste, aroma, and experience...',
+                        hintText:
+                            'Describe the taste, aroma, and experience...',
                       ),
                       maxLines: 4,
                     ),
@@ -1488,7 +1571,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
             if (_currentFieldVisibility['bestRecipe'] == true)
               CheckboxListTile(
                 title: const Text('Mark as Best Recipe'),
-                subtitle: const Text('This will be your reference cup for this bag'),
+                subtitle:
+                    const Text('This will be your reference cup for this bag'),
                 value: _isBest,
                 onChanged: (value) => setState(() => _isBest = value ?? false),
               ),
@@ -1623,7 +1707,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
     );
   }
 
-  Widget _buildScaSlider(String label, double? value, Function(double) onChanged) {
+  Widget _buildScaSlider(
+      String label, double? value, Function(double) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1822,7 +1907,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   // Calculate SCA master toggle state
                   bool? scaMasterValue;
                   if (isScaSection) {
-                    final scaValues = scaFields.map((key) => tempVisibility[key] ?? false).toList();
+                    final scaValues = scaFields
+                        .map((key) => tempVisibility[key] ?? false)
+                        .toList();
                     if (scaValues.every((v) => v == true)) {
                       scaMasterValue = true;
                     } else if (scaValues.every((v) => v == false)) {
@@ -1939,12 +2026,23 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
         coffeeName: _coffeeNameController.text,
         roaster: _roasterController.text,
         farmer: _farmerController.text.isEmpty ? null : _farmerController.text,
-        variety: _varietyController.text.isEmpty ? null : _varietyController.text,
-        elevation: _elevationController.text.isEmpty ? null : _elevationController.text,
-        beanAroma: _beanAromaController.text.isEmpty ? null : _beanAromaController.text,
-        price: _priceController.text.isEmpty ? null : double.tryParse(_priceController.text),
-        bagSizeGrams: _bagSizeController.text.isEmpty ? null : double.tryParse(_bagSizeController.text),
-        recommendedRestDays: _restDaysController.text.isEmpty ? null : int.tryParse(_restDaysController.text),
+        variety:
+            _varietyController.text.isEmpty ? null : _varietyController.text,
+        elevation: _elevationController.text.isEmpty
+            ? null
+            : _elevationController.text,
+        beanAroma: _beanAromaController.text.isEmpty
+            ? null
+            : _beanAromaController.text,
+        price: _priceController.text.isEmpty
+            ? null
+            : double.tryParse(_priceController.text),
+        bagSizeGrams: _bagSizeController.text.isEmpty
+            ? null
+            : double.tryParse(_bagSizeController.text),
+        recommendedRestDays: _restDaysController.text.isEmpty
+            ? null
+            : int.tryParse(_restDaysController.text),
         datePurchased: _datePurchased,
         roastDate: _roastDate,
         openDate: _openDate ?? DateTime.now(),
@@ -1969,7 +2067,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       bagId: finalBagId,
       userId: user.id,
       brewType: _selectedBrewType!,
-      grindLevel: _grindLevelController.text.isEmpty ? null : _grindLevelController.text,
+      grindLevel: _grindLevelController.text.isEmpty
+          ? null
+          : _grindLevelController.text,
       grinderMinSetting: equipment?.grinderMinSetting,
       grinderMaxSetting: equipment?.grinderMaxSetting,
       grinderStepSize: equipment?.grinderStepSize,
@@ -2032,7 +2132,8 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       cuppingSweetness: _cuppingSweetness,
       cuppingCleanCup: _cuppingCleanCup,
       cuppingUniformity: _cuppingUniformity,
-      cuppingOverall: _calculateScaOverall() > 0 ? _calculateScaOverall().toDouble() : null,
+      cuppingOverall:
+          _calculateScaOverall() > 0 ? _calculateScaOverall().toDouble() : null,
       cuppingDefects: _cuppingDefectsController.text.isEmpty
           ? null
           : _cuppingDefectsController.text,
