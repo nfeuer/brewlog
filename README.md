@@ -61,6 +61,32 @@ A comprehensive mobile-first coffee tracking application built with Flutter and 
 
 The app will automatically generate sample data on first launch!
 
+## 📚 Documentation
+
+**For Developers:**
+- **[CODEBASE_GUIDE.md](CODEBASE_GUIDE.md)** - Comprehensive architecture overview and developer guide
+  - Quick start for new developers
+  - Architecture patterns and data flow
+  - Directory structure and file purposes
+  - Adding new features guide
+  - Common tasks reference
+
+**For Setup & Deployment:**
+- **[SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)** - Detailed development setup and Firebase configuration
+- **[BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md)** - Build commands and troubleshooting
+- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute quick start guide
+
+**For Features & Implementation:**
+- **[AUTHENTICATION_IMPLEMENTATION.md](AUTHENTICATION_IMPLEMENTATION.md)** - Authentication system details
+- **[FIREBASE_BACKEND_ACTIVATED.md](FIREBASE_BACKEND_ACTIVATED.md)** - Firebase integration status
+- **[PREMIUM_FEATURES_ROADMAP.md](PREMIUM_FEATURES_ROADMAP.md)** - Premium features roadmap
+
+All code files include comprehensive inline documentation with DartDoc comments explaining:
+- Class purposes and responsibilities
+- Method functionality and parameters
+- Usage examples
+- Architecture patterns
+
 ## 📖 Detailed Setup Instructions
 
 For comprehensive setup instructions including Firebase configuration, see [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md).

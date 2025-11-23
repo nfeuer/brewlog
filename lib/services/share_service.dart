@@ -2,7 +2,74 @@ import 'dart:convert';
 import '../models/drink_recipe.dart';
 import '../models/cup.dart';
 
-/// Service for sharing data via QR codes and deep links
+/// Service for sharing cups and recipes via QR codes and deep links.
+///
+/// **Premium Feature:** QR code sharing is only available to paid users.
+///
+/// This service provides encoding/decoding functionality for sharing:
+/// - Drink recipes
+/// - Brew cups (without photos for QR size constraints)
+///
+/// **Sharing Methods:**
+///
+/// 1. **QR Codes:**
+///    - Encode object to JSON string
+///    - Generate QR code with qr_flutter package
+///    - Scan QR with mobile_scanner package
+///    - Decode JSON string back to object
+///
+/// 2. **Deep Links:**
+///    - Create brewlog:// URLs with encoded data
+///    - Handle incoming links via app_links package
+///    - Parse and import data
+///
+/// **Data Format:**
+/// ```json
+/// {
+///   "type": "drink_recipe" | "cup",
+///   "version": 1,
+///   "data": { ... object JSON ... }
+/// }
+/// ```
+///
+/// **Version Management:**
+/// - Current version: 1
+/// - Future versions can have different data structures
+/// - Decoder validates version compatibility
+///
+/// **Usage Examples:**
+///
+/// **Encoding a recipe:**
+/// ```dart
+/// final qrData = ShareService.encodeDrinkRecipe(recipe, sharerUsername: user.username);
+/// // Display in QrImageView widget
+/// ```
+///
+/// **Decoding from QR:**
+/// ```dart
+/// final recipe = ShareService.decodeDrinkRecipe(scannedData);
+/// if (recipe != null) {
+///   await db.createDrinkRecipe(recipe);
+/// }
+/// ```
+///
+/// **Creating deep link:**
+/// ```dart
+/// final url = ShareService.encodeShareUrl('cup', cupJson);
+/// // Returns: brewlog://cup?data=<base64>
+/// await Share.share(url);
+/// ```
+///
+/// **Security Notes:**
+/// - Photos are excluded from cup shares (device-specific paths)
+/// - IDs and userIds are stripped on import (new IDs generated)
+/// - Sharer username is preserved for attribution
+/// - No sensitive user data is shared
+///
+/// **See Also:**
+/// - [SharedCup] for storing imported cups
+/// - [ScanQrScreen] for QR code scanning
+/// - [main.dart] deep link handling in _handleDeepLink()
 class ShareService {
   /// Encode a DrinkRecipe to JSON string for sharing
   static String encodeDrinkRecipe(DrinkRecipe recipe, {String? sharerUsername}) {

@@ -1,3 +1,24 @@
+/// BrewLog - Coffee Tracking Application
+///
+/// **Main Entry Point**
+///
+/// This file handles application initialization including:
+/// - Hive database setup for offline-first storage
+/// - Firebase initialization (optional, for premium features)
+/// - Deep link handling for recipe/cup sharing
+/// - Sample data generation in debug mode
+/// - Username prompt scheduling for new users
+///
+/// **Architecture:**
+/// - Uses Riverpod for state management
+/// - Hive for local storage (NoSQL embedded database)
+/// - Firebase for cloud sync (premium only)
+/// - Material Design 3 theme
+///
+/// **See Also:**
+/// - [CODEBASE_GUIDE.md] for complete architecture overview
+/// - [README.md] for project description
+/// - [SETUP_INSTRUCTIONS.md] for development setup
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +43,21 @@ import 'providers/user_provider.dart';
 import 'widgets/username_prompt_dialog.dart';
 import 'package:uuid/uuid.dart';
 
+/// Application entry point.
+///
+/// **Initialization Sequence:**
+/// 1. Initialize Flutter bindings
+/// 2. Initialize Hive database
+/// 3. Register Hive adapters (commented until build_runner is run)
+/// 4. Initialize DatabaseService (opens boxes, creates default user)
+/// 5. Initialize Firebase (graceful failure if not configured)
+/// 6. Launch app with Riverpod
+/// 7. Generate sample data in debug mode (non-blocking)
+///
+/// **Important:** Hive adapters must be generated before uncommenting:
+/// ```bash
+/// flutter pub run build_runner build --delete-conflicting-outputs
+/// ```
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -82,6 +118,22 @@ Future<void> _generateSampleDataIfNeeded() async {
   }
 }
 
+/// Root application widget wrapped with Riverpod.
+///
+/// This widget sets up:
+/// - Material app configuration
+/// - Deep link handling for brewlog:// URLs
+/// - Username prompt dialog for new users
+/// - Global navigator key for accessing context outside widgets
+///
+/// **Deep Links:**
+/// Handles two types of deep links:
+/// - `brewlog://drink_recipe?data=<json>` - Import drink recipe
+/// - `brewlog://cup?data=<json>` - Import shared cup
+///
+/// **Username Prompt:**
+/// New users are prompted to enter a username after a 1-second delay.
+/// This can be skipped or disabled via "Never ask again" option.
 class BrewLogApp extends ConsumerStatefulWidget {
   const BrewLogApp({super.key});
 
@@ -89,6 +141,7 @@ class BrewLogApp extends ConsumerStatefulWidget {
   ConsumerState<BrewLogApp> createState() => _BrewLogAppState();
 }
 
+/// State for [BrewLogApp] managing deep links and username prompts.
 class _BrewLogAppState extends ConsumerState<BrewLogApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   late AppLinks _appLinks;
