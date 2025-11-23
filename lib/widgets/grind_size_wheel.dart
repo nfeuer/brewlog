@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wheel_slider/wheel_slider.dart';
@@ -98,6 +99,7 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   late int _currentIndex;
   bool _showSettings = false;
   int _wheelKey = 0; // Used to force WheelSlider rebuild when snapping to valid position
+  Timer? _snapTimer; // Timer to debounce snapping to valid position
 
   // Always use 0.25 as the base interval for consistent spacing
   static const double _baseInterval = 0.25;
@@ -106,6 +108,12 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   void initState() {
     super.initState();
     _initializeValues();
+  }
+
+  @override
+  void dispose() {
+    _snapTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -143,11 +151,16 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
 
   void _onValueChanged(int index) {
     final newValue = widget.minValue + (index * _baseInterval);
+    final isValid = _TickMarkHelper.isSelectable(newValue, widget.stepSize);
 
-    // Only update if this is a valid selectable tick
-    if (_TickMarkHelper.isSelectable(newValue, widget.stepSize)) {
+    // Always update the index for smooth scrolling
+    setState(() {
+      _currentIndex = index;
+    });
+
+    if (isValid) {
+      // Valid position - update immediately
       setState(() {
-        _currentIndex = index;
         _currentValue = _snapToStepSize(newValue);
       });
 
@@ -158,19 +171,26 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
 
       // Notify parent
       widget.onChanged(_currentValue);
+
+      // Cancel any pending snap timer since we're on a valid position
+      _snapTimer?.cancel();
     } else {
-      // User landed on an invalid tick - snap to nearest valid position
-      final snappedValue = _snapToStepSize(newValue);
-      final snappedIndex = ((snappedValue - widget.minValue) / _baseInterval).round();
+      // Invalid position - debounce the snap to avoid interrupting scrolling
+      _snapTimer?.cancel();
+      _snapTimer = Timer(const Duration(milliseconds: 150), () {
+        // After scrolling has stopped, snap to nearest valid position
+        final snappedValue = _snapToStepSize(newValue);
+        final snappedIndex = ((snappedValue - widget.minValue) / _baseInterval).round();
 
-      setState(() {
-        _currentIndex = snappedIndex;
-        _currentValue = snappedValue;
-        _wheelKey++; // Force WheelSlider to rebuild at the snapped position
+        setState(() {
+          _currentIndex = snappedIndex;
+          _currentValue = snappedValue;
+          _wheelKey++; // Force WheelSlider to rebuild at the snapped position
+        });
+
+        // Notify parent
+        widget.onChanged(_currentValue);
       });
-
-      // Notify parent
-      widget.onChanged(_currentValue);
     }
   }
 
