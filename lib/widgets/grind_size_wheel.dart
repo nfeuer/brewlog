@@ -214,12 +214,12 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Horizontal layout: number on left, dial on right
+            // Horizontal layout: number/settings on left, dial on right
             Row(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left side: Display current value and label
+                // Left side: Display current value, label, and settings
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,6 +242,39 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
                         color: Colors.grey,
                       ),
                     ),
+
+                    // Settings button and controls (on left side)
+                    if (widget.showRangeControls) ...[
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _showSettings = !_showSettings;
+                          });
+                        },
+                        icon: Icon(_showSettings ? Icons.expand_less : Icons.settings),
+                        label: Text(_showSettings ? 'Hide Settings' : 'Adjust Range & Step'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.brown.shade700,
+                        ),
+                      ),
+                      if (_showSettings) ...[
+                        const SizedBox(height: 4),
+                        _buildRangeControls(),
+                      ],
+                    ],
+
+                    // Show range information (on left side)
+                    if (!widget.showRangeControls || !_showSettings) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Range: ${widget.minValue.toStringAsFixed(0)} - ${widget.maxValue.toStringAsFixed(0)} (step: ${widget.stepSize})',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
 
@@ -312,38 +345,6 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
                   ),
                 ),
               ],
-            ),
-
-          const SizedBox(height: 8),
-
-          // Range controls (optional)
-          if (widget.showRangeControls) ...[
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _showSettings = !_showSettings;
-                });
-              },
-              icon: Icon(_showSettings ? Icons.expand_less : Icons.settings),
-              label: Text(_showSettings ? 'Hide Settings' : 'Adjust Range & Step'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.brown.shade700,
-              ),
-            ),
-            if (_showSettings) ...[
-              const SizedBox(height: 4),
-              _buildRangeControls(),
-            ],
-          ],
-
-          // Show range information
-          if (!widget.showRangeControls || !_showSettings)
-            Text(
-              'Range: ${widget.minValue.toStringAsFixed(0)} - ${widget.maxValue.toStringAsFixed(0)} (step: ${widget.stepSize})',
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.grey,
-              ),
             ),
           ],
         ),
