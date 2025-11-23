@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
 import '../utils/constants.dart';
@@ -199,6 +200,14 @@ class ProfileScreen extends ConsumerWidget {
                     );
                   },
                 ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.feedback),
+                  title: const Text('Send Feedback'),
+                  subtitle: const Text('Share your thoughts with us'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showFeedbackDialog(context, user),
+                ),
               ],
             ),
           ),
@@ -383,5 +392,78 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showFeedbackDialog(BuildContext context, dynamic user) {
+    final TextEditingController feedbackController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Send Feedback'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'We value your feedback! Let us know what you think about BrewLog.',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: feedbackController,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                hintText: 'Enter your feedback here...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final feedback = feedbackController.text.trim();
+              if (feedback.isEmpty) {
+                showError(context, 'Please enter your feedback');
+                return;
+              }
+
+              Navigator.pop(context);
+              await _sendFeedback(context, feedback, user);
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendFeedback(BuildContext context, String feedback, dynamic user) async {
+    try {
+      // Submit feedback to Firebase Firestore
+      await FirebaseFirestore.instance.collection('feedback').add({
+        'userId': user.id,
+        'username': user.username ?? 'Unknown User',
+        'email': user.email,
+        'isPremium': user.isPaid,
+        'feedback': feedback,
+        'timestamp': FieldValue.serverTimestamp(),
+        'appVersion': '1.0.0',
+        'platform': 'mobile',
+      });
+
+      if (context.mounted) {
+        showSuccess(context, 'Thank you for your feedback!');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showError(context, 'Failed to submit feedback. Please try again.');
+      }
+    }
   }
 }
