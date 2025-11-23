@@ -18,6 +18,7 @@ import '../utils/theme.dart';
 import '../widgets/rating_input.dart';
 import '../widgets/photo_viewer.dart';
 import '../widgets/temperature_dial.dart';
+import '../widgets/grind_size_wheel.dart';
 import '../widgets/pour_schedule_timer.dart';
 import 'equipment_form_screen.dart';
 import 'share_cup_screen.dart';
@@ -122,6 +123,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   final _drinkInstructionsController = TextEditingController();
   bool _showDrinkRecipeSection = false;
   bool _showDrinkRecipeDetails = false;
+
+  // Grinder settings for GrindSizeWheel
+  double? _grinderMinSetting;
+  double? _grinderMaxSetting;
+  double? _grinderStepSize;
 
   @override
   void initState() {
@@ -643,10 +649,50 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   ],
                 ],
                 if (_currentFieldVisibility['grindLevel'] == true) ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _grindLevelController,
-                    decoration: const InputDecoration(labelText: 'Grind Level'),
+                  const SizedBox(height: 24),
+                  // Grind Size Wheel
+                  Builder(
+                    builder: (context) {
+                      final equipment = _selectedEquipmentId != null
+                          ? ref.read(equipmentProvider(_selectedEquipmentId!))
+                          : null;
+                      final minValue = _grinderMinSetting ?? equipment?.grinderMinSetting ?? 0.0;
+                      final maxValue = _grinderMaxSetting ?? equipment?.grinderMaxSetting ?? 50.0;
+                      final stepSize = _grinderStepSize ?? equipment?.grinderStepSize ?? 1.0;
+
+                      return GrindSizeWheel(
+                        initialValue: _grindLevelController.text.isEmpty
+                            ? null
+                            : double.tryParse(_grindLevelController.text),
+                        onChanged: (value) {
+                          setState(() {
+                            _grindLevelController.text = value?.toStringAsFixed(
+                              stepSize < 1 ? 2 : (stepSize == 1 ? 0 : 1),
+                            ) ?? '';
+                          });
+                        },
+                        minValue: minValue,
+                        maxValue: maxValue,
+                        stepSize: stepSize,
+                        showRangeControls: true,
+                        hapticsEnabled: true, // Default to true for now
+                        onMinValueChanged: (value) {
+                          setState(() {
+                            _grinderMinSetting = value;
+                          });
+                        },
+                        onMaxValueChanged: (value) {
+                          setState(() {
+                            _grinderMaxSetting = value;
+                          });
+                        },
+                        onStepSizeChanged: (value) {
+                          setState(() {
+                            _grinderStepSize = value;
+                          });
+                        },
+                      );
+                    },
                   ),
                 ],
                 if (_currentFieldVisibility['waterTemp'] == true) ...[
