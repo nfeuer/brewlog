@@ -114,7 +114,7 @@ class DatabaseService {
   Future<void> _createDefaultUser() async {
     final user = UserProfile(
       id: _uuid.v4(),
-      username: 'Coffee Enthusiast',
+      username: null, // No default username - prompt user to create one
       isPaid: false,
       isAdmin: false,
       ratingScaleIndex: RatingScale.oneToFive.index,

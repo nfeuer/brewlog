@@ -823,7 +823,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     if (_clearDataPressCount >= 4) {
       // Reset counter
-      _clearDataPressCount = 0;
+      setState(() {
+        _clearDataPressCount = 0;
+      });
 
       // Show confirmation dialog
       _showClearDataConfirmation();

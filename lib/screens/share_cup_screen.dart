@@ -9,7 +9,7 @@ import '../providers/user_provider.dart';
 import '../utils/theme.dart';
 
 /// Screen for sharing a Cup via QR code or deep link
-class ShareCupScreen extends ConsumerWidget {
+class ShareCupScreen extends ConsumerStatefulWidget {
   final Cup cup;
 
   const ShareCupScreen({
@@ -18,15 +18,97 @@ class ShareCupScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ShareCupScreen> createState() => _ShareCupScreenState();
+}
+
+class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
+  // Field visibility toggles for reducing QR code size
+  bool _includeEnvironmental = true;
+  bool _includeCuppingScores = true;
+  bool _includeAdvancedBrewing = true;
+  bool _includeTimingDetails = true;
+
+  Cup get _filteredCup {
+    // Create a copy of the cup with optional fields removed based on settings
+    return Cup(
+      id: widget.cup.id,
+      bagId: widget.cup.bagId,
+      userId: widget.cup.userId,
+      brewType: widget.cup.brewType,
+      grindLevel: widget.cup.grindLevel,
+      waterTempCelsius: widget.cup.waterTempCelsius,
+      gramsUsed: widget.cup.gramsUsed,
+      finalVolumeMl: widget.cup.finalVolumeMl,
+      ratio: widget.cup.ratio,
+      brewTimeSeconds: _includeTimingDetails ? widget.cup.brewTimeSeconds : null,
+      bloomTimeSeconds: _includeTimingDetails ? widget.cup.bloomTimeSeconds : null,
+      score1to5: widget.cup.score1to5,
+      score1to10: widget.cup.score1to10,
+      score1to100: widget.cup.score1to100,
+      tastingNotes: widget.cup.tastingNotes,
+      flavorTags: widget.cup.flavorTags,
+      photoPaths: [], // Never include photos in QR
+      isBest: widget.cup.isBest,
+      shareCount: widget.cup.shareCount,
+      sharedByUserId: widget.cup.sharedByUserId,
+      sharedByUsername: widget.cup.sharedByUsername,
+      createdAt: widget.cup.createdAt,
+      customTitle: widget.cup.customTitle,
+      equipmentSetupId: widget.cup.equipmentSetupId,
+      adaptationNotes: widget.cup.adaptationNotes,
+      // Advanced brewing parameters
+      preInfusionTimeSeconds: _includeAdvancedBrewing ? widget.cup.preInfusionTimeSeconds : null,
+      pressureBars: _includeAdvancedBrewing ? widget.cup.pressureBars : null,
+      yieldGrams: _includeAdvancedBrewing ? widget.cup.yieldGrams : null,
+      bloomAmountGrams: _includeAdvancedBrewing ? widget.cup.bloomAmountGrams : null,
+      pourSchedule: _includeAdvancedBrewing ? widget.cup.pourSchedule : null,
+      tds: _includeAdvancedBrewing ? widget.cup.tds : null,
+      extractionYield: _includeAdvancedBrewing ? widget.cup.extractionYield : null,
+      // Environmental conditions
+      roomTempCelsius: _includeEnvironmental ? widget.cup.roomTempCelsius : null,
+      humidity: _includeEnvironmental ? widget.cup.humidity : null,
+      altitudeMeters: _includeEnvironmental ? widget.cup.altitudeMeters : null,
+      timeOfDay: _includeEnvironmental ? widget.cup.timeOfDay : null,
+      // Cupping scores
+      cuppingFragrance: _includeCuppingScores ? widget.cup.cuppingFragrance : null,
+      cuppingAroma: _includeCuppingScores ? widget.cup.cuppingAroma : null,
+      cuppingFlavor: _includeCuppingScores ? widget.cup.cuppingFlavor : null,
+      cuppingAftertaste: _includeCuppingScores ? widget.cup.cuppingAftertaste : null,
+      cuppingAcidity: _includeCuppingScores ? widget.cup.cuppingAcidity : null,
+      cuppingBody: _includeCuppingScores ? widget.cup.cuppingBody : null,
+      cuppingBalance: _includeCuppingScores ? widget.cup.cuppingBalance : null,
+      cuppingSweetness: _includeCuppingScores ? widget.cup.cuppingSweetness : null,
+      cuppingCleanCup: _includeCuppingScores ? widget.cup.cuppingCleanCup : null,
+      cuppingUniformity: _includeCuppingScores ? widget.cup.cuppingUniformity : null,
+      cuppingOverall: _includeCuppingScores ? widget.cup.cuppingOverall : null,
+      cuppingTotal: _includeCuppingScores ? widget.cup.cuppingTotal : null,
+      cuppingDefects: _includeCuppingScores ? widget.cup.cuppingDefects : null,
+      fieldVisibility: widget.cup.fieldVisibility,
+      drinkRecipeId: widget.cup.drinkRecipeId,
+      grinderMinSetting: widget.cup.grinderMinSetting,
+      grinderMaxSetting: widget.cup.grinderMaxSetting,
+      grinderStepSize: widget.cup.grinderStepSize,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(userProfileProvider);
-    final String qrData = ShareService.encodeCup(cup, sharerUsername: user?.username);
-    final String deepLink = ShareService.createCupDeepLink(cup, sharerUsername: user?.username);
+    final Cup cupToShare = _filteredCup;
+    final String qrData = ShareService.encodeCup(cupToShare, sharerUsername: user?.username);
+    final String deepLink = ShareService.createCupDeepLink(cupToShare, sharerUsername: user?.username);
     final int dataSize = ShareService.estimateDataSize(qrData);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Share Cup'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            onPressed: _showFieldSettings,
+            tooltip: 'Customize QR Code',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -43,21 +125,21 @@ class ShareCupScreen extends ConsumerWidget {
 
             // Brew type
             Text(
-              cup.brewType,
+              widget.cup.brewType,
               style: AppTextStyles.cardTitle,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 4),
 
             // Rating if available
-            if (cup.score1to5 != null) ...[
+            if (widget.cup.score1to5 != null) ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(Icons.star, color: Colors.amber, size: 20),
                   const SizedBox(width: 4),
                   Text(
-                    '${cup.score1to5}/5',
+                    '${widget.cup.score1to5}/5',
                     style: AppTextStyles.cardSubtitle,
                   ),
                 ],
@@ -83,9 +165,9 @@ class ShareCupScreen extends ConsumerWidget {
               child: QrImageView(
                 data: qrData,
                 version: QrVersions.auto,
-                size: 280,
+                size: 300,
                 backgroundColor: Colors.white,
-                errorCorrectionLevel: QrErrorCorrectLevel.M,
+                errorCorrectionLevel: QrErrorCorrectLevel.H,
               ),
             ),
             const SizedBox(height: 16),
@@ -109,13 +191,19 @@ class ShareCupScreen extends ConsumerWidget {
               style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Tap the ⚙️ icon above to customize what data to include',
+              style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 32),
 
             // Share via link button (fallback option)
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _shareViaLink(context, deepLink, cup),
+                onPressed: () => _shareViaLink(context, deepLink, cupToShare),
                 icon: const Icon(Icons.share),
                 label: const Text('Share via Link'),
                 style: ElevatedButton.styleFrom(
@@ -174,6 +262,81 @@ class ShareCupScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showFieldSettings() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Customize QR Code'),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Toggle fields to reduce QR code size for easier scanning:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Timing Details'),
+                subtitle: const Text('Brew time, bloom time'),
+                value: _includeTimingDetails,
+                onChanged: (value) {
+                  setDialogState(() => _includeTimingDetails = value);
+                  setState(() => _includeTimingDetails = value);
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Advanced Brewing'),
+                subtitle: const Text('Pre-infusion, pressure, TDS, extraction'),
+                value: _includeAdvancedBrewing,
+                onChanged: (value) {
+                  setDialogState(() => _includeAdvancedBrewing = value);
+                  setState(() => _includeAdvancedBrewing = value);
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Environmental Data'),
+                subtitle: const Text('Room temp, humidity, altitude'),
+                value: _includeEnvironmental,
+                onChanged: (value) {
+                  setDialogState(() => _includeEnvironmental = value);
+                  setState(() => _includeEnvironmental = value);
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Cupping Scores'),
+                subtitle: const Text('SCA cupping protocol scores'),
+                value: _includeCuppingScores,
+                onChanged: (value) {
+                  setDialogState(() => _includeCuppingScores = value);
+                  setState(() => _includeCuppingScores = value);
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _includeTimingDetails = true;
+                _includeAdvancedBrewing = true;
+                _includeEnvironmental = true;
+                _includeCuppingScores = true;
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Include All'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
       ),
     );
   }
