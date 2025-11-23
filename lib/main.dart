@@ -340,7 +340,7 @@ class _BrewLogAppState extends ConsumerState<BrewLogApp> {
         originalCupId: cup.id,
         originalUserId: cup.userId,
         originalUsername: cup.sharedByUsername ?? 'Anonymous',
-        receivedByUserId: user.id,
+        receivedByUserId: user!.id,
         cupData: cup,
         sharedAt: DateTime.now(),
       );

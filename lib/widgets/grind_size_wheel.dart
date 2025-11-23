@@ -193,12 +193,11 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
             child: WheelSlider.customWidget(
               totalCount: _totalCount,
               initValue: _currentIndex,
-              onValueChanged: _onValueChanged,
+              onValueChanged: (value) => _onValueChanged(value as int),
               hapticFeedbackType: HapticFeedbackType.vibrate,
               enableAnimation: true,
               perspective: 0.01, // Creates the 3D curved effect
               squeeze: 1.1, // Makes the lines curve back
-              diameterRatio: 3.0, // Controls the size of the wheel
               showPointer: true,
               pointerColor: Colors.brown.shade900,
               pointerWidth: 3,
