@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_profile.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
 import '../utils/constants.dart';
@@ -394,7 +395,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _showFeedbackDialog(BuildContext context, dynamic user) {
+  void _showFeedbackDialog(BuildContext context, UserProfile user) {
     final TextEditingController feedbackController = TextEditingController();
 
     showDialog(
@@ -443,7 +444,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _sendFeedback(BuildContext context, String feedback, dynamic user) async {
+  Future<void> _sendFeedback(BuildContext context, String feedback, UserProfile user) async {
     try {
       // Submit feedback to Firebase Firestore
       await FirebaseFirestore.instance.collection('feedback').add({
