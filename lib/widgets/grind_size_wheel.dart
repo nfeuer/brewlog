@@ -12,6 +12,7 @@ class GrindSizeWheel extends StatefulWidget {
   final ValueChanged<double>? onMinValueChanged;
   final ValueChanged<double>? onMaxValueChanged;
   final ValueChanged<double>? onStepSizeChanged;
+  final bool hapticsEnabled;
 
   const GrindSizeWheel({
     super.key,
@@ -24,6 +25,7 @@ class GrindSizeWheel extends StatefulWidget {
     this.onMinValueChanged,
     this.onMaxValueChanged,
     this.onStepSizeChanged,
+    this.hapticsEnabled = true,
   });
 
   @override
@@ -162,8 +164,10 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
         _currentValue = _snapToStepSize(newValue);
       });
 
-      // Provide haptic feedback
-      HapticFeedback.selectionClick();
+      // Provide haptic feedback if enabled
+      if (widget.hapticsEnabled) {
+        HapticFeedback.selectionClick();
+      }
 
       // Notify parent
       widget.onChanged(_currentValue);

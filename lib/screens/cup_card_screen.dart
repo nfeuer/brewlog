@@ -661,6 +661,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                       final minValue = _grinderMinSetting ?? equipment?.grinderMinSetting ?? 0.0;
                       final maxValue = _grinderMaxSetting ?? equipment?.grinderMaxSetting ?? 50.0;
                       final stepSize = _grinderStepSize ?? equipment?.grinderStepSize ?? 1.0;
+                      final hapticsEnabled = ref.watch(hapticsEnabledProvider);
 
                       return GrindSizeWheel(
                         initialValue: _grindLevelController.text.isEmpty
@@ -677,6 +678,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         maxValue: maxValue,
                         stepSize: stepSize,
                         showRangeControls: true,
+                        hapticsEnabled: hapticsEnabled,
                         onMinValueChanged: (value) {
                           setState(() {
                             _grinderMinSetting = value;
@@ -698,14 +700,20 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                 ],
                 if (_currentFieldVisibility['waterTemp'] == true) ...[
                   const SizedBox(height: 24),
-                  TemperatureDial(
-                    initialValue: _waterTempController.text.isEmpty
-                        ? null
-                        : double.tryParse(_waterTempController.text),
-                    onChanged: (value) {
-                      setState(() {
-                        _waterTempController.text = value?.toStringAsFixed(1) ?? '';
-                      });
+                  Builder(
+                    builder: (context) {
+                      final hapticsEnabled = ref.watch(hapticsEnabledProvider);
+                      return TemperatureDial(
+                        initialValue: _waterTempController.text.isEmpty
+                            ? null
+                            : double.tryParse(_waterTempController.text),
+                        onChanged: (value) {
+                          setState(() {
+                            _waterTempController.text = value?.toStringAsFixed(1) ?? '';
+                          });
+                        },
+                        hapticsEnabled: hapticsEnabled,
+                      );
                     },
                   ),
                 ],

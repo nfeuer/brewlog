@@ -198,6 +198,10 @@ class UserProfile extends HiveObject {
   @HiveField(17)
   String? firebaseUid; // Firebase Auth user ID
 
+  // Haptic feedback preference
+  @HiveField(18)
+  bool hapticsEnabled;
+
   UserProfile({
     required this.id,
     this.username,
@@ -217,6 +221,7 @@ class UserProfile extends HiveObject {
     this.hasBeenAskedForUsername = false,
     this.neverAskForUsername = false,
     this.firebaseUid,
+    this.hapticsEnabled = true, // Default to enabled
   })  : defaultVisibleFields = defaultVisibleFields ?? [],
         stats = stats ?? UserStats(),
         createdAt = createdAt ?? DateTime.now(),
@@ -303,6 +308,7 @@ class UserProfile extends HiveObject {
       'hasBeenAskedForUsername': hasBeenAskedForUsername,
       'neverAskForUsername': neverAskForUsername,
       'firebaseUid': firebaseUid,
+      'hapticsEnabled': hapticsEnabled,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -338,6 +344,7 @@ class UserProfile extends HiveObject {
       hasBeenAskedForUsername: json['hasBeenAskedForUsername'] as bool? ?? false,
       neverAskForUsername: json['neverAskForUsername'] as bool? ?? false,
       firebaseUid: json['firebaseUid'] as String?,
+      hapticsEnabled: json['hapticsEnabled'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
