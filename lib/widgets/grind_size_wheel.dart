@@ -257,7 +257,10 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  _buildRangeControls(),
+                  SizedBox(
+                    width: 200,
+                    child: _buildRangeControls(),
+                  ),
                 ],
 
                 // Show range information (always visible)
