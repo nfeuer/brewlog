@@ -75,6 +75,15 @@ class EquipmentSetup extends HiveObject {
   @HiveField(6)
   String? grinderNotes;
 
+  @HiveField(25)
+  double? grinderMinSetting; // Minimum grind size setting (e.g., 0)
+
+  @HiveField(26)
+  double? grinderMaxSetting; // Maximum grind size setting (e.g., 50)
+
+  @HiveField(27)
+  double? grinderStepSize; // Step size: 1.0, 0.5, or 0.25
+
   // Brewer details
   @HiveField(7)
   String? brewerBrand;
@@ -142,6 +151,9 @@ class EquipmentSetup extends HiveObject {
     this.grinderModel,
     this.grinderType,
     this.grinderNotes,
+    this.grinderMinSetting,
+    this.grinderMaxSetting,
+    this.grinderStepSize,
     this.brewerBrand,
     this.brewerModel,
     this.filterType,
@@ -202,6 +214,9 @@ class EquipmentSetup extends HiveObject {
       'grinderModel': grinderModel,
       'grinderType': grinderType,
       'grinderNotes': grinderNotes,
+      'grinderMinSetting': grinderMinSetting,
+      'grinderMaxSetting': grinderMaxSetting,
+      'grinderStepSize': grinderStepSize,
       'brewerBrand': brewerBrand,
       'brewerModel': brewerModel,
       'filterType': filterType,
@@ -232,6 +247,9 @@ class EquipmentSetup extends HiveObject {
       grinderModel: json['grinderModel'] as String?,
       grinderType: json['grinderType'] as String?,
       grinderNotes: json['grinderNotes'] as String?,
+      grinderMinSetting: json['grinderMinSetting']?.toDouble(),
+      grinderMaxSetting: json['grinderMaxSetting']?.toDouble(),
+      grinderStepSize: json['grinderStepSize']?.toDouble(),
       brewerBrand: json['brewerBrand'] as String?,
       brewerModel: json['brewerModel'] as String?,
       filterType: json['filterType'] as String?,
@@ -260,6 +278,9 @@ class EquipmentSetup extends HiveObject {
     String? grinderModel,
     String? grinderType,
     String? grinderNotes,
+    double? grinderMinSetting,
+    double? grinderMaxSetting,
+    double? grinderStepSize,
     String? brewerBrand,
     String? brewerModel,
     String? filterType,
@@ -285,6 +306,9 @@ class EquipmentSetup extends HiveObject {
       grinderModel: grinderModel ?? this.grinderModel,
       grinderType: grinderType ?? this.grinderType,
       grinderNotes: grinderNotes ?? this.grinderNotes,
+      grinderMinSetting: grinderMinSetting ?? this.grinderMinSetting,
+      grinderMaxSetting: grinderMaxSetting ?? this.grinderMaxSetting,
+      grinderStepSize: grinderStepSize ?? this.grinderStepSize,
       brewerBrand: brewerBrand ?? this.brewerBrand,
       brewerModel: brewerModel ?? this.brewerModel,
       filterType: filterType ?? this.filterType,

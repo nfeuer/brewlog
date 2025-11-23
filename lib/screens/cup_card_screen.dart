@@ -19,6 +19,7 @@ import '../widgets/rating_input.dart';
 import '../widgets/photo_viewer.dart';
 import '../widgets/temperature_dial.dart';
 import '../widgets/pour_schedule_timer.dart';
+import '../widgets/grind_size_wheel.dart';
 import 'equipment_form_screen.dart';
 import 'share_cup_screen.dart';
 
@@ -643,10 +644,34 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                   ],
                 ],
                 if (_currentFieldVisibility['grindLevel'] == true) ...[
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _grindLevelController,
-                    decoration: const InputDecoration(labelText: 'Grind Level'),
+                  const SizedBox(height: 24),
+                  // Get grinder settings from selected equipment (if available)
+                  Builder(
+                    builder: (context) {
+                      final equipment = _selectedEquipmentId != null
+                          ? ref.watch(equipmentByIdProvider(_selectedEquipmentId!))
+                          : null;
+
+                      final minValue = equipment?.grinderMinSetting ?? 0.0;
+                      final maxValue = equipment?.grinderMaxSetting ?? 50.0;
+                      final stepSize = equipment?.grinderStepSize ?? 1.0;
+
+                      return GrindSizeWheel(
+                        initialValue: _grindLevelController.text.isEmpty
+                            ? null
+                            : double.tryParse(_grindLevelController.text),
+                        onChanged: (value) {
+                          setState(() {
+                            _grindLevelController.text = value?.toStringAsFixed(
+                              stepSize < 1 ? 2 : (stepSize == 1 ? 0 : 1),
+                            ) ?? '';
+                          });
+                        },
+                        minValue: minValue,
+                        maxValue: maxValue,
+                        stepSize: stepSize,
+                      );
+                    },
                   ),
                 ],
                 if (_currentFieldVisibility['waterTemp'] == true) ...[
@@ -1897,6 +1922,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       return;
     }
 
+    // Get grinder settings from selected equipment (for sharing)
+    final equipment = _selectedEquipmentId != null
+        ? ref.read(equipmentByIdProvider(_selectedEquipmentId!))
+        : null;
+
     // Create or update cup
     final cupId = widget.cupId ?? uuid.v4();
     final cup = Cup(
@@ -1905,6 +1935,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       userId: user.id,
       brewType: _selectedBrewType!,
       grindLevel: _grindLevelController.text.isEmpty ? null : _grindLevelController.text,
+      grinderMinSetting: equipment?.grinderMinSetting,
+      grinderMaxSetting: equipment?.grinderMaxSetting,
+      grinderStepSize: equipment?.grinderStepSize,
       waterTempCelsius: _waterTempController.text.isEmpty
           ? null
           : double.tryParse(_waterTempController.text),
