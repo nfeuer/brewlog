@@ -3,6 +3,25 @@ import '../utils/constants.dart';
 
 part 'user_profile.g.dart';
 
+/// Tracks cumulative brewing statistics for a user.
+///
+/// This class maintains running totals of brewing activity and is embedded
+/// within [UserProfile]. Statistics automatically update as cups are created,
+/// updated, or deleted through [DatabaseService].
+///
+/// **Tracked Metrics:**
+/// - Total cups brewed across all bags
+/// - Total coffee used (grams)
+/// - Total volume produced (ml)
+/// - Breakdown by brew type (pour over, espresso, etc.)
+/// - Total bags purchased
+///
+/// **Example:**
+/// ```dart
+/// print('Total cups: ${user.stats.totalCupsMade}');
+/// print('Total coffee: ${user.stats.totalGramsUsed}g');
+/// print('Espresso shots: ${user.stats.cupsByBrewType['Espresso'] ?? 0}');
+/// ```
 @HiveType(typeId: HiveTypeIds.userStats)
 class UserStats extends HiveObject {
   @HiveField(0)
@@ -28,7 +47,20 @@ class UserStats extends HiveObject {
     this.totalBagsPurchased = 0,
   }) : cupsByBrewType = cupsByBrewType ?? {};
 
-  // Helper methods for updating stats
+  /// Increments statistics when a new cup is brewed.
+  ///
+  /// Called automatically by [DatabaseService.createCup].
+  ///
+  /// **Updates:**
+  /// - Increments [totalCupsMade]
+  /// - Adds to [totalGramsUsed] if provided
+  /// - Adds to [totalMlConsumed] if provided
+  /// - Increments brew type counter in [cupsByBrewType]
+  ///
+  /// **Parameters:**
+  /// - [brewType]: Type of brew (e.g., 'Pour Over', 'Espresso')
+  /// - [gramsUsed]: Coffee weight in grams (optional)
+  /// - [mlConsumed]: Final volume in ml (optional)
   void addCup({
     required String brewType,
     double? gramsUsed,
@@ -40,6 +72,20 @@ class UserStats extends HiveObject {
     cupsByBrewType[brewType] = (cupsByBrewType[brewType] ?? 0) + 1;
   }
 
+  /// Decrements statistics when a cup is deleted or updated.
+  ///
+  /// Called automatically by [DatabaseService.deleteCup] and [DatabaseService.updateCup].
+  ///
+  /// **Updates:**
+  /// - Decrements [totalCupsMade] (minimum 0)
+  /// - Subtracts from [totalGramsUsed] if provided (minimum 0)
+  /// - Subtracts from [totalMlConsumed] if provided (minimum 0)
+  /// - Decrements brew type counter, removes key if count reaches 0
+  ///
+  /// **Parameters:**
+  /// - [brewType]: Type of brew being removed
+  /// - [gramsUsed]: Coffee weight to subtract (optional)
+  /// - [mlConsumed]: Volume to subtract (optional)
   void removeCup({
     required String brewType,
     double? gramsUsed,
@@ -61,6 +107,34 @@ class UserStats extends HiveObject {
   }
 }
 
+/// Represents a user account with preferences, statistics, and customization.
+///
+/// This is the central user entity containing all account information,
+/// preferences, and cumulative statistics. There is typically only one
+/// [UserProfile] per device (stored as 'current_user' in Hive).
+///
+/// **Key Sections:**
+/// - **Account**: id, username, email, isPaid, isAdmin, firebaseUid
+/// - **Preferences**: rating scale, view mode, field visibility
+/// - **Statistics**: embedded [UserStats] object
+/// - **Customization**: custom brew types, profile picture, bio
+/// - **Username Management**: tracking for username prompt dialog
+///
+/// **Premium Features:**
+/// When [isPaid] is true, the user gets access to:
+/// - Cloud sync via Firebase
+/// - QR code sharing
+/// - Multi-device access
+/// - Cloud photo storage
+///
+/// **Example:**
+/// ```dart
+/// final user = ref.watch(userProfileProvider);
+/// if (user.isPaid) {
+///   // Show premium features
+/// }
+/// print('You\'ve made ${user.stats.totalCupsMade} cups!');
+/// ```
 @HiveType(typeId: HiveTypeIds.userProfile)
 class UserProfile extends HiveObject {
   @HiveField(0)
@@ -149,24 +223,62 @@ class UserProfile extends HiveObject {
         updatedAt = updatedAt ?? DateTime.now(),
         customBrewTypes = customBrewTypes ?? [];
 
-  // Getters for enum conversion
+  /// Converts the rating scale index to a [RatingScale] enum value.
+  ///
+  /// Hive stores enums as integers for efficiency. This getter provides
+  /// type-safe access to the user's preferred rating scale.
   RatingScale get ratingScale => RatingScale.values[ratingScaleIndex];
+
+  /// Sets the rating scale preference and stores it as an index for Hive.
   set ratingScale(RatingScale scale) => ratingScaleIndex = scale.index;
 
+  /// Converts the view preference index to a [ViewPreference] enum value.
+  ///
+  /// User can choose between:
+  /// - [ViewPreference.grid]: Card grid layout
+  /// - [ViewPreference.list]: Detailed list view
+  /// - [ViewPreference.rolodex]: Animated carousel
   ViewPreference get viewPreference => ViewPreference.values[viewPreferenceIndex];
+
+  /// Sets the view preference and stores it as an index for Hive.
   set viewPreference(ViewPreference pref) => viewPreferenceIndex = pref.index;
 
-  // Get all brew types (default + custom)
+  /// Returns all available brew types (default + user-added custom types).
+  ///
+  /// **Default types** are defined in [constants.dart]:
+  /// Pour Over, Espresso, French Press, AeroPress, etc.
+  ///
+  /// **Custom types** are added by the user and stored in [customBrewTypes].
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final types = user.allBrewTypes;
+  /// DropdownButton<String>(
+  ///   items: types.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
+  /// )
+  /// ```
   List<String> get allBrewTypes {
     return [...defaultBrewTypes, ...customBrewTypes];
   }
 
-  // Update timestamp helper
+  /// Updates the [updatedAt] timestamp to the current time.
+  ///
+  /// Called automatically by most update operations.
   void touch() {
     updatedAt = DateTime.now();
   }
 
-  // Convert to/from JSON for Firebase sync
+  /// Converts this profile to a JSON map for Firebase synchronization.
+  ///
+  /// **Includes:**
+  /// - All account fields
+  /// - Nested [UserStats] as a map
+  /// - Enum values as string names
+  /// - DateTime as ISO 8601 strings
+  ///
+  /// **Usage:**
+  /// - Cloud sync for premium users
+  /// - User data backup
   Map<String, dynamic> toJson() {
     return {
       'id': id,

@@ -3,6 +3,39 @@ import '../utils/constants.dart';
 
 part 'coffee_bag.g.dart';
 
+/// Represents a physical bag of coffee beans purchased and tracked by the user.
+///
+/// This is the primary entity for organizing brews. Each bag contains comprehensive
+/// information about the coffee's origin, processing, roasting, and tracking details.
+/// All cups (brews) are associated with a specific bag.
+///
+/// **Key Features:**
+/// - 31 tracked fields from basic info to detailed bean characteristics
+/// - Automatic statistics calculation (total cups, average score, best cup)
+/// - Status tracking (active vs finished bags)
+/// - Customizable field visibility per bag
+/// - Full JSON serialization for cloud sync
+///
+/// **Lifecycle:**
+/// 1. Created when user purchases new coffee
+/// 2. Marked active and tracked as cups are brewed
+/// 3. Statistics auto-update as cups are added/removed
+/// 4. Marked finished when bag is empty
+///
+/// **Example:**
+/// ```dart
+/// final bag = CoffeeBag(
+///   id: uuid.v4(),
+///   userId: currentUser.id,
+///   customTitle: 'Morning Blend',
+///   coffeeName: 'Ethiopia Yirgacheffe',
+///   roaster: 'Local Roasters',
+///   variety: 'Heirloom',
+///   processingMethods: ['Washed'],
+///   roastLevel: 'Light',
+/// );
+/// await db.createBag(bag);
+/// ```
 @HiveType(typeId: HiveTypeIds.coffeeBag)
 class CoffeeBag extends HiveObject {
   @HiveField(0)
@@ -143,16 +176,37 @@ class CoffeeBag extends HiveObject {
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
-  // Getters for enum conversion
+  /// Converts the bag status index to a [BagStatus] enum value.
+  ///
+  /// Hive stores enums as integers, so this getter converts back to the enum.
   BagStatus get status => BagStatus.values[bagStatusIndex];
+
+  /// Sets the bag status and stores it as an index for Hive compatibility.
   set status(BagStatus status) => bagStatusIndex = status.index;
 
-  // Update timestamp helper
+  /// Updates the [updatedAt] timestamp to the current time.
+  ///
+  /// Call this whenever the bag is modified to maintain accurate timestamps.
+  /// Most update operations call this automatically.
   void touch() {
     updatedAt = DateTime.now();
   }
 
-  // Recalculate stats based on cups
+  /// Recalculates and updates statistics based on the cups in this bag.
+  ///
+  /// This method is typically called by [DatabaseService] after cups are
+  /// added, removed, or updated for this bag.
+  ///
+  /// **Parameters:**
+  /// - [cups]: List of Cup objects belonging to this bag
+  /// - [newAvgScore]: Pre-calculated average score (optional)
+  /// - [newBestCupId]: ID of the best-rated cup (optional)
+  ///
+  /// **Updates:**
+  /// - [totalCups]: Total count of cups
+  /// - [avgScore]: Average rating across all cups
+  /// - [bestCupId]: ID of the highest-rated cup
+  /// - [updatedAt]: Timestamp automatically updated
   void updateStats({
     required List<dynamic> cups, // List of Cup objects
     double? newAvgScore,
@@ -164,12 +218,32 @@ class CoffeeBag extends HiveObject {
     touch();
   }
 
-  // Get display title (falls back to coffee name if custom title is empty)
+  /// Returns the display title for this bag.
+  ///
+  /// Falls back to [coffeeName] if [customTitle] is empty.
+  /// This allows users to have both a custom nickname and the official name.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// bag.customTitle = 'Daily Brew';
+  /// bag.coffeeName = 'Ethiopia Yirgacheffe';
+  /// print(bag.displayTitle); // 'Daily Brew'
+  ///
+  /// bag.customTitle = '';
+  /// print(bag.displayTitle); // 'Ethiopia Yirgacheffe'
+  /// ```
   String get displayTitle {
     return customTitle.isNotEmpty ? customTitle : coffeeName;
   }
 
-  // Convert to/from JSON for Firebase sync
+  /// Converts this bag to a JSON map for Firebase synchronization.
+  ///
+  /// **Usage:**
+  /// - Cloud sync for premium users
+  /// - Data export features
+  /// - Deep link sharing
+  ///
+  /// **Note:** Converts enums to string names and DateTime to ISO 8601 format.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -207,6 +281,19 @@ class CoffeeBag extends HiveObject {
     };
   }
 
+  /// Creates a [CoffeeBag] instance from a JSON map.
+  ///
+  /// Used for Firebase sync and data import. Handles:
+  /// - DateTime parsing from ISO 8601 strings
+  /// - Enum conversion from string names
+  /// - Null safety for optional fields
+  /// - Migration from old field names (e.g., single processingMethod to processingMethods list)
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final json = await firestore.collection('bags').doc(id).get();
+  /// final bag = CoffeeBag.fromJson(json.data()!);
+  /// ```
   factory CoffeeBag.fromJson(Map<String, dynamic> json) {
     return CoffeeBag(
       id: json['id'] as String,
@@ -261,7 +348,22 @@ class CoffeeBag extends HiveObject {
     );
   }
 
-  // Create a copy with updated fields
+  /// Creates a copy of this bag with specified fields updated.
+  ///
+  /// This is the preferred method for updating bags because it:
+  /// - Maintains immutability patterns
+  /// - Preserves unchanged fields
+  /// - Automatically updates [updatedAt] timestamp
+  /// - Keeps original [id], [userId], [createdAt]
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final updated = bag.copyWith(
+  ///   status: BagStatus.finished,
+  ///   finishedDate: DateTime.now(),
+  /// );
+  /// await db.updateBag(updated);
+  /// ```
   CoffeeBag copyWith({
     String? customTitle,
     String? labelPhotoPath,
