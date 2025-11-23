@@ -54,18 +54,18 @@ class _TickMarkHelper {
   static double getLineWidth(double value, double stepSize) {
     final remainder = value % 1.0;
 
-    // Whole numbers
+    // Whole numbers - keep full width
     if (remainder.abs() < 0.01) {
       return 3.0;
     }
 
-    // Half steps
+    // Half steps - reduced by 50%
     if ((remainder - 0.5).abs() < 0.01) {
-      return 2.5;
+      return 1.25;
     }
 
-    // Quarter steps
-    return 1.5;
+    // Quarter steps - reduced by 75%
+    return 0.375;
   }
 
   static Color getLineColor(double value, double stepSize) {
@@ -119,17 +119,18 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   }
 
   void _initializeValues() {
-    // Calculate total number of selectable steps based on stepSize
-    _totalCount = ((widget.maxValue - widget.minValue) / widget.stepSize).round() + 1;
+    // Always generate ticks at 0.25 intervals for consistent spacing
+    _totalCount = ((widget.maxValue - widget.minValue) / _baseInterval).round() + 1;
 
     // Set initial value
     if (widget.initialValue != null) {
       _currentValue = widget.initialValue!;
-      _currentIndex = ((widget.initialValue! - widget.minValue) / widget.stepSize).round();
+      _currentIndex = ((widget.initialValue! - widget.minValue) / _baseInterval).round();
     } else {
       // Default to middle value, snapped to stepSize
-      _currentIndex = _totalCount ~/ 2;
-      _currentValue = widget.minValue + (_currentIndex * widget.stepSize);
+      final middleValue = (widget.minValue + widget.maxValue) / 2;
+      _currentValue = _snapToStepSize(middleValue);
+      _currentIndex = ((_currentValue - widget.minValue) / _baseInterval).round();
     }
   }
 
@@ -140,20 +141,23 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   }
 
   void _onValueChanged(int index) {
-    final newValue = widget.minValue + (index * widget.stepSize);
+    final newValue = widget.minValue + (index * _baseInterval);
 
-    setState(() {
-      _currentIndex = index;
-      _currentValue = newValue;
-    });
+    // Only update if this is a valid selectable tick
+    if (_TickMarkHelper.isSelectable(newValue, widget.stepSize)) {
+      setState(() {
+        _currentIndex = index;
+        _currentValue = _snapToStepSize(newValue);
+      });
 
-    // Provide haptic feedback if enabled
-    if (widget.hapticsEnabled) {
-      HapticFeedback.selectionClick();
+      // Provide haptic feedback if enabled
+      if (widget.hapticsEnabled) {
+        HapticFeedback.selectionClick();
+      }
+
+      // Notify parent
+      widget.onChanged(_currentValue);
     }
-
-    // Notify parent
-    widget.onChanged(_currentValue);
   }
 
   /// Calculate the visual width for a tick to maintain consistent spacing
@@ -219,17 +223,31 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
               horizontalListWidth: MediaQuery.of(context).size.width * 0.8,
               horizontalListHeight: 200,
               children: List.generate(_totalCount, (index) {
-                final value = widget.minValue + (index * widget.stepSize);
+                final value = widget.minValue + (index * _baseInterval);
+                final isWholeNumber = (value % 1.0).abs() < 0.01;
+                final isHalfStep = ((value % 1.0) - 0.5).abs() < 0.01;
+                final isQuarterStep = !isWholeNumber && !isHalfStep;
+
+                // Hide finer ticks based on stepSize to maintain spacing
+                bool shouldHide = false;
+                if (widget.stepSize >= 1.0 && !isWholeNumber) {
+                  shouldHide = true; // Hide half and quarter steps at 1.0 stepSize
+                } else if (widget.stepSize == 0.5 && isQuarterStep) {
+                  shouldHide = true; // Hide quarter steps at 0.5 stepSize
+                }
+
+                if (shouldHide) {
+                  return const SizedBox(width: 0, height: 0);
+                }
+
                 final lineHeight = _TickMarkHelper.getLineHeight(value, widget.stepSize);
                 final lineWidth = _TickMarkHelper.getLineWidth(value, widget.stepSize);
                 final lineColor = _TickMarkHelper.getLineColor(value, widget.stepSize);
-                final isWholeNumber = (value % 1.0).abs() < 0.01;
-                final showHalfLabel = widget.stepSize <= 0.5 && ((value % 1.0) - 0.5).abs() < 0.01;
+                final showHalfLabel = widget.stepSize <= 0.5 && isHalfStep;
 
                 return Container(
                   height: lineHeight,
                   width: lineWidth,
-                  margin: EdgeInsets.symmetric(horizontal: _getTickSpacing(widget.stepSize) / 2),
                   decoration: BoxDecoration(
                     color: lineColor,
                     borderRadius: BorderRadius.circular(lineWidth / 2),
