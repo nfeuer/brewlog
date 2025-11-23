@@ -210,139 +210,135 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
     return Center(
       child: Container(
         padding: const EdgeInsets.all(8),
-        child: Column(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Horizontal layout: number on left, dial on right
-            Row(
+            // Left side: Display current value, label, and settings (aligned right)
+            Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Left side: Display current value and label
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _currentValue.toStringAsFixed(
-                        widget.stepSize < 1 ? 2 : (widget.stepSize == 1 ? 0 : 1),
-                      ),
-                      style: const TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.w300,
-                        height: 1.0,
-                        color: Colors.brown,
-                      ),
-                    ),
-                    const Text(
-                      'details',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(width: 24),
-
-                // Right side: Vertical wheel slider
-                SizedBox(
-                  width: 100,
-                  height: 300,
-                  child: WheelSlider.customWidget(
-                    totalCount: _totalCount,
-                    initValue: _currentIndex,
-                    onValueChanged: (value) => _onValueChanged(value as int),
-                    isVibrate: false,
-                    enableAnimation: false,
-                    perspective: 0.005,
-                    squeeze: 1.5,
-                    showPointer: true,
-                    pointerColor: Colors.brown.shade900,
-                    pointerWidth: 40,
-                    pointerHeight: 3,
-                    children: List.generate(_totalCount, (index) {
-                      final value = widget.minValue + (index * _baseInterval);
-                      final isWholeNumber = (value % 1.0).abs() < 0.01;
-                      final isHalfStep = ((value % 1.0) - 0.5).abs() < 0.01;
-                      final isQuarterStep = !isWholeNumber && !isHalfStep;
-
-                      // Hide finer ticks based on stepSize to maintain spacing
-                      bool shouldHide = false;
-                      if (widget.stepSize >= 1.0 && !isWholeNumber) {
-                        shouldHide = true;
-                      } else if (widget.stepSize == 0.5 && isQuarterStep) {
-                        shouldHide = true;
-                      }
-
-                      if (shouldHide) {
-                        return const SizedBox(width: 0, height: 0);
-                      }
-
-                      final lineHeight = _TickMarkHelper.getLineWidth(value, widget.stepSize);
-                      final lineWidth = _TickMarkHelper.getLineHeight(value, widget.stepSize);
-                      final lineColor = _TickMarkHelper.getLineColor(value, widget.stepSize);
-                      final showHalfLabel = widget.stepSize <= 0.5 && isHalfStep;
-
-                      return Container(
-                        height: lineHeight,
-                        width: lineWidth,
-                        decoration: BoxDecoration(
-                          color: lineColor,
-                          borderRadius: BorderRadius.circular(lineHeight / 2),
-                        ),
-                        alignment: Alignment.centerRight,
-                        child: (isWholeNumber || showHalfLabel)
-                            ? Padding(
-                                padding: const EdgeInsets.only(right: 45),
-                                child: Text(
-                                  value.toStringAsFixed(showHalfLabel ? 1 : 0),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.brown.shade700,
-                                  ),
-                                ),
-                              )
-                            : null,
-                      );
-                    }),
+                Text(
+                  _currentValue.toStringAsFixed(
+                    widget.stepSize < 1 ? 2 : (widget.stepSize == 1 ? 0 : 1),
+                  ),
+                  style: const TextStyle(
+                    fontSize: 56,
+                    fontWeight: FontWeight.w300,
+                    height: 1.0,
+                    color: Colors.brown,
                   ),
                 ),
+                const Text(
+                  'details',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+
+                // Settings (always visible, not expandable)
+                if (widget.showRangeControls) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.settings, size: 16, color: Colors.brown.shade700),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Adjust Range & Step',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.brown,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _buildRangeControls(),
+                ],
+
+                // Show range information (always visible)
+                if (!widget.showRangeControls) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Range: ${widget.minValue.toStringAsFixed(0)} - ${widget.maxValue.toStringAsFixed(0)} (step: ${widget.stepSize})',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
               ],
             ),
 
-          const SizedBox(height: 8),
+            const SizedBox(width: 24),
 
-          // Range controls (optional)
-          if (widget.showRangeControls) ...[
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _showSettings = !_showSettings;
-                });
-              },
-              icon: Icon(_showSettings ? Icons.expand_less : Icons.settings),
-              label: Text(_showSettings ? 'Hide Settings' : 'Adjust Range & Step'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.brown.shade700,
-              ),
-            ),
-            if (_showSettings) ...[
-              const SizedBox(height: 4),
-              _buildRangeControls(),
-            ],
-          ],
+            // Right side: Vertical wheel slider with horizontal tick marks
+            SizedBox(
+              width: 100,
+              height: 300,
+              child: WheelSlider.customWidget(
+                horizontal: false,
+                totalCount: _totalCount,
+                initValue: _currentIndex,
+                onValueChanged: (value) => _onValueChanged(value as int),
+                isVibrate: false,
+                enableAnimation: false,
+                perspective: 0.005,
+                squeeze: 1.5,
+                showPointer: true,
+                pointerColor: Colors.brown.shade900,
+                pointerWidth: 40,
+                pointerHeight: 3,
+                children: List.generate(_totalCount, (index) {
+                  final value = widget.minValue + (index * _baseInterval);
+                  final isWholeNumber = (value % 1.0).abs() < 0.01;
+                  final isHalfStep = ((value % 1.0) - 0.5).abs() < 0.01;
+                  final isQuarterStep = !isWholeNumber && !isHalfStep;
 
-          // Show range information
-          if (!widget.showRangeControls || !_showSettings)
-            Text(
-              'Range: ${widget.minValue.toStringAsFixed(0)} - ${widget.maxValue.toStringAsFixed(0)} (step: ${widget.stepSize})',
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.grey,
+                  // Hide finer ticks based on stepSize to maintain spacing
+                  bool shouldHide = false;
+                  if (widget.stepSize >= 1.0 && !isWholeNumber) {
+                    shouldHide = true;
+                  } else if (widget.stepSize == 0.5 && isQuarterStep) {
+                    shouldHide = true;
+                  }
+
+                  if (shouldHide) {
+                    return const SizedBox(width: 0, height: 0);
+                  }
+
+                  final lineHeight = _TickMarkHelper.getLineWidth(value, widget.stepSize);
+                  final lineWidth = _TickMarkHelper.getLineHeight(value, widget.stepSize);
+                  final lineColor = _TickMarkHelper.getLineColor(value, widget.stepSize);
+                  final showHalfLabel = widget.stepSize <= 0.5 && isHalfStep;
+
+                  return Container(
+                    height: lineHeight,
+                    width: lineWidth,
+                    decoration: BoxDecoration(
+                      color: lineColor,
+                      borderRadius: BorderRadius.circular(lineHeight / 2),
+                    ),
+                    alignment: Alignment.centerRight,
+                    child: (isWholeNumber || showHalfLabel)
+                        ? Padding(
+                            padding: const EdgeInsets.only(right: 45),
+                            child: Text(
+                              value.toStringAsFixed(showHalfLabel ? 1 : 0),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.brown.shade700,
+                              ),
+                            ),
+                          )
+                        : null,
+                  );
+                }),
               ),
             ),
           ],
