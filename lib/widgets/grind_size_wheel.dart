@@ -8,6 +8,10 @@ class GrindSizeWheel extends StatefulWidget {
   final double minValue;
   final double maxValue;
   final double stepSize;
+  final bool showRangeControls;
+  final ValueChanged<double>? onMinValueChanged;
+  final ValueChanged<double>? onMaxValueChanged;
+  final ValueChanged<double>? onStepSizeChanged;
 
   const GrindSizeWheel({
     super.key,
@@ -16,72 +20,87 @@ class GrindSizeWheel extends StatefulWidget {
     this.minValue = 0,
     this.maxValue = 50,
     this.stepSize = 1.0,
+    this.showRangeControls = false,
+    this.onMinValueChanged,
+    this.onMaxValueChanged,
+    this.onStepSizeChanged,
   });
 
   @override
   State<GrindSizeWheel> createState() => _GrindSizeWheelState();
 }
 
-/// Helper to determine tick mark height based on value and step size
+/// Helper to determine tick mark properties based on value
+/// Always renders ticks at 0.25 intervals for consistent spacing
 class _TickMarkHelper {
   static double getLineHeight(double value, double stepSize) {
-    if (stepSize >= 1.0) {
-      // All full steps - uniform height
+    final remainder = value % 1.0;
+
+    // Whole numbers always get full height
+    if (remainder.abs() < 0.01) {
       return 40.0;
-    } else if (stepSize == 0.5) {
-      // Whole numbers get full height, half steps get medium height
-      final isWholeNumber = (value % 1.0).abs() < 0.01;
-      return isWholeNumber ? 40.0 : 25.0;
-    } else if (stepSize == 0.25) {
-      // Whole numbers: full, halves: medium, quarters: short
-      final remainder = value % 1.0;
-      if (remainder.abs() < 0.01) {
-        return 40.0; // Whole number
-      } else if ((remainder - 0.5).abs() < 0.01) {
-        return 30.0; // Half step
-      } else {
-        return 20.0; // Quarter step
-      }
     }
-    return 40.0; // Default
+
+    // Half steps (0.5) get medium height if stepSize allows
+    if ((remainder - 0.5).abs() < 0.01 && stepSize <= 0.5) {
+      return 30.0;
+    }
+
+    // Quarter steps get short height if stepSize allows
+    if (stepSize <= 0.25) {
+      return 20.0;
+    }
+
+    // For stepSize > 0.5, don't show fractional ticks
+    return 0.0;
   }
 
   static double getLineWidth(double value, double stepSize) {
-    if (stepSize >= 1.0) {
-      return 2.5;
-    } else if (stepSize == 0.5) {
-      final isWholeNumber = (value % 1.0).abs() < 0.01;
-      return isWholeNumber ? 3.0 : 2.0;
-    } else if (stepSize == 0.25) {
-      final remainder = value % 1.0;
-      if (remainder.abs() < 0.01) {
-        return 3.0; // Whole number
-      } else if ((remainder - 0.5).abs() < 0.01) {
-        return 2.5; // Half step
-      } else {
-        return 1.5; // Quarter step
-      }
+    final remainder = value % 1.0;
+
+    // Whole numbers
+    if (remainder.abs() < 0.01) {
+      return 3.0;
     }
+
+    // Half steps
+    if ((remainder - 0.5).abs() < 0.01 && stepSize <= 0.5) {
+      return 2.5;
+    }
+
+    // Quarter steps
+    if (stepSize <= 0.25) {
+      return 1.5;
+    }
+
     return 2.5;
   }
 
   static Color getLineColor(double value, double stepSize) {
-    if (stepSize >= 1.0) {
-      return Colors.brown.shade400;
-    } else if (stepSize == 0.5) {
-      final isWholeNumber = (value % 1.0).abs() < 0.01;
-      return isWholeNumber ? Colors.brown.shade500 : Colors.brown.shade300;
-    } else if (stepSize == 0.25) {
-      final remainder = value % 1.0;
-      if (remainder.abs() < 0.01) {
-        return Colors.brown.shade600; // Whole number
-      } else if ((remainder - 0.5).abs() < 0.01) {
-        return Colors.brown.shade400; // Half step
-      } else {
-        return Colors.brown.shade300; // Quarter step
-      }
+    final remainder = value % 1.0;
+
+    // Whole numbers
+    if (remainder.abs() < 0.01) {
+      return Colors.brown.shade600;
     }
+
+    // Half steps
+    if ((remainder - 0.5).abs() < 0.01 && stepSize <= 0.5) {
+      return Colors.brown.shade400;
+    }
+
+    // Quarter steps
+    if (stepSize <= 0.25) {
+      return Colors.brown.shade300;
+    }
+
     return Colors.brown.shade400;
+  }
+
+  /// Check if this tick should be selectable based on stepSize
+  static bool isSelectable(double value, double stepSize) {
+    final adjustedValue = value % stepSize;
+    return adjustedValue.abs() < 0.01 || (stepSize - adjustedValue).abs() < 0.01;
   }
 }
 
@@ -89,6 +108,10 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   late double _currentValue;
   late int _totalCount;
   late int _currentIndex;
+  bool _showSettings = false;
+
+  // Always use 0.25 as the base interval for consistent spacing
+  static const double _baseInterval = 0.25;
 
   @override
   void initState() {
@@ -108,31 +131,43 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   }
 
   void _initializeValues() {
-    // Calculate total number of steps
-    _totalCount = ((widget.maxValue - widget.minValue) / widget.stepSize).round() + 1;
+    // Always generate ticks at 0.25 intervals for consistent spacing
+    _totalCount = ((widget.maxValue - widget.minValue) / _baseInterval).round() + 1;
 
     // Set initial value
     if (widget.initialValue != null) {
       _currentValue = widget.initialValue!;
-      _currentIndex = ((widget.initialValue! - widget.minValue) / widget.stepSize).round();
+      _currentIndex = ((widget.initialValue! - widget.minValue) / _baseInterval).round();
     } else {
-      // Default to middle value
-      _currentIndex = _totalCount ~/ 2;
-      _currentValue = widget.minValue + (_currentIndex * widget.stepSize);
+      // Default to middle value, snapped to stepSize
+      final middleValue = (widget.minValue + widget.maxValue) / 2;
+      _currentValue = _snapToStepSize(middleValue);
+      _currentIndex = ((_currentValue - widget.minValue) / _baseInterval).round();
     }
   }
 
+  /// Snap a value to the nearest valid stepSize
+  double _snapToStepSize(double value) {
+    final steps = ((value - widget.minValue) / widget.stepSize).round();
+    return widget.minValue + (steps * widget.stepSize);
+  }
+
   void _onValueChanged(int index) {
-    setState(() {
-      _currentIndex = index;
-      _currentValue = widget.minValue + (index * widget.stepSize);
-    });
+    final newValue = widget.minValue + (index * _baseInterval);
 
-    // Provide haptic feedback
-    HapticFeedback.selectionClick();
+    // Only update if this is a valid selectable tick
+    if (_TickMarkHelper.isSelectable(newValue, widget.stepSize)) {
+      setState(() {
+        _currentIndex = index;
+        _currentValue = _snapToStepSize(newValue);
+      });
 
-    // Notify parent
-    widget.onChanged(_currentValue);
+      // Provide haptic feedback
+      HapticFeedback.selectionClick();
+
+      // Notify parent
+      widget.onChanged(_currentValue);
+    }
   }
 
   @override
@@ -142,52 +177,35 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Display current value
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.blender,
-                  size: 24,
+          // Display current value (removed icon, reduced spacing)
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _currentValue.toStringAsFixed(
+                  widget.stepSize < 1 ? 2 : (widget.stepSize == 1 ? 0 : 1),
+                ),
+                style: const TextStyle(
+                  fontSize: 56,
+                  fontWeight: FontWeight.w300,
+                  height: 1.0,
                   color: Colors.brown,
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _currentValue.toStringAsFixed(
-                        widget.stepSize < 1 ? 2 : (widget.stepSize == 1 ? 0 : 1),
-                      ),
-                      style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.w300,
-                        height: 1.0,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Grind Size',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'Grind Size',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
 
-          // Wheel slider with custom line rendering
+          // Wheel slider with custom line rendering (oval/3D effect)
           SizedBox(
             height: 200,
             child: WheelSlider.customWidget(
@@ -196,8 +214,8 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
               onValueChanged: (value) => _onValueChanged(value as int),
               hapticFeedbackType: HapticFeedbackType.vibrate,
               enableAnimation: true,
-              perspective: 0.01, // Creates the 3D curved effect
-              squeeze: 1.1, // Makes the lines curve back
+              perspective: 0.005, // Reduced for more oval effect
+              squeeze: 1.5, // Increased for more pronounced 3D curve
               showPointer: true,
               pointerColor: Colors.brown.shade900,
               pointerWidth: 3,
@@ -205,11 +223,16 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
               horizontalListWidth: MediaQuery.of(context).size.width * 0.8,
               horizontalListHeight: 200,
               children: List.generate(_totalCount, (index) {
-                final value = widget.minValue + (index * widget.stepSize);
+                final value = widget.minValue + (index * _baseInterval);
                 final lineHeight = _TickMarkHelper.getLineHeight(value, widget.stepSize);
                 final lineWidth = _TickMarkHelper.getLineWidth(value, widget.stepSize);
                 final lineColor = _TickMarkHelper.getLineColor(value, widget.stepSize);
-                final isWholeNumber = widget.stepSize < 1.0 && (value % 1.0).abs() < 0.01;
+                final isWholeNumber = (value % 1.0).abs() < 0.01;
+
+                // Don't render ticks with 0 height
+                if (lineHeight == 0.0) {
+                  return const SizedBox.shrink();
+                }
 
                 return Container(
                   height: lineHeight,
@@ -239,13 +262,118 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
 
           const SizedBox(height: 8),
 
-          // Show range information
-          Text(
-            'Range: ${widget.minValue.toStringAsFixed(0)} - ${widget.maxValue.toStringAsFixed(0)} (step: ${widget.stepSize})',
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.grey,
+          // Range controls (optional)
+          if (widget.showRangeControls) ...[
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _showSettings = !_showSettings;
+                });
+              },
+              icon: Icon(_showSettings ? Icons.expand_less : Icons.settings),
+              label: Text(_showSettings ? 'Hide Settings' : 'Adjust Range & Step'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.brown.shade700,
+              ),
             ),
+            if (_showSettings) ...[
+              const SizedBox(height: 8),
+              _buildRangeControls(),
+            ],
+          ],
+
+          // Show range information
+          if (!widget.showRangeControls || !_showSettings)
+            Text(
+              'Range: ${widget.minValue.toStringAsFixed(0)} - ${widget.maxValue.toStringAsFixed(0)} (step: ${widget.stepSize})',
+              style: const TextStyle(
+                fontSize: 11,
+                color: Colors.grey,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRangeControls() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Min', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    TextField(
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      controller: TextEditingController(text: widget.minValue.toString()),
+                      onSubmitted: (value) {
+                        final newMin = double.tryParse(value);
+                        if (newMin != null && widget.onMinValueChanged != null) {
+                          widget.onMinValueChanged!(newMin);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Max', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    TextField(
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      controller: TextEditingController(text: widget.maxValue.toString()),
+                      onSubmitted: (value) {
+                        final newMax = double.tryParse(value);
+                        if (newMax != null && widget.onMaxValueChanged != null) {
+                          widget.onMaxValueChanged!(newMax);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text('Step Size', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          const SizedBox(height: 4),
+          DropdownButtonFormField<double>(
+            value: widget.stepSize,
+            decoration: const InputDecoration(
+              isDense: true,
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: 1.0, child: Text('1.0 (Full steps)')),
+              DropdownMenuItem(value: 0.5, child: Text('0.5 (Half steps)')),
+              DropdownMenuItem(value: 0.25, child: Text('0.25 (Quarter steps)')),
+            ],
+            onChanged: (value) {
+              if (value != null && widget.onStepSizeChanged != null) {
+                widget.onStepSizeChanged!(value);
+              }
+            },
           ),
         ],
       ),

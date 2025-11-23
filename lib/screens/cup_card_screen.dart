@@ -70,6 +70,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   final _bloomTimeController = TextEditingController();
   final _tastingNotesController = TextEditingController();
 
+  // Grinder settings (can override equipment settings)
+  double? _grinderMinSetting;
+  double? _grinderMaxSetting;
+  double? _grinderStepSize;
+
   // Advanced brewing parameter controllers
   final _preInfusionTimeController = TextEditingController();
   final _pressureBarsController = TextEditingController();
@@ -652,9 +657,10 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                           ? ref.watch(equipmentByIdProvider(_selectedEquipmentId!))
                           : null;
 
-                      final minValue = equipment?.grinderMinSetting ?? 0.0;
-                      final maxValue = equipment?.grinderMaxSetting ?? 50.0;
-                      final stepSize = equipment?.grinderStepSize ?? 1.0;
+                      // Use override values if set, otherwise fall back to equipment settings
+                      final minValue = _grinderMinSetting ?? equipment?.grinderMinSetting ?? 0.0;
+                      final maxValue = _grinderMaxSetting ?? equipment?.grinderMaxSetting ?? 50.0;
+                      final stepSize = _grinderStepSize ?? equipment?.grinderStepSize ?? 1.0;
 
                       return GrindSizeWheel(
                         initialValue: _grindLevelController.text.isEmpty
@@ -670,6 +676,22 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         minValue: minValue,
                         maxValue: maxValue,
                         stepSize: stepSize,
+                        showRangeControls: true,
+                        onMinValueChanged: (value) {
+                          setState(() {
+                            _grinderMinSetting = value;
+                          });
+                        },
+                        onMaxValueChanged: (value) {
+                          setState(() {
+                            _grinderMaxSetting = value;
+                          });
+                        },
+                        onStepSizeChanged: (value) {
+                          setState(() {
+                            _grinderStepSize = value;
+                          });
+                        },
                       );
                     },
                   ),
