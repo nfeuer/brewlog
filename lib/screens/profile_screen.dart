@@ -310,6 +310,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () => _showViewPreferenceDialog(context, ref, user.viewPreference),
                 ),
                 const Divider(height: 1),
+                SwitchListTile(
+                  title: const Text('Haptic Feedback'),
+                  subtitle: const Text('Vibration when adjusting dials'),
+                  value: user.hapticsEnabled,
+                  onChanged: (value) {
+                    ref.read(userProfileProvider.notifier).updateHapticsEnabled(value);
+                  },
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.coffee_maker),
                   title: const Text('My Equipment'),

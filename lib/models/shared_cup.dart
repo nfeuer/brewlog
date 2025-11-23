@@ -4,6 +4,52 @@ import 'cup.dart';
 
 part 'shared_cup.g.dart';
 
+/// Represents a cup received from another user via QR code sharing.
+///
+/// SharedCup is a wrapper around [Cup] that tracks the sharing metadata
+/// while preserving the original cup data for offline access. This allows
+/// users to view shared cups even without internet connection.
+///
+/// **Premium Feature:**
+/// QR code sharing is only available to paid users. Free users cannot
+/// generate QR codes but may import shared cups.
+///
+/// **Data Structure:**
+/// - Original cup metadata (ID, user ID, username)
+/// - Receiving user information
+/// - Denormalized [Cup] data for offline access
+/// - Share timestamp
+///
+/// **Sharing Flow:**
+/// 1. User A creates a cup and generates QR code
+/// 2. User B scans QR code
+/// 3. App creates SharedCup with User A's data
+/// 4. SharedCup stored in User B's local database
+/// 5. Cup appears in User B's "Shared" tab
+///
+/// **Usage:**
+/// ```dart
+/// final sharedCup = SharedCup(
+///   id: uuid.v4(),
+///   originalCupId: cup.id,
+///   originalUserId: cup.userId,
+///   originalUsername: 'CoffeeExpert',
+///   receivedByUserId: currentUser.id,
+///   cupData: cup,  // Full cup object
+/// );
+/// await db.addSharedCup(sharedCup);
+/// ```
+///
+/// **Why Denormalized?**
+/// The full [Cup] object is stored within SharedCup to ensure:
+/// - Offline access to all cup details
+/// - No dependency on original user's data
+/// - Shared cups persist even if sharer deletes their cup
+///
+/// **See Also:**
+/// - [ShareService] for QR code generation and parsing
+/// - [Cup] for the underlying brew data
+/// - [SharedTab] screen for displaying shared cups
 @HiveType(typeId: HiveTypeIds.sharedCup)
 class SharedCup extends HiveObject {
   @HiveField(0)

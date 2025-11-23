@@ -4,6 +4,53 @@ import '../utils/constants.dart';
 // Part directive commented out until build_runner is executed
 // part 'equipment_setup.g.dart';
 
+/// Represents a saved equipment configuration for brewing coffee.
+///
+/// Equipment setups allow users to save their brewing equipment configurations
+/// (grinder, brewer, scale, kettle, water) and quickly populate brew parameters.
+/// Users can have multiple setups (e.g., "Home Setup", "Travel Kit", "Office").
+///
+/// **Tracked Equipment:**
+/// - **Grinder**: Brand, model, type (burr/blade/hand), notes
+/// - **Brewer**: Brand, model, filter type
+/// - **Water**: Type, TDS, brand (e.g., Third Wave Water)
+/// - **Scale**: Brand, model, accuracy
+/// - **Kettle**: Brand, type, temperature control
+/// - **Espresso**: Machine model, boiler temp, brew pressure
+///
+/// **Key Features:**
+/// - Save multiple equipment configurations
+/// - Mark one setup as default
+/// - Auto-populate brew parameters from default setup
+/// - Track equipment notes and specifications
+/// - 25 tracked fields for comprehensive equipment tracking
+///
+/// **Usage:**
+/// ```dart
+/// final setup = EquipmentSetup(
+///   id: uuid.v4(),
+///   userId: user.id,
+///   name: 'Home Setup',
+///   grinderBrand: 'Baratza',
+///   grinderModel: 'Virtuoso+',
+///   grinderType: 'Burr (Conical)',
+///   brewerBrand: 'Hario',
+///   brewerModel: 'V60',
+///   filterType: 'Paper (Unbleached)',
+///   scaleBrand: 'Acaia',
+///   scaleModel: 'Lunar',
+///   isDefault: true,
+/// );
+/// await db.createEquipment(setup);
+/// ```
+///
+/// **Default Setup:**
+/// When creating a new cup, the default equipment setup automatically
+/// populates the equipment field. Only one setup can be default at a time.
+///
+/// **See Also:**
+/// - [Cup.equipmentSetupId] for linking cups to equipment
+/// - [DatabaseService.getDefaultEquipment] to get default setup
 @HiveType(typeId: HiveTypeIds.equipmentSetup)
 class EquipmentSetup extends HiveObject {
   @HiveField(0)
@@ -27,6 +74,15 @@ class EquipmentSetup extends HiveObject {
 
   @HiveField(6)
   String? grinderNotes;
+
+  @HiveField(25)
+  double? grinderMinSetting; // Minimum grind size setting (e.g., 0)
+
+  @HiveField(26)
+  double? grinderMaxSetting; // Maximum grind size setting (e.g., 50)
+
+  @HiveField(27)
+  double? grinderStepSize; // Step size: 1.0, 0.5, or 0.25
 
   // Brewer details
   @HiveField(7)
@@ -95,6 +151,9 @@ class EquipmentSetup extends HiveObject {
     this.grinderModel,
     this.grinderType,
     this.grinderNotes,
+    this.grinderMinSetting,
+    this.grinderMaxSetting,
+    this.grinderStepSize,
     this.brewerBrand,
     this.brewerModel,
     this.filterType,
@@ -155,6 +214,9 @@ class EquipmentSetup extends HiveObject {
       'grinderModel': grinderModel,
       'grinderType': grinderType,
       'grinderNotes': grinderNotes,
+      'grinderMinSetting': grinderMinSetting,
+      'grinderMaxSetting': grinderMaxSetting,
+      'grinderStepSize': grinderStepSize,
       'brewerBrand': brewerBrand,
       'brewerModel': brewerModel,
       'filterType': filterType,
@@ -185,6 +247,9 @@ class EquipmentSetup extends HiveObject {
       grinderModel: json['grinderModel'] as String?,
       grinderType: json['grinderType'] as String?,
       grinderNotes: json['grinderNotes'] as String?,
+      grinderMinSetting: json['grinderMinSetting']?.toDouble(),
+      grinderMaxSetting: json['grinderMaxSetting']?.toDouble(),
+      grinderStepSize: json['grinderStepSize']?.toDouble(),
       brewerBrand: json['brewerBrand'] as String?,
       brewerModel: json['brewerModel'] as String?,
       filterType: json['filterType'] as String?,
@@ -213,6 +278,9 @@ class EquipmentSetup extends HiveObject {
     String? grinderModel,
     String? grinderType,
     String? grinderNotes,
+    double? grinderMinSetting,
+    double? grinderMaxSetting,
+    double? grinderStepSize,
     String? brewerBrand,
     String? brewerModel,
     String? filterType,
@@ -238,6 +306,9 @@ class EquipmentSetup extends HiveObject {
       grinderModel: grinderModel ?? this.grinderModel,
       grinderType: grinderType ?? this.grinderType,
       grinderNotes: grinderNotes ?? this.grinderNotes,
+      grinderMinSetting: grinderMinSetting ?? this.grinderMinSetting,
+      grinderMaxSetting: grinderMaxSetting ?? this.grinderMaxSetting,
+      grinderStepSize: grinderStepSize ?? this.grinderStepSize,
       brewerBrand: brewerBrand ?? this.brewerBrand,
       brewerModel: brewerModel ?? this.brewerModel,
       filterType: filterType ?? this.filterType,

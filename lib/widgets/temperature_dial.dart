@@ -1,14 +1,17 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class TemperatureDial extends StatefulWidget {
   final double? initialValue; // Temperature in Celsius
   final ValueChanged<double?> onChanged; // Returns value in Celsius
+  final bool hapticsEnabled;
 
   const TemperatureDial({
     super.key,
     this.initialValue,
     required this.onChanged,
+    this.hapticsEnabled = true,
   });
 
   @override
@@ -29,6 +32,9 @@ class _TemperatureDialState extends State<TemperatureDial> {
 
   // Track cumulative rotation for visual display
   double _cumulativeRotation = 0.0;
+
+  // Track last temperature for haptic feedback
+  int _lastHapticTemp = 0;
 
   @override
   void initState() {
@@ -69,6 +75,7 @@ class _TemperatureDialState extends State<TemperatureDial> {
     // Initialize previous angle on first touch
     if (_previousDialAngle == null) {
       _previousDialAngle = currentAngle;
+      _lastHapticTemp = _temperatureFahrenheit.round();
       return;
     }
 
@@ -97,6 +104,15 @@ class _TemperatureDialState extends State<TemperatureDial> {
           (_temperatureFahrenheit + tempChange).clamp(_minTempF, _maxTempF);
     });
 
+    // Provide haptic feedback if enabled and temperature crossed a whole degree
+    if (widget.hapticsEnabled) {
+      final currentTemp = _temperatureFahrenheit.round();
+      if (currentTemp != _lastHapticTemp) {
+        HapticFeedback.selectionClick();
+        _lastHapticTemp = currentTemp;
+      }
+    }
+
     // Notify parent with value in Celsius
     widget.onChanged(_fahrenheitToCelsius(_temperatureFahrenheit));
   }
@@ -104,6 +120,7 @@ class _TemperatureDialState extends State<TemperatureDial> {
   void _handlePanEnd(DragEndDetails details) {
     // Reset angle tracking when touch ends
     _previousDialAngle = null;
+    _lastHapticTemp = _temperatureFahrenheit.round();
   }
 
   double _celsiusToFahrenheit(double celsius) {

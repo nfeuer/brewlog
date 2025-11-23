@@ -5,7 +5,38 @@ import '../utils/constants.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
 
-/// Reusable bag card widget that adapts to different view modes
+/// Reusable coffee bag card widget that adapts to different view modes.
+///
+/// This widget displays a [CoffeeBag] in either grid or list format,
+/// showing key information like:
+/// - Bag image/label photo (or placeholder)
+/// - Bag title and roaster name
+/// - Average rating (if available)
+/// - Total cups brewed
+///
+/// **View Modes:**
+/// - **Grid Mode** ([isGridView] = true): Vertical card with image on top
+/// - **List Mode** ([isGridView] = false): Horizontal row with image on left
+///
+/// **Features:**
+/// - Tap handling via [onTap] callback
+/// - Displays local images or placeholder
+/// - Responsive layout that adapts to view mode
+/// - Shows rating badge with star icon
+/// - Shows cup count badge
+///
+/// **Usage:**
+/// ```dart
+/// BagCard(
+///   bag: coffeeBag,
+///   onTap: () => Navigator.push(...),
+///   isGridView: true,  // or false for list view
+/// )
+/// ```
+///
+/// **See Also:**
+/// - [CoffeeBag] model
+/// - [HomeScreen] where this widget is primarily used
 class BagCard extends StatelessWidget {
   final CoffeeBag bag;
   final VoidCallback onTap;

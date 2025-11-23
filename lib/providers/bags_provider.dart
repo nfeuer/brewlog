@@ -4,12 +4,58 @@ import '../services/database_service.dart';
 import '../utils/constants.dart';
 import 'user_provider.dart';
 
-/// Provider for all coffee bags
+/// **Coffee Bag State Management**
+///
+/// This file provides Riverpod providers for managing coffee bag state throughout
+/// the application. It handles CRUD operations, filtering, sorting, and searching.
+///
+/// **Available Providers:**
+///
+/// - [bagsProvider] - Main state provider for all bags (StateNotifierProvider)
+/// - [bagProvider] - Get single bag by ID (Provider.family)
+/// - [activeBagsProvider] - Filter active bags only
+/// - [finishedBagsProvider] - Filter finished bags only
+/// - [sortedBagsProvider] - Sort bags by latest/alphabetical/score
+/// - [searchedBagsProvider] - Filter bags by search query
+///
+/// **Usage Examples:**
+///
+/// ```dart
+/// // Watch all bags (auto-rebuilds on changes)
+/// final bags = ref.watch(bagsProvider);
+///
+/// // Get single bag by ID
+/// final bag = ref.watch(bagProvider('bag-id-123'));
+///
+/// // Create new bag
+/// await ref.read(bagsProvider.notifier).createBag(newBag);
+///
+/// // Update bag status
+/// await ref.read(bagsProvider.notifier).markAsFinished(bagId);
+///
+/// // Search bags
+/// ref.read(bagSearchQueryProvider.notifier).state = 'ethiopia';
+/// final results = ref.watch(searchedBagsProvider);
+/// ```
+///
+/// **See Also:**
+/// - [CoffeeBag] model definition
+/// - [DatabaseService] for persistence layer
+/// - [CODEBASE_GUIDE.md] section "State Management"
+
+/// Provider for all coffee bags.
+///
+/// This is the main state provider. It loads bags from [DatabaseService]
+/// and automatically refreshes the UI when bags are created, updated, or deleted.
 final bagsProvider = StateNotifierProvider<BagsNotifier, List<CoffeeBag>>((ref) {
   final db = ref.watch(databaseServiceProvider);
   return BagsNotifier(db);
 });
 
+/// State notifier for managing coffee bag operations.
+///
+/// Handles CRUD operations and delegates to [DatabaseService] for persistence.
+/// Automatically reloads state after each operation to keep UI in sync.
 class BagsNotifier extends StateNotifier<List<CoffeeBag>> {
   final DatabaseService _db;
 

@@ -3,6 +3,47 @@ import '../utils/constants.dart';
 
 part 'drink_recipe.g.dart';
 
+/// Represents a saved coffee drink recipe (e.g., latte, cappuccino, iced coffee).
+///
+/// Drink recipes allow users to save their favorite coffee beverage combinations
+/// and associate them with brew cups. Unlike [Cup] which tracks the brewing
+/// process, DrinkRecipe focuses on the final drink composition (milk, syrups, etc.).
+///
+/// **Key Features:**
+/// - Save drink recipes with custom names
+/// - Track ingredients: milk, syrups, sweeteners, additions
+/// - Usage counter for popular recipes
+/// - QR code sharing with other users (premium)
+/// - Link to cups via [Cup.drinkRecipeId]
+///
+/// **Example Recipes:**
+/// - Vanilla Latte: Espresso + whole milk + vanilla syrup
+/// - Iced Americano: Espresso + ice + water
+/// - Spanish Latte: Espresso + condensed milk + whole milk
+///
+/// **Usage:**
+/// ```dart
+/// final recipe = DrinkRecipe(
+///   id: uuid.v4(),
+///   userId: user.id,
+///   name: 'Vanilla Latte',
+///   baseType: 'Espresso',
+///   espressoShot: 'Double',
+///   milkType: 'Whole Milk',
+///   milkAmountMl: 200,
+///   syrups: ['Vanilla'],
+/// );
+/// await db.createDrinkRecipe(recipe);
+/// ```
+///
+/// **Sharing:**
+/// Premium users can share recipes via:
+/// - QR codes (encodes recipe JSON)
+/// - Deep links (brewlog://drink_recipe?data=...)
+///
+/// **See Also:**
+/// - [Cup] for brew tracking
+/// - [ShareService] for QR code generation
 @HiveType(typeId: HiveTypeIds.drinkRecipe)
 class DrinkRecipe extends HiveObject {
   @HiveField(0)
