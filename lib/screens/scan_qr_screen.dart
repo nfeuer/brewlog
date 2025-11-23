@@ -394,45 +394,46 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-            // Bag selection
-            SizedBox(
-              width: double.maxFinite,
-              child: DropdownButtonFormField<CoffeeBag>(
-                decoration: const InputDecoration(
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  border: OutlineInputBorder(),
-                ),
-                hint: const Text('Select a bag'),
-                items: bags.map((bag) {
-                  return DropdownMenuItem<CoffeeBag>(
-                    value: bag,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          bag.coffeeName,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                        Text(
-                          bag.roaster,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+              // Bag selection
+              SizedBox(
+                width: double.maxFinite,
+                child: DropdownButtonFormField<CoffeeBag>(
+                  decoration: const InputDecoration(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(),
+                  ),
+                  hint: const Text('Select a bag'),
+                  items: bags.map((bag) {
+                    return DropdownMenuItem<CoffeeBag>(
+                      value: bag,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            bag.coffeeName,
+                            style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (CoffeeBag? bag) {
-                  if (bag != null) {
-                    Navigator.pop(context, bag);
-                  }
-                },
+                          Text(
+                            bag.roaster,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (CoffeeBag? bag) {
+                    if (bag != null) {
+                      Navigator.pop(context, bag);
+                    }
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
