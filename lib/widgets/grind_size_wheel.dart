@@ -161,7 +161,7 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
       _currentValue = newValue;
     });
 
-    // Provide haptic feedback if enabled (WheelSlider's built-in haptics are disabled)
+    // Provide haptic feedback if enabled
     if (widget.hapticsEnabled) {
       HapticFeedback.selectionClick();
     }
@@ -221,7 +221,7 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
               totalCount: _totalCount,
               initValue: _currentIndex,
               onValueChanged: (value) => _onValueChanged(value as int),
-              hapticFeedbackType: widget.hapticsEnabled ? HapticFeedbackType.vibrate : HapticFeedbackType.none,
+              // Haptics are handled manually in _onValueChanged based on hapticsEnabled setting
               enableAnimation: false, // Disable animation to prevent initial scroll
               perspective: 0.005, // Reduced for more oval effect
               squeeze: 1.5, // Increased for more pronounced 3D curve
