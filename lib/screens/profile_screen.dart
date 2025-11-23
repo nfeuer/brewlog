@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/user_provider.dart';
 import '../providers/equipment_provider.dart';
 import '../utils/constants.dart';
@@ -444,34 +444,25 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _sendFeedback(BuildContext context, String feedback, dynamic user) async {
-    final username = user.username ?? 'Unknown User';
-    final isPremium = user.isPaid ? 'Premium' : 'Free';
-
-    final emailBody = Uri.encodeComponent(
-      'Feedback from: $username ($isPremium user)\n\n'
-      'Feedback:\n$feedback\n\n'
-      '---\n'
-      'App: BrewLog\n'
-      'Version: 1.0.0',
-    );
-
-    final emailSubject = Uri.encodeComponent('BrewLog Feedback from $username');
-    final emailUri = Uri.parse('mailto:feedback@brewlog.app?subject=$emailSubject&body=$emailBody');
-
     try {
-      if (await canLaunchUrl(emailUri)) {
-        await launchUrl(emailUri);
-        if (context.mounted) {
-          showSuccess(context, 'Thank you for your feedback!');
-        }
-      } else {
-        if (context.mounted) {
-          showError(context, 'Could not open email app. Please email feedback@brewlog.app directly.');
-        }
+      // Submit feedback to Firebase Firestore
+      await FirebaseFirestore.instance.collection('feedback').add({
+        'userId': user.id,
+        'username': user.username ?? 'Unknown User',
+        'email': user.email,
+        'isPremium': user.isPaid,
+        'feedback': feedback,
+        'timestamp': FieldValue.serverTimestamp(),
+        'appVersion': '1.0.0',
+        'platform': 'mobile',
+      });
+
+      if (context.mounted) {
+        showSuccess(context, 'Thank you for your feedback!');
       }
     } catch (e) {
       if (context.mounted) {
-        showError(context, 'Error opening email: ${e.toString()}');
+        showError(context, 'Failed to submit feedback. Please try again.');
       }
     }
   }
