@@ -3,6 +3,90 @@ import '../utils/constants.dart';
 
 part 'cup.g.dart';
 
+/// Represents a single brew/cup of coffee with comprehensive tracking.
+///
+/// This is the most detailed model in BrewLog, tracking 50+ fields covering
+/// everything from basic brewing parameters to advanced metrics, environmental
+/// conditions, SCA cupping scores, and tasting notes.
+///
+/// **Core Sections:**
+///
+/// 1. **Basic Brew Parameters** (Always tracked)
+///    - Brew type, grind level, water temperature
+///    - Coffee amount (grams), final volume (ml), ratio
+///    - Brew time, bloom time
+///
+/// 2. **Advanced Brewing** (Conditional by brew type)
+///    - Espresso: pre-infusion time, pressure, yield weight
+///    - Pour over: bloom amount, pour schedule
+///    - Universal: TDS, extraction yield percentage
+///
+/// 3. **Environmental Conditions** (Optional)
+///    - Room temperature, humidity, altitude
+///    - Time of day (morning/afternoon/evening/night)
+///
+/// 4. **SCA Cupping Protocol** (Professional, optional)
+///    - 11-point scoring system (each 0-10 scale)
+///    - Fragrance, aroma, flavor, aftertaste, acidity, body,
+///      balance, sweetness, clean cup, uniformity, overall
+///    - Total score auto-calculated
+///    - Defects notes
+///
+/// 5. **Rating & Tasting**
+///    - Triple rating system (1-5, 1-10, 1-100) - all stored simultaneously
+///    - Tasting notes (free text)
+///    - Flavor tags (fruity, nutty, chocolatey, etc.)
+///    - Custom flavor tags
+///
+/// 6. **Media & Metadata**
+///    - Photo paths (local or Firebase URLs)
+///    - Equipment setup reference
+///    - Drink recipe reference
+///    - Share count and sharer information
+///    - Created/updated timestamps
+///
+/// **Rating System:**
+/// All three rating scales are stored simultaneously:
+/// - [score1to5]: 1-5 stars (quick casual rating)
+/// - [score1to10]: 1-10 scale (medium granularity)
+/// - [score1to100]: 1-100 scale (high precision)
+///
+/// Scales auto-convert between each other. User selects display preference
+/// in profile settings.
+///
+/// **Field Visibility:**
+/// Not all fields need to be shown. Users can customize which fields appear:
+/// - Global defaults in [UserProfile.cupFieldVisibility]
+/// - Per-bag overrides in [CoffeeBag.fieldVisibility]
+/// - Per-cup customization (future feature)
+///
+/// **Usage:**
+/// ```dart
+/// final cup = Cup(
+///   id: uuid.v4(),
+///   bagId: bag.id,
+///   userId: user.id,
+///   brewType: 'Pour Over',
+///   grindLevel: 'Medium-Fine',
+///   waterTempCelsius: 93.0,
+///   gramsUsed: 18.0,
+///   finalVolumeMl: 300.0,
+///   brewTimeSeconds: 180,
+///   score1to5: 4.5,
+/// );
+/// await db.createCup(cup);
+/// ```
+///
+/// **Statistics Impact:**
+/// Creating/updating/deleting cups automatically updates:
+/// - User statistics ([UserStats])
+/// - Bag statistics ([CoffeeBag.totalCups], [CoffeeBag.avgScore])
+/// - Drink recipe usage count (if recipe linked)
+///
+/// **See Also:**
+/// - [CupCardScreen] for the comprehensive entry form
+/// - [CoffeeBag] for the parent bag
+/// - [DatabaseService.createCup] for persistence
 @HiveType(typeId: HiveTypeIds.cup)
 class Cup extends HiveObject {
   @HiveField(0)
@@ -175,6 +259,15 @@ class Cup extends HiveObject {
   @HiveField(51)
   String? drinkRecipeId; // Reference to a saved drink recipe
 
+  @HiveField(52)
+  double? grinderMinSetting; // For sharing: min grind size used
+
+  @HiveField(53)
+  double? grinderMaxSetting; // For sharing: max grind size used
+
+  @HiveField(54)
+  double? grinderStepSize; // For sharing: step size used
+
   Cup({
     required this.id,
     required this.bagId,
@@ -228,6 +321,9 @@ class Cup extends HiveObject {
     this.cuppingDefects,
     this.fieldVisibility,
     this.drinkRecipeId,
+    this.grinderMinSetting,
+    this.grinderMaxSetting,
+    this.grinderStepSize,
   })  : flavorTags = flavorTags ?? [],
         photoPaths = photoPaths ?? [],
         createdAt = createdAt ?? DateTime.now(),
@@ -387,6 +483,9 @@ class Cup extends HiveObject {
       'cuppingDefects': cuppingDefects,
       'fieldVisibility': fieldVisibility,
       'drinkRecipeId': drinkRecipeId,
+      'grinderMinSetting': grinderMinSetting,
+      'grinderMaxSetting': grinderMaxSetting,
+      'grinderStepSize': grinderStepSize,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -446,6 +545,9 @@ class Cup extends HiveObject {
           ? Map<String, bool>.from(json['fieldVisibility'] as Map)
           : null,
       drinkRecipeId: json['drinkRecipeId'] as String?,
+      grinderMinSetting: json['grinderMinSetting']?.toDouble(),
+      grinderMaxSetting: json['grinderMaxSetting']?.toDouble(),
+      grinderStepSize: json['grinderStepSize']?.toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -592,6 +694,9 @@ class Cup extends HiveObject {
       cuppingOverall: cuppingOverall,
       cuppingTotal: cuppingTotal,
       cuppingDefects: cuppingDefects,
+      grinderMinSetting: grinderMinSetting,
+      grinderMaxSetting: grinderMaxSetting,
+      grinderStepSize: grinderStepSize,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

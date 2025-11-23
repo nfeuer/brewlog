@@ -162,7 +162,7 @@ class ShareCupScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   _buildHelpItem(
                     'Included',
-                    'Coffee details, brew method, tasting notes, rating, and all cupping scores',
+                    'Coffee details, brew method, grind size settings, tasting notes, rating, and all cupping scores',
                   ),
                   const SizedBox(height: 8),
                   _buildHelpItem(

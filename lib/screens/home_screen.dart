@@ -13,6 +13,46 @@ import 'shared_tab.dart';
 import 'cup_card_screen.dart';
 import 'scan_qr_screen.dart';
 
+/// Main home screen with tab-based navigation.
+///
+/// This is the primary UI screen shown after app launch. It provides:
+///
+/// **Tab Navigation:**
+/// - **My Bags Tab**: Displays user's coffee bag collection
+/// - **Shared Tab**: Shows cups received via QR code sharing (premium feature)
+///
+/// **App Bar Actions:**
+/// - Search button - Opens search dialog to filter bags
+/// - Profile button - Navigates to profile/settings screen
+///
+/// **View Modes:**
+/// User can toggle between three view modes for displaying bags:
+/// - Grid: Card grid layout (default)
+/// - List: Detailed list view
+/// - Rolodex: Animated carousel/swiper
+///
+/// **Sorting Options:**
+/// - Latest: By last updated (default)
+/// - Alphabetical: By bag title
+/// - Score: By average rating
+///
+/// **Floating Action Button:**
+/// - On "My Bags" tab: Add new bag
+/// - On "Shared" tab: Scan QR code to import shared cup (premium only)
+///
+/// **State Management:**
+/// Uses Riverpod providers to watch:
+/// - [bagsProvider] for bag collection
+/// - [userProfileProvider] for user preferences and premium status
+/// - [sharedCupsProvider] for shared cups count badge
+///
+/// **Example Navigation:**
+/// ```dart
+/// Navigator.push(
+///   context,
+///   MaterialPageRoute(builder: (context) => const HomeScreen()),
+/// );
+/// ```
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 

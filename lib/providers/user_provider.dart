@@ -53,6 +53,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       hasBeenAskedForUsername: true,
       neverAskForUsername: state!.neverAskForUsername,
       firebaseUid: state!.firebaseUid,
+      hapticsEnabled: state!.hapticsEnabled,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -81,6 +82,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       hasBeenAskedForUsername: true,
       neverAskForUsername: state!.neverAskForUsername,
       firebaseUid: state!.firebaseUid,
+      hapticsEnabled: state!.hapticsEnabled,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -109,6 +111,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       hasBeenAskedForUsername: true,
       neverAskForUsername: true,
       firebaseUid: state!.firebaseUid,
+      hapticsEnabled: state!.hapticsEnabled,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -137,6 +140,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       hasBeenAskedForUsername: state!.hasBeenAskedForUsername,
       neverAskForUsername: state!.neverAskForUsername,
       firebaseUid: firebaseUid,
+      hapticsEnabled: state!.hapticsEnabled,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -165,6 +169,7 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       hasBeenAskedForUsername: state!.hasBeenAskedForUsername,
       neverAskForUsername: state!.neverAskForUsername,
       firebaseUid: null,
+      hapticsEnabled: state!.hapticsEnabled,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -369,6 +374,36 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       cupFieldVisibility: state!.cupFieldVisibility,
       profilePicturePath: state!.profilePicturePath,
       bio: state!.bio,
+      hapticsEnabled: state!.hapticsEnabled,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Update haptics preference
+  Future<void> updateHapticsEnabled(bool enabled) async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
+      hasBeenAskedForUsername: state!.hasBeenAskedForUsername,
+      neverAskForUsername: state!.neverAskForUsername,
+      firebaseUid: state!.firebaseUid,
+      hapticsEnabled: enabled,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -449,4 +484,10 @@ final shouldPromptForUsernameProvider = Provider<bool>((ref) {
 final isLoggedInProvider = Provider<bool>((ref) {
   final user = ref.watch(userProfileProvider);
   return user?.firebaseUid != null;
+});
+
+/// Provider for haptics preference
+final hapticsEnabledProvider = Provider<bool>((ref) {
+  final user = ref.watch(userProfileProvider);
+  return user?.hapticsEnabled ?? true;
 });

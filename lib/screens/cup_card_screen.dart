@@ -18,8 +18,8 @@ import '../utils/theme.dart';
 import '../widgets/rating_input.dart';
 import '../widgets/photo_viewer.dart';
 import '../widgets/temperature_dial.dart';
-import '../widgets/grind_size_wheel.dart';
 import '../widgets/pour_schedule_timer.dart';
+import '../widgets/grind_size_wheel.dart';
 import 'equipment_form_screen.dart';
 import 'share_cup_screen.dart';
 
@@ -69,6 +69,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   final _brewTimeFormattedController = TextEditingController();
   final _bloomTimeController = TextEditingController();
   final _tastingNotesController = TextEditingController();
+
+  // Grinder settings (can override equipment settings)
+  double? _grinderMinSetting;
+  double? _grinderMaxSetting;
+  double? _grinderStepSize;
 
   // Advanced brewing parameter controllers
   final _preInfusionTimeController = TextEditingController();
@@ -650,15 +655,18 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                 ],
                 if (_currentFieldVisibility['grindLevel'] == true) ...[
                   const SizedBox(height: 24),
-                  // Grind Size Wheel
+                  // Get grinder settings from selected equipment (if available)
                   Builder(
                     builder: (context) {
                       final equipment = _selectedEquipmentId != null
-                          ? ref.read(equipmentProvider(_selectedEquipmentId!))
+                          ? ref.watch(equipmentByIdProvider(_selectedEquipmentId!))
                           : null;
+
+                      // Use override values if set, otherwise fall back to equipment settings
                       final minValue = _grinderMinSetting ?? equipment?.grinderMinSetting ?? 0.0;
                       final maxValue = _grinderMaxSetting ?? equipment?.grinderMaxSetting ?? 50.0;
                       final stepSize = _grinderStepSize ?? equipment?.grinderStepSize ?? 1.0;
+                      final hapticsEnabled = ref.watch(hapticsEnabledProvider);
 
                       return GrindSizeWheel(
                         initialValue: _grindLevelController.text.isEmpty
@@ -675,7 +683,7 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                         maxValue: maxValue,
                         stepSize: stepSize,
                         showRangeControls: true,
-                        hapticsEnabled: true, // Default to true for now
+                        hapticsEnabled: hapticsEnabled,
                         onMinValueChanged: (value) {
                           setState(() {
                             _grinderMinSetting = value;
@@ -697,14 +705,20 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
                 ],
                 if (_currentFieldVisibility['waterTemp'] == true) ...[
                   const SizedBox(height: 24),
-                  TemperatureDial(
-                    initialValue: _waterTempController.text.isEmpty
-                        ? null
-                        : double.tryParse(_waterTempController.text),
-                    onChanged: (value) {
-                      setState(() {
-                        _waterTempController.text = value?.toStringAsFixed(1) ?? '';
-                      });
+                  Builder(
+                    builder: (context) {
+                      final hapticsEnabled = ref.watch(hapticsEnabledProvider);
+                      return TemperatureDial(
+                        initialValue: _waterTempController.text.isEmpty
+                            ? null
+                            : double.tryParse(_waterTempController.text),
+                        onChanged: (value) {
+                          setState(() {
+                            _waterTempController.text = value?.toStringAsFixed(1) ?? '';
+                          });
+                        },
+                        hapticsEnabled: hapticsEnabled,
+                      );
                     },
                   ),
                 ],
@@ -1943,6 +1957,11 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       return;
     }
 
+    // Get grinder settings from selected equipment (for sharing)
+    final equipment = _selectedEquipmentId != null
+        ? ref.read(equipmentByIdProvider(_selectedEquipmentId!))
+        : null;
+
     // Create or update cup
     final cupId = widget.cupId ?? uuid.v4();
     final cup = Cup(
@@ -1951,6 +1970,9 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
       userId: user.id,
       brewType: _selectedBrewType!,
       grindLevel: _grindLevelController.text.isEmpty ? null : _grindLevelController.text,
+      grinderMinSetting: equipment?.grinderMinSetting,
+      grinderMaxSetting: equipment?.grinderMaxSetting,
+      grinderStepSize: equipment?.grinderStepSize,
       waterTempCelsius: _waterTempController.text.isEmpty
           ? null
           : double.tryParse(_waterTempController.text),

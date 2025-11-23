@@ -8,8 +8,49 @@ import '../models/equipment_setup.dart';
 import '../models/drink_recipe.dart';
 import '../utils/constants.dart';
 
-/// Local database service using Hive for offline-first storage
-/// All data is stored locally, and optionally synced to Firebase for paid users
+/// Local database service using Hive for offline-first storage.
+///
+/// This is the core data persistence layer for BrewLog. All data is stored
+/// locally first in Hive (embedded NoSQL database), enabling full offline
+/// functionality. Firebase sync is optional for premium users.
+///
+/// **Architecture Pattern:** Singleton
+///
+/// **Managed Hive Boxes:**
+/// - `user` - Single [UserProfile] (stored as 'current_user')
+/// - `bags` - All [CoffeeBag] instances
+/// - `cups` - All [Cup] instances
+/// - `shared_cups` - All [SharedCup] instances from QR imports
+/// - `equipment` - All [EquipmentSetup] configurations
+/// - `drink_recipes` - All [DrinkRecipe] instances
+///
+/// **Key Responsibilities:**
+/// - CRUD operations for all models
+/// - Automatic statistics calculation and updates
+/// - Relationship management (e.g., deleting bag deletes its cups)
+/// - Default user creation on first run
+/// - Transaction-like operations (statistics stay consistent)
+///
+/// **Usage:**
+/// ```dart
+/// final db = DatabaseService();
+/// await db.initialize();  // Call once at app startup
+///
+/// // CRUD operations
+/// final bags = db.getAllBags();
+/// await db.createCup(newCup);  // Auto-updates bag & user stats
+/// await db.deleteBag(bagId);   // Cascade deletes all cups
+/// ```
+///
+/// **Important Notes:**
+/// - Uses JSON serialization until Hive adapters are generated
+/// - Statistics update automatically on cup create/update/delete
+/// - All methods are synchronous except for Hive I/O operations
+/// - Thread-safe due to Hive's internal locking
+///
+/// **See Also:**
+/// - [FirebaseService] for cloud sync operations
+/// - [CODEBASE_GUIDE.md] section "Services Layer"
 class DatabaseService {
   static const String _userBoxName = 'user';
   static const String _bagsBoxName = 'bags';
