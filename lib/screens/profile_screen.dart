@@ -94,15 +94,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Centered username with edit button
+                  // Profile Name with edit button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Flexible(
                         child: GestureDetector(
-                          onTap: _isEditing ? () => _showEditNameDialog(context, ref, user.username) : null,
+                          onTap: _isEditing ? () => _showEditProfileNameDialog(context, ref, user.profileName) : null,
                           child: Text(
-                            user.username ?? 'Coffee Enthusiast',
+                            user.profileName ?? 'Coffee Enthusiast',
                             style: Theme.of(context).textTheme.headlineMedium,
                             textAlign: TextAlign.center,
                           ),
@@ -112,12 +112,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         IconButton(
                           icon: const Icon(Icons.edit, size: 18),
                           color: AppTheme.primaryBrown,
-                          onPressed: () => _showEditNameDialog(context, ref, user.username),
+                          onPressed: () => _showEditProfileNameDialog(context, ref, user.profileName),
                           padding: const EdgeInsets.only(left: 4),
                           constraints: const BoxConstraints(),
                         ),
                     ],
                   ),
+                  // Username (handle) with edit button
+                  if (user.username != null && user.username!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: _isEditing ? () => _showEditUsernameDialog(context, ref, user.username) : null,
+                            child: Text(
+                              '@${user.username}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                        if (_isEditing)
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 16),
+                            color: Colors.grey[600],
+                            onPressed: () => _showEditUsernameDialog(context, ref, user.username),
+                            padding: const EdgeInsets.only(left: 4),
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
+                    ),
+                  ] else if (_isEditing) ...[
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: () => _showEditUsernameDialog(context, ref, null),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add username'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                   // Bio section with edit button
                   if (user.bio != null && user.bio!.isNotEmpty) ...[
                     const SizedBox(height: 4),
@@ -640,7 +680,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _showEditNameDialog(BuildContext context, WidgetRef ref, String? currentName) {
+  void _showEditProfileNameDialog(BuildContext context, WidgetRef ref, String? currentName) {
+    final controller = TextEditingController(text: currentName);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profile Name'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Profile Name',
+            hintText: 'Nick the Coffee Enthusiast',
+            helperText: 'Your display name on your profile',
+          ),
+          autofocus: true,
+          maxLength: 50,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newName = controller.text.trim();
+              ref.read(userProfileProvider.notifier).updateProfileName(newName.isEmpty ? null : newName);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditUsernameDialog(BuildContext context, WidgetRef ref, String? currentName) {
     final controller = TextEditingController(text: currentName);
     final formKey = GlobalKey<FormState>();
 
@@ -655,7 +730,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             decoration: const InputDecoration(
               labelText: 'Username',
               hintText: 'coffeemaster',
-              helperText: 'Used when sharing recipes',
+              helperText: 'Used when sharing recipes (@username)',
             ),
             autofocus: true,
             maxLength: 20,

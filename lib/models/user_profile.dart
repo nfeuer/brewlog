@@ -202,6 +202,10 @@ class UserProfile extends HiveObject {
   @HiveField(18)
   bool hapticsEnabled;
 
+  // Profile display name (separate from username)
+  @HiveField(19)
+  String? profileName; // Display name shown on profile (e.g., "Nick the Coffee Enthusiast")
+
   UserProfile({
     required this.id,
     this.username,
@@ -222,6 +226,7 @@ class UserProfile extends HiveObject {
     this.neverAskForUsername = false,
     this.firebaseUid,
     this.hapticsEnabled = true, // Default to enabled
+    this.profileName,
   })  : defaultVisibleFields = defaultVisibleFields ?? [],
         stats = stats ?? UserStats(),
         createdAt = createdAt ?? DateTime.now(),
@@ -304,6 +309,7 @@ class UserProfile extends HiveObject {
       'customBrewTypes': customBrewTypes,
       'cupFieldVisibility': cupFieldVisibility,
       'profilePicturePath': profilePicturePath,
+      'profileName': profileName,
       'bio': bio,
       'hasBeenAskedForUsername': hasBeenAskedForUsername,
       'neverAskForUsername': neverAskForUsername,
@@ -340,6 +346,7 @@ class UserProfile extends HiveObject {
           ? Map<String, bool>.from(json['cupFieldVisibility'])
           : null,
       profilePicturePath: json['profilePicturePath'] as String?,
+      profileName: json['profileName'] as String?,
       bio: json['bio'] as String?,
       hasBeenAskedForUsername: json['hasBeenAskedForUsername'] as bool? ?? false,
       neverAskForUsername: json['neverAskForUsername'] as bool? ?? false,
