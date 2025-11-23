@@ -133,18 +133,17 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   }
 
   void _initializeValues() {
-    // Always generate ticks at 0.25 intervals for consistent spacing
-    _totalCount = ((widget.maxValue - widget.minValue) / _baseInterval).round() + 1;
+    // Calculate total number of selectable steps based on stepSize
+    _totalCount = ((widget.maxValue - widget.minValue) / widget.stepSize).round() + 1;
 
     // Set initial value
     if (widget.initialValue != null) {
       _currentValue = widget.initialValue!;
-      _currentIndex = ((widget.initialValue! - widget.minValue) / _baseInterval).round();
+      _currentIndex = ((widget.initialValue! - widget.minValue) / widget.stepSize).round();
     } else {
       // Default to middle value, snapped to stepSize
-      final middleValue = (widget.minValue + widget.maxValue) / 2;
-      _currentValue = _snapToStepSize(middleValue);
-      _currentIndex = ((_currentValue - widget.minValue) / _baseInterval).round();
+      _currentIndex = _totalCount ~/ 2;
+      _currentValue = widget.minValue + (_currentIndex * widget.stepSize);
     }
   }
 
@@ -155,23 +154,29 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
   }
 
   void _onValueChanged(int index) {
-    final newValue = widget.minValue + (index * _baseInterval);
+    final newValue = widget.minValue + (index * widget.stepSize);
 
-    // Only update if this is a valid selectable tick
-    if (_TickMarkHelper.isSelectable(newValue, widget.stepSize)) {
-      setState(() {
-        _currentIndex = index;
-        _currentValue = _snapToStepSize(newValue);
-      });
+    setState(() {
+      _currentIndex = index;
+      _currentValue = newValue;
+    });
 
-      // Provide haptic feedback if enabled
-      if (widget.hapticsEnabled) {
-        HapticFeedback.selectionClick();
-      }
-
-      // Notify parent
-      widget.onChanged(_currentValue);
+    // Provide haptic feedback if enabled (WheelSlider's built-in haptics are disabled)
+    if (widget.hapticsEnabled) {
+      HapticFeedback.selectionClick();
     }
+
+    // Notify parent
+    widget.onChanged(_currentValue);
+  }
+
+  /// Calculate the visual width for a tick to maintain consistent spacing
+  /// regardless of step size
+  double _getTickSpacing(double stepSize) {
+    // Base spacing for 1.0 step size
+    const baseSpacing = 40.0;
+    // Scale spacing based on step size to maintain visual consistency
+    return baseSpacing / stepSize;
   }
 
   @override
@@ -216,8 +221,8 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
               totalCount: _totalCount,
               initValue: _currentIndex,
               onValueChanged: (value) => _onValueChanged(value as int),
-              hapticFeedbackType: HapticFeedbackType.vibrate,
-              enableAnimation: true,
+              hapticFeedbackType: widget.hapticsEnabled ? HapticFeedbackType.vibrate : HapticFeedbackType.none,
+              enableAnimation: false, // Disable animation to prevent initial scroll
               perspective: 0.005, // Reduced for more oval effect
               squeeze: 1.5, // Increased for more pronounced 3D curve
               showPointer: true,
@@ -227,30 +232,27 @@ class _GrindSizeWheelState extends State<GrindSizeWheel> {
               horizontalListWidth: MediaQuery.of(context).size.width * 0.8,
               horizontalListHeight: 200,
               children: List.generate(_totalCount, (index) {
-                final value = widget.minValue + (index * _baseInterval);
+                final value = widget.minValue + (index * widget.stepSize);
                 final lineHeight = _TickMarkHelper.getLineHeight(value, widget.stepSize);
                 final lineWidth = _TickMarkHelper.getLineWidth(value, widget.stepSize);
                 final lineColor = _TickMarkHelper.getLineColor(value, widget.stepSize);
                 final isWholeNumber = (value % 1.0).abs() < 0.01;
-
-                // Don't render ticks with 0 height
-                if (lineHeight == 0.0) {
-                  return const SizedBox.shrink();
-                }
+                final showHalfLabel = widget.stepSize <= 0.5 && ((value % 1.0) - 0.5).abs() < 0.01;
 
                 return Container(
                   height: lineHeight,
                   width: lineWidth,
+                  margin: EdgeInsets.symmetric(horizontal: _getTickSpacing(widget.stepSize) / 2),
                   decoration: BoxDecoration(
                     color: lineColor,
                     borderRadius: BorderRadius.circular(lineWidth / 2),
                   ),
                   alignment: Alignment.bottomCenter,
-                  child: isWholeNumber
+                  child: (isWholeNumber || showHalfLabel)
                       ? Padding(
                           padding: const EdgeInsets.only(top: 45),
                           child: Text(
-                            value.toStringAsFixed(0),
+                            value.toStringAsFixed(showHalfLabel ? 1 : 0),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
