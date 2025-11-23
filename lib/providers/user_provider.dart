@@ -403,7 +403,6 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       hasBeenAskedForUsername: state!.hasBeenAskedForUsername,
       neverAskForUsername: state!.neverAskForUsername,
       firebaseUid: state!.firebaseUid,
-      hapticsEnabled: state!.hapticsEnabled,
       hapticsEnabled: enabled,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
