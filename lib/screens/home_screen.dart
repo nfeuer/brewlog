@@ -11,6 +11,7 @@ import 'bag_detail_screen.dart';
 import 'profile_screen.dart';
 import 'shared_tab.dart';
 import 'cup_card_screen.dart';
+import 'scan_qr_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -110,10 +111,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           const SharedTab(),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createNewBag,
-        label: const Text('New Bag'),
-        icon: const Icon(Icons.add),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(left: 32),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // QR Scanner button - bottom left
+            FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ScanQRScreen(),
+                  ),
+                );
+              },
+              heroTag: 'qr_scanner',
+              child: const Icon(Icons.qr_code_scanner),
+            ),
+            // New Bag button - bottom right
+            FloatingActionButton.extended(
+              onPressed: _createNewBag,
+              label: const Text('New Bag'),
+              icon: const Icon(Icons.add),
+              heroTag: 'new_bag',
+            ),
+          ],
+        ),
       ),
     );
   }

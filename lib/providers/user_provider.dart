@@ -48,6 +48,123 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
+      hasBeenAskedForUsername: true,
+      neverAskForUsername: state!.neverAskForUsername,
+      firebaseUid: state!.firebaseUid,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Mark that user has been asked for username
+  Future<void> markAskedForUsername() async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
+      hasBeenAskedForUsername: true,
+      neverAskForUsername: state!.neverAskForUsername,
+      firebaseUid: state!.firebaseUid,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Set never ask for username again
+  Future<void> setNeverAskForUsername() async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
+      hasBeenAskedForUsername: true,
+      neverAskForUsername: true,
+      firebaseUid: state!.firebaseUid,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Link Firebase account
+  Future<void> linkFirebaseAccount(String firebaseUid, String email) async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
+      hasBeenAskedForUsername: state!.hasBeenAskedForUsername,
+      neverAskForUsername: state!.neverAskForUsername,
+      firebaseUid: firebaseUid,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Unlink Firebase account (logout)
+  Future<void> unlinkFirebaseAccount() async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
+      hasBeenAskedForUsername: state!.hasBeenAskedForUsername,
+      neverAskForUsername: state!.neverAskForUsername,
+      firebaseUid: null,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -71,6 +188,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -94,6 +213,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -117,6 +238,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: visibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -141,6 +264,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
         stats: state!.stats,
         customBrewTypes: [...state!.customBrewTypes, brewType],
         cupFieldVisibility: state!.cupFieldVisibility,
+        profilePicturePath: state!.profilePicturePath,
+        bio: state!.bio,
         createdAt: state!.createdAt,
         updatedAt: DateTime.now(),
       );
@@ -165,6 +290,85 @@ class UserProfileNotifier extends StateNotifier<UserProfile?> {
       stats: state!.stats,
       customBrewTypes: state!.customBrewTypes,
       cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Update bio
+  Future<void> updateBio(String? bio) async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: bio,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Update profile picture
+  Future<void> updateProfilePicture(String? picturePath) async {
+    if (state == null) return;
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: state!.stats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: picturePath,
+      bio: state!.bio,
+      createdAt: state!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    await updateProfile(updated);
+  }
+
+  /// Recalculate statistics from actual data
+  Future<void> recalculateStats() async {
+    if (state == null) return;
+
+    final newStats = await _db.recalculateUserStats();
+
+    final updated = UserProfile(
+      id: state!.id,
+      username: state!.username,
+      email: state!.email,
+      isPaid: state!.isPaid,
+      isAdmin: state!.isAdmin,
+      ratingScaleIndex: state!.ratingScaleIndex,
+      defaultVisibleFields: state!.defaultVisibleFields,
+      viewPreferenceIndex: state!.viewPreferenceIndex,
+      stats: newStats,
+      customBrewTypes: state!.customBrewTypes,
+      cupFieldVisibility: state!.cupFieldVisibility,
+      profilePicturePath: state!.profilePicturePath,
+      bio: state!.bio,
       createdAt: state!.createdAt,
       updatedAt: DateTime.now(),
     );
@@ -222,4 +426,27 @@ final cupFieldVisibilityProvider = Provider<Map<String, bool>>((ref) {
   }
 
   return visibility;
+});
+
+/// Provider to check if user should be prompted for username
+final shouldPromptForUsernameProvider = Provider<bool>((ref) {
+  final user = ref.watch(userProfileProvider);
+  if (user == null) return false;
+
+  // Don't prompt if user already has a username
+  if (user.username != null && user.username!.isNotEmpty) return false;
+
+  // Don't prompt if user selected "never ask again"
+  if (user.neverAskForUsername) return false;
+
+  // Don't prompt if already asked in this session
+  if (user.hasBeenAskedForUsername) return false;
+
+  return true;
+});
+
+/// Provider to check if user is logged in to Firebase
+final isLoggedInProvider = Provider<bool>((ref) {
+  final user = ref.watch(userProfileProvider);
+  return user?.firebaseUid != null;
 });

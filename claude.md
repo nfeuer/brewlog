@@ -54,6 +54,46 @@ This is required because new `@HiveField` annotations were added to the Cup and 
 - Bean screen size (e.g., 17/18)
 - Certifications (Organic, Fair Trade, Bird Friendly, etc.)
 
+### Drink Recipe System
+- **Comprehensive drink recipe creation** for coffee-based beverages
+- **Recipe components**:
+  * Base type (Espresso, Drip, Pour Over, etc.)
+  * Milk type and amount (Whole, Oat, Almond, etc.)
+  * Syrups (Vanilla, Caramel, Hazelnut, etc.)
+  * Sweeteners (Sugar, Honey, Stevia, etc.)
+  * Ice option for iced drinks
+  * Additional ingredients (Whipped Cream, Alcohol, Tonic Water, etc.)
+  * Preparation notes
+- **Recipe book management**:
+  * Save and name drink recipes
+  * Search recipes by name
+  * View recipe details in expandable cards
+  * Edit and delete recipes
+  * Usage counter tracks how many times each recipe is used
+- **Integration with cups**:
+  * Select saved recipes when creating cups
+  * Cup cards show "Recipe" badge when drink recipe was used
+  * Auto-increment usage count when recipe is used
+  * Recipes linked to cups via drinkRecipeId field
+- **Recipe book screen** accessible from profile
+  * Displays usage count for popular recipes (e.g., "3×")
+  * Real-time search filtering
+  * Purple-themed UI to distinguish from coffee ratings
+
+### Per-Cup Field Visibility
+- **Independent visibility settings** for each cup
+- Each cup saves its own field visibility preferences
+- New cups start with current default visibility settings
+- Edit visibility settings without affecting global defaults or other cups
+- Provides flexibility for different brewing scenarios
+
+### Equipment Details Display
+- **Expandable equipment details** in cup view
+- Shows full equipment setup information when expanded
+- Displays only fields with actual values
+- Includes grinder, brewer, kettle, scale, water, and filter details
+- Clean, icon-based formatting for easy reading
+
 All new fields are:
 - Optional (won't break existing data)
 - Hideable via field visibility settings
@@ -437,7 +477,8 @@ When implementing features from this roadmap:
 - **v1.1** - Photo support, field visibility
 - **v1.2** - Equipment tracking, copy recipe
 - **v1.3** - Field customization per bag
-- **v2.0** - *Current*: Advanced parameters, SCA cupping, environmental tracking
-- **v2.1** - *Planned*: Analytics dashboard
-- **v2.2** - *Planned*: Sharing features
+- **v2.0** - Advanced parameters, SCA cupping, environmental tracking
+- **v2.1** - *Current*: Drink recipe system, per-cup field visibility, equipment details display
+- **v2.2** - *Planned*: Analytics dashboard
+- **v2.3** - *Planned*: Sharing features
 - **v3.0** - *Future*: Smart device integration

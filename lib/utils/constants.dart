@@ -97,9 +97,9 @@ const Map<String, bool> defaultFieldVisibility = {
   'finalVolume': true,
   'ratio': true,
   'brewTime': false,
-  'bloomTime': false,
 
   // Advanced Brewing Parameters (brew-type specific, hidden by default)
+  'bloomTime': false,
   'preInfusionTime': false,
   'pressureBars': false,
   'yieldGrams': false,
@@ -173,9 +173,9 @@ const List<CupFieldDefinition> cupFields = [
   CupFieldDefinition(key: 'gramsUsed', displayName: 'Grams Used', section: 'Brew Parameters'),
   CupFieldDefinition(key: 'finalVolume', displayName: 'Final Volume', section: 'Brew Parameters'),
   CupFieldDefinition(key: 'brewTime', displayName: 'Brew Time', section: 'Brew Parameters'),
-  CupFieldDefinition(key: 'bloomTime', displayName: 'Bloom Time', section: 'Brew Parameters'),
 
   // Advanced Brewing Parameters section (brew-type specific)
+  CupFieldDefinition(key: 'bloomTime', displayName: 'Bloom Time', section: 'Advanced Brewing'),
   CupFieldDefinition(key: 'preInfusionTime', displayName: 'Pre-Infusion Time', section: 'Advanced Brewing'),
   CupFieldDefinition(key: 'pressureBars', displayName: 'Pressure (bars)', section: 'Advanced Brewing'),
   CupFieldDefinition(key: 'yieldGrams', displayName: 'Yield (grams)', section: 'Advanced Brewing'),
@@ -237,6 +237,7 @@ class HiveTypeIds {
   static const viewPreference = 6;
   static const bagStatus = 7;
   static const equipmentSetup = 8;
+  static const drinkRecipe = 9;
 }
 
 // Common equipment types
@@ -280,6 +281,7 @@ const List<String> processingMethods = [
   'Anaerobic',
   'Carbonic Maceration',
   'Double Fermentation',
+  'Thermal Shock',
 ];
 
 // Roast levels
@@ -330,3 +332,60 @@ const List<String> coffeeCertifications = [
   'UTZ Certified',
   'Cup of Excellence',
 ];
+
+// Drink recipe - milk types
+const List<String> milkTypes = [
+  'Whole Milk',
+  'Skim Milk',
+  '2% Milk',
+  'Half and Half',
+  'Heavy Cream',
+  'Oat Milk',
+  'Almond Milk',
+  'Soy Milk',
+  'Coconut Milk',
+  'Cashew Milk',
+];
+
+// Drink recipe - common syrups
+const List<String> commonSyrups = [
+  'Vanilla',
+  'Caramel',
+  'Hazelnut',
+  'Mocha',
+  'White Chocolate',
+  'Peppermint',
+  'Irish Cream',
+  'Cinnamon',
+  'Maple',
+  'Lavender',
+];
+
+// Drink recipe - sweeteners
+const List<String> sweeteners = [
+  'Sugar',
+  'Brown Sugar',
+  'Honey',
+  'Agave',
+  'Stevia',
+  'Monk Fruit',
+  'Simple Syrup',
+  'Maple Syrup',
+];
+
+// Drink recipe - other additions
+const List<String> drinkAdditions = [
+  'Whipped Cream',
+  'Cocoa Powder',
+  'Cinnamon Powder',
+  'Nutmeg',
+  'Chocolate Shavings',
+  'Caramel Drizzle',
+  'Whiskey',
+  'Irish Cream Liqueur',
+  'Rum',
+  'Tonic Water',
+  'Lemon',
+  'Orange Peel',
+];
+
