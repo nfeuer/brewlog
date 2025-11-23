@@ -7,26 +7,109 @@ import '../models/coffee_bag.dart';
 import '../models/cup.dart';
 import '../models/shared_cup.dart';
 
-/// Firebase service for cloud sync (Paid users only)
+/// Cloud synchronization and authentication service using Firebase.
 ///
-/// This service handles:
-/// - User authentication
-/// - Cloud data sync
-/// - Multi-device synchronization
-/// - QR code sharing via Firestore
+/// **Premium Feature:** This service is only available to paid users.
 ///
-/// SETUP REQUIRED:
+/// Provides comprehensive Firebase integration for:
+/// - **Authentication**: Email/password signup, login, password reset
+/// - **Cloud Sync**: Automatic data backup to Firestore
+/// - **Multi-Device**: Real-time sync across user devices
+/// - **Sharing**: QR code-based cup/recipe sharing via Firestore
+///
+/// **Architecture Pattern:** Singleton
+///
+/// **Graceful Degradation:**
+/// - Initialize returns false if Firebase not configured
+/// - App continues in offline-only mode without Firebase
+/// - All methods check [isAvailable] before operations
+/// - User-friendly error messages for all failures
+///
+/// **Firestore Data Structure:**
+/// ```
+/// /users/{uid}/
+///   - (user profile document)
+///   /bags/{bagId}/
+///     - (coffee bag document)
+///   /cups/{cupId}/
+///     - (cup/brew document)
+/// /shared/{shareId}/
+///   - (shared cup data for QR codes)
+/// ```
+///
+/// **Error Handling:**
+/// All methods throw exceptions with user-friendly messages:
+/// - FirebaseAuthException → Clear auth error messages
+/// - FirebaseException → Firestore operation errors
+/// - Generic exceptions → "Try again later" messages
+///
+/// **Setup Required:**
 /// 1. Create Firebase project at https://console.firebase.google.com/
 /// 2. Add Android/iOS/Web apps to Firebase project
 /// 3. Download and add configuration files:
-///    - Android: google-services.json → android/app/
-///    - iOS: GoogleService-Info.plist → ios/Runner/
-/// 4. Enable Firebase services:
-///    - Authentication (Email/Password)
-///    - Firestore Database
-///    - Storage
-/// 5. Update security rules (see SETUP_INSTRUCTIONS.md)
-/// 6. Uncomment initialization in main.dart
+///    - Android: `google-services.json` → `android/app/`
+///    - iOS: `GoogleService-Info.plist` → `ios/Runner/`
+/// 4. Enable Firebase services in console:
+///    - Authentication (Email/Password provider)
+///    - Cloud Firestore Database
+///    - Firebase Storage (for photos)
+/// 5. Configure security rules (see SETUP_INSTRUCTIONS.md)
+/// 6. App will automatically detect Firebase availability
+///
+/// **Usage Examples:**
+///
+/// **Authentication:**
+/// ```dart
+/// final firebase = FirebaseService();
+/// await firebase.initialize();
+///
+/// if (firebase.isAvailable) {
+///   try {
+///     final uid = await firebase.signUp(email, password);
+///     print('Signed up with UID: $uid');
+///   } catch (e) {
+///     print('Error: $e'); // User-friendly message
+///   }
+/// }
+/// ```
+///
+/// **Syncing Data:**
+/// ```dart
+/// // Sync single bag
+/// await firebase.syncBag(bag);
+///
+/// // Sync all data
+/// await firebase.syncAllToCloud(
+///   user: userProfile,
+///   bags: allBags,
+///   cups: allCups,
+/// );
+///
+/// // Load from cloud
+/// final data = await firebase.loadAllFromCloud(userId);
+/// ```
+///
+/// **Real-time Listening:**
+/// ```dart
+/// final bagsStream = firebase.watchBags(userId);
+/// bagsStream?.listen((bags) {
+///   print('Bags updated: ${bags.length}');
+/// });
+/// ```
+///
+/// **Sharing:**
+/// ```dart
+/// // Share cup (returns share ID for QR code)
+/// final shareId = await firebase.shareCup(cup, username);
+///
+/// // Receive shared cup
+/// final sharedCup = await firebase.receiveSharedCup(shareId, userId);
+/// ```
+///
+/// **See Also:**
+/// - [DatabaseService] for local offline storage
+/// - [FIREBASE_BACKEND_ACTIVATED.md] for implementation details
+/// - [SETUP_INSTRUCTIONS.md] for Firebase setup guide
 class FirebaseService {
   static final FirebaseService _instance = FirebaseService._internal();
   factory FirebaseService() => _instance;
@@ -45,8 +128,27 @@ class FirebaseService {
   /// Get current Firebase user
   User? get currentUser => _auth?.currentUser;
 
-  /// Initialize Firebase
-  /// Returns true if successful, false if Firebase is not configured
+  /// Initialize Firebase and set up authentication and Firestore instances.
+  ///
+  /// **Returns:** `true` if Firebase initialized successfully, `false` otherwise.
+  ///
+  /// **Graceful Failure:**
+  /// - If Firebase is not configured, returns `false` without crashing
+  /// - App continues in offline-only mode
+  /// - All Firebase methods will check [isAvailable] before executing
+  ///
+  /// **Called From:** `main.dart` during app initialization
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final firebase = FirebaseService();
+  /// final success = await firebase.initialize();
+  /// if (success) {
+  ///   print('Premium features available');
+  /// } else {
+  ///   print('Running in offline mode');
+  /// }
+  /// ```
   Future<bool> initialize() async {
     try {
       await Firebase.initializeApp();
@@ -67,7 +169,30 @@ class FirebaseService {
   // AUTHENTICATION
   // ============================================================================
 
-  /// Sign up new user with email and password
+  /// Create a new user account with email and password.
+  ///
+  /// **Parameters:**
+  /// - [email]: User's email address
+  /// - [password]: User's password (minimum 6 characters recommended)
+  ///
+  /// **Returns:** Firebase user UID on success
+  ///
+  /// **Throws:**
+  /// - `Exception('email-already-in-use')` - Email is already registered
+  /// - `Exception('invalid-email')` - Email format is invalid
+  /// - `Exception('weak-password')` - Password is too weak
+  /// - `Exception('operation-not-allowed')` - Email/password auth not enabled
+  ///
+  /// **Example:**
+  /// ```dart
+  /// try {
+  ///   final uid = await firebase.signUp('user@example.com', 'password123');
+  ///   print('Created user: $uid');
+  ///   // Update UserProfile.firebaseUid and set isPaid = true
+  /// } catch (e) {
+  ///   print('Signup failed: $e'); // User-friendly message
+  /// }
+  /// ```
   Future<String?> signUp(String email, String password) async {
     if (!_isInitialized) {
       throw Exception('Firebase not initialized. Please check your setup.');
@@ -492,7 +617,39 @@ class FirebaseService {
   // FULL SYNC (Initial sync or manual sync)
   // ============================================================================
 
-  /// Sync all local data to Firestore
+  /// Perform a complete sync of all local data to Firestore.
+  ///
+  /// This is typically used for:
+  /// - Initial cloud backup when user upgrades to premium
+  /// - Manual "Backup Now" action in settings
+  /// - Disaster recovery scenarios
+  ///
+  /// **Parameters:**
+  /// - [user]: User profile to sync
+  /// - [bags]: All coffee bags to sync
+  /// - [cups]: All cups/brews to sync
+  ///
+  /// **Returns:** `true` if all data synced successfully, `false` on any failure
+  ///
+  /// **Process:**
+  /// 1. Syncs user profile first
+  /// 2. Iterates through all bags and syncs each
+  /// 3. Iterates through all cups and syncs each
+  /// 4. Logs progress to console
+  ///
+  /// **Note:** This can be slow for large datasets. Consider showing progress UI.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final success = await firebase.syncAllToCloud(
+  ///   user: currentUser,
+  ///   bags: allBags,
+  ///   cups: allCups,
+  /// );
+  /// if (success) {
+  ///   showSnackbar('All data backed up to cloud');
+  /// }
+  /// ```
   Future<bool> syncAllToCloud({
     required UserProfile user,
     required List<CoffeeBag> bags,
@@ -556,7 +713,36 @@ class FirebaseService {
   // REALTIME LISTENERS (for multi-device sync)
   // ============================================================================
 
-  /// Listen to bag changes in realtime
+  /// Create a real-time stream of coffee bags for multi-device sync.
+  ///
+  /// **Returns:** Stream of coffee bag lists that updates automatically when
+  /// Firestore data changes, or `null` if Firebase not initialized.
+  ///
+  /// **Use Case:**
+  /// - Real-time synchronization across multiple devices
+  /// - Automatically reflects changes made on other devices
+  /// - Updates UI when bags are added/modified/deleted remotely
+  ///
+  /// **Parameters:**
+  /// - [userId]: Firebase UID of the user whose bags to watch
+  ///
+  /// **Example:**
+  /// ```dart
+  /// final bagsStream = firebase.watchBags(user.firebaseUid);
+  /// if (bagsStream != null) {
+  ///   bagsStream.listen((bags) {
+  ///     // Update local database with cloud changes
+  ///     for (final bag in bags) {
+  ///       await db.updateBag(bag);
+  ///     }
+  ///     // Refresh UI
+  ///     ref.read(bagsProvider.notifier).refresh();
+  ///   });
+  /// }
+  /// ```
+  ///
+  /// **Important:** Remember to cancel the stream subscription when not needed
+  /// to avoid memory leaks.
   Stream<List<CoffeeBag>>? watchBags(String userId) {
     if (!_isInitialized || currentUser == null) {
       print('Cannot watch bags: Firebase not initialized or user not logged in');
