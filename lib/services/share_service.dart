@@ -317,8 +317,8 @@ class ShareService {
       Map<String, dynamic>? bagData;
 
       if (shareData['type'] == 'cup_with_bag') {
-        cupData = data['cup'];
-        bagData = data['bag'];
+        cupData = Map<String, dynamic>.from(data['cup'] as Map);
+        bagData = data['bag'] != null ? Map<String, dynamic>.from(data['bag'] as Map) : null;
       } else {
         // Legacy format - just cup data
         cupData = data;
