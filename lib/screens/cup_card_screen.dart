@@ -27,12 +27,16 @@ class CupCardScreen extends ConsumerStatefulWidget {
   final String? bagId;
   final String? cupId;
   final bool isNewBag;
+  final Cup? initialCup;
+  final CoffeeBag? initialBag;
 
   const CupCardScreen({
     super.key,
     this.bagId,
     this.cupId,
     this.isNewBag = false,
+    this.initialCup,
+    this.initialBag,
   });
 
   @override
@@ -136,7 +140,107 @@ class _CupCardScreenState extends ConsumerState<CupCardScreen> {
   }
 
   void _loadData() {
-    if (widget.cupId != null) {
+    // Load initial data if provided (for copying shared recipes)
+    if (widget.initialCup != null) {
+      final cup = widget.initialCup!;
+      // Get user's current rating scale to load the rating in correct scale
+      final ratingScale = ref.read(ratingScaleProvider);
+
+      // Load per-cup field visibility or use defaults
+      _currentFieldVisibility = cup.fieldVisibility != null
+          ? Map<String, bool>.from(cup.fieldVisibility!)
+          : Map<String, bool>.from(ref.read(cupFieldVisibilityProvider));
+
+      _selectedBrewType = cup.brewType;
+      _selectedEquipmentId = cup.equipmentSetupId;
+      _grindLevelController.text = cup.grindLevel ?? '';
+      _waterTempController.text = cup.waterTempCelsius?.toString() ?? '';
+      _gramsUsedController.text = cup.gramsUsed?.toString() ?? '';
+      _finalVolumeController.text = cup.finalVolumeMl?.toString() ?? '';
+      _brewTimeController.text = cup.brewTimeSeconds?.toString() ?? '';
+      _brewTimeFormattedController.text =
+          _formatSecondsToMinSec(cup.brewTimeSeconds?.toString() ?? '');
+      _bloomTimeController.text = cup.bloomTimeSeconds?.toString() ?? '';
+
+      // Load advanced brewing parameters
+      _preInfusionTimeController.text =
+          cup.preInfusionTimeSeconds?.toString() ?? '';
+      _pressureBarsController.text = cup.pressureBars?.toString() ?? '';
+      _yieldGramsController.text = cup.yieldGrams?.toString() ?? '';
+      _bloomAmountController.text = cup.bloomAmountGrams?.toString() ?? '';
+      _pourScheduleController.text = cup.pourSchedule ?? '';
+      _parsePourSchedule(cup.pourSchedule);
+      _tdsController.text = cup.tds?.toString() ?? '';
+      _extractionYieldController.text = cup.extractionYield?.toString() ?? '';
+
+      // Load environmental conditions
+      _roomTempController.text = cup.roomTempCelsius?.toString() ?? '';
+      _humidityController.text = cup.humidity?.toString() ?? '';
+      _altitudeController.text = cup.altitudeMeters?.toString() ?? '';
+      _timeOfDay = cup.timeOfDay;
+
+      // Load SCA cupping scores
+      _cuppingFragrance = cup.cuppingFragrance;
+      _cuppingAroma = cup.cuppingAroma;
+      _cuppingFlavor = cup.cuppingFlavor;
+      _cuppingAftertaste = cup.cuppingAftertaste;
+      _cuppingAcidity = cup.cuppingAcidity;
+      _cuppingBody = cup.cuppingBody;
+      _cuppingBalance = cup.cuppingBalance;
+      _cuppingSweetness = cup.cuppingSweetness;
+      _cuppingCleanCup = cup.cuppingCleanCup;
+      _cuppingUniformity = cup.cuppingUniformity;
+      _cuppingDefectsController.text = cup.cuppingDefects ?? '';
+
+      // Show SCA section if any scores are present
+      _showScaCuppingFields = cup.cuppingFragrance != null ||
+          cup.cuppingAroma != null ||
+          cup.cuppingFlavor != null ||
+          cup.cuppingAftertaste != null ||
+          cup.cuppingAcidity != null ||
+          cup.cuppingBody != null ||
+          cup.cuppingBalance != null ||
+          cup.cuppingSweetness != null ||
+          cup.cuppingCleanCup != null ||
+          cup.cuppingUniformity != null ||
+          (cup.cuppingDefects != null && cup.cuppingDefects!.isNotEmpty);
+
+      // Load rating in user's current preferred scale
+      _rating = cup.getRating(ratingScale);
+      _tastingNotesController.text = cup.tastingNotes ?? '';
+      _selectedFlavorTags = List.from(cup.flavorTags);
+      // Don't copy photos for shared recipes
+      _photoPaths = [];
+      _isBest = false;
+
+      // Load drink recipe if present
+      if (cup.drinkRecipeId != null) {
+        _selectedDrinkRecipeId = cup.drinkRecipeId;
+        final recipe = ref.read(drinkRecipeByIdProvider(cup.drinkRecipeId!));
+        if (recipe != null) {
+          _loadDrinkRecipe(recipe);
+          _showDrinkRecipeSection = true;
+        }
+      }
+
+      // Load bag info from initialBag if provided
+      if (widget.initialBag != null) {
+        final bag = widget.initialBag!;
+        _customTitleController.text = bag.customTitle;
+        _coffeeNameController.text = bag.coffeeName;
+        _roasterController.text = bag.roaster;
+        _farmerController.text = bag.farmer ?? '';
+        _varietyController.text = bag.variety ?? '';
+        _elevationController.text = bag.elevation ?? '';
+        _beanAromaController.text = bag.beanAroma ?? '';
+        _priceController.text = bag.price?.toString() ?? '';
+        _bagSizeController.text = bag.bagSizeGrams?.toString() ?? '';
+        _restDaysController.text = bag.recommendedRestDays?.toString() ?? '';
+        _datePurchased = bag.datePurchased;
+        _roastDate = bag.roastDate;
+        _openDate = bag.openDate;
+      }
+    } else if (widget.cupId != null) {
       // Load existing cup
       final cup = ref.read(cupProvider(widget.cupId!));
       if (cup != null) {
