@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:uuid/uuid.dart';
 import '../models/drink_recipe.dart';
 import '../models/cup.dart';
 import '../models/coffee_bag.dart';
+import '../models/shared_cup.dart';
 import '../services/share_service.dart';
 import '../providers/drink_recipes_provider.dart';
 import '../providers/bags_provider.dart';
 import '../providers/cups_provider.dart';
+import '../providers/shared_cups_provider.dart';
+import '../providers/user_provider.dart';
 import '../utils/theme.dart';
 
 /// Screen for scanning QR codes to import shared data
@@ -281,41 +285,24 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
   Future<void> _importCup(Cup cup, {Map<String, dynamic>? bagData}) async {
     if (!mounted) return;
 
-    // Get user's bags
-    final bags = ref.read(bagsProvider);
-
-    if (bags.isEmpty) {
-      // No bags available
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('No Bags Available'),
-          content: const Text(
-            'You need to have at least one coffee bag to import tasting notes. '
-            'Please add a bag first, then try importing again.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+    // Get current user
+    final currentUser = ref.read(userProfileProvider);
+    if (currentUser == null) {
+      _showError('User not found');
       return;
     }
 
-    // Show bag selection dialog
-    final CoffeeBag? selectedBag = await showDialog<CoffeeBag>(
+    // Show confirmation dialog with cup preview
+    final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Import Tasting Notes'),
+        title: const Text('Import Shared Cup'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Select which bag to add these tasting notes to:'),
+              const Text('Import this cup to your Shared tab?'),
               const SizedBox(height: 16),
               // Cup preview with bag data if available
               Container(
@@ -331,7 +318,7 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
                     // Show bag info if available
                     if (bagData != null) ...[
                       Text(
-                        'Shared Coffee',
+                        'Coffee',
                         style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
                       ),
                       const SizedBox(height: 4),
@@ -355,16 +342,16 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
                       const SizedBox(height: 4),
                     ],
                     Text(
-                      'Tasting Notes',
+                      'Brew Method',
                       style: AppTextStyles.cardTitle.copyWith(fontSize: 14),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Brew Type: ${cup.brewType}',
+                      cup.brewType,
                       style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
                     ),
                     if (cup.score1to100 != null) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(Icons.star, color: Colors.amber, size: 16),
@@ -377,59 +364,25 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
                       ),
                     ],
                     if (cup.tastingNotes != null && cup.tastingNotes!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Text(
                         cup.tastingNotes!,
                         style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12),
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Add to bag:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              // Bag selection
-              SizedBox(
-                width: double.maxFinite,
-                child: DropdownButtonFormField<CoffeeBag>(
-                  decoration: const InputDecoration(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    border: OutlineInputBorder(),
-                  ),
-                  hint: const Text('Select a bag'),
-                  items: bags.map((bag) {
-                    return DropdownMenuItem<CoffeeBag>(
-                      value: bag,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            bag.coffeeName,
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            bag.roaster,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
+                    if (cup.sharedByUsername != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Shared by @${cup.sharedByUsername}',
+                        style: AppTextStyles.cardSubtitle.copyWith(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (CoffeeBag? bag) {
-                    if (bag != null) {
-                      Navigator.pop(context, bag);
-                    }
-                  },
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -437,77 +390,41 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Import'),
           ),
         ],
       ),
     );
 
-    if (selectedBag == null || !mounted) return;
+    if (confirmed != true || !mounted) return;
 
     try {
-      // Create a new cup with the selected bagId
-      final importedCup = Cup(
-        id: cup.id, // Will get a new ID when added
-        userId: cup.userId, // Will be set to current user
-        bagId: selectedBag.id, // Use the selected bag
-        brewType: cup.brewType,
-        grindLevel: cup.grindLevel,
-        waterTempCelsius: cup.waterTempCelsius,
-        gramsUsed: cup.gramsUsed,
-        finalVolumeMl: cup.finalVolumeMl,
-        brewTimeSeconds: cup.brewTimeSeconds,
-        bloomTimeSeconds: cup.bloomTimeSeconds,
-        score1to5: cup.score1to5,
-        score1to10: cup.score1to10,
-        score1to100: cup.score1to100,
-        tastingNotes: cup.tastingNotes,
-        flavorTags: cup.flavorTags,
-        photoPaths: [], // Photos don't transfer
-        isBest: cup.isBest,
-        createdAt: cup.createdAt,
-        updatedAt: DateTime.now(),
-        customTitle: cup.customTitle,
-        equipmentSetupId: cup.equipmentSetupId,
-        adaptationNotes: cup.adaptationNotes,
-        preInfusionTimeSeconds: cup.preInfusionTimeSeconds,
-        pressureBars: cup.pressureBars,
-        yieldGrams: cup.yieldGrams,
-        bloomAmountGrams: cup.bloomAmountGrams,
-        pourSchedule: cup.pourSchedule,
-        tds: cup.tds,
-        extractionYield: cup.extractionYield,
-        roomTempCelsius: cup.roomTempCelsius,
-        humidity: cup.humidity,
-        altitudeMeters: cup.altitudeMeters,
-        timeOfDay: cup.timeOfDay,
-        // Cupping scores
-        cuppingFragrance: cup.cuppingFragrance,
-        cuppingAroma: cup.cuppingAroma,
-        cuppingFlavor: cup.cuppingFlavor,
-        cuppingAftertaste: cup.cuppingAftertaste,
-        cuppingAcidity: cup.cuppingAcidity,
-        cuppingBody: cup.cuppingBody,
-        cuppingBalance: cup.cuppingBalance,
-        cuppingSweetness: cup.cuppingSweetness,
-        cuppingCleanCup: cup.cuppingCleanCup,
-        cuppingUniformity: cup.cuppingUniformity,
-        cuppingOverall: cup.cuppingOverall,
-        cuppingDefects: cup.cuppingDefects,
-        // Drink recipe
-        drinkRecipeId: cup.drinkRecipeId,
+      // Create a SharedCup
+      const uuid = Uuid();
+      final sharedCup = SharedCup(
+        id: uuid.v4(),
+        originalCupId: cup.id,
+        originalUserId: cup.userId,
+        originalUsername: cup.sharedByUsername ?? 'Unknown',
+        receivedByUserId: currentUser.id,
+        cupData: cup,
+        sharedAt: DateTime.now(),
       );
 
-      // Add the cup
-      await ref.read(cupsNotifierProvider).createCup(importedCup);
+      // Save to shared cups
+      await ref.read(sharedCupsProvider.notifier).addSharedCup(sharedCup);
 
       if (mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Tasting notes imported to ${selectedBag.coffeeName}',
+              'Cup imported to Shared tab${cup.sharedByUsername != null ? ' from @${cup.sharedByUsername}' : ''}',
             ),
             backgroundColor: Colors.green,
           ),
@@ -518,7 +435,7 @@ class _ScanQRScreenState extends ConsumerState<ScanQRScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _showError('Failed to import tasting notes: $e');
+        _showError('Failed to import cup: $e');
       }
     }
   }
