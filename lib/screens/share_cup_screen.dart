@@ -24,11 +24,10 @@ class ShareCupScreen extends ConsumerStatefulWidget {
 
 class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
   // Field visibility toggles for reducing QR code size
-  // Default to false to keep QR codes scannable - most users don't need all fields
+  // Match the show/hide structure from cup screen
+  bool _includeAdvancedBrewing = false;
   bool _includeEnvironmental = false;
   bool _includeCuppingScores = false;
-  bool _includeAdvancedBrewing = false;
-  bool _includeTimingDetails = true; // Keep timing as it's commonly used
 
   Cup get _filteredCup {
     // Create a minimal copy of the cup for QR code sharing
@@ -196,7 +195,7 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Use the ⚙️ button to disable more fields, or use "Share via Link" below.',
+                            'Use the sliders button (⚙) above to disable more fields, or use "Share via Link" below.',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey.shade700,
@@ -287,7 +286,7 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Tap the ⚙️ icon above to customize what data to include',
+              'Tap the sliders icon above to customize what data to include',
               style: AppTextStyles.cardSubtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
             ),
@@ -370,22 +369,18 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Toggle fields to reduce QR code size for easier scanning:',
+                'Toggle optional fields to reduce QR code size for easier scanning:',
                 style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Default fields (grind size, water temp, amounts, timing) are always included.',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               const SizedBox(height: 16),
               SwitchListTile(
-                title: const Text('Timing Details'),
-                subtitle: const Text('Brew time, bloom time'),
-                value: _includeTimingDetails,
-                onChanged: (value) {
-                  setDialogState(() => _includeTimingDetails = value);
-                  setState(() => _includeTimingDetails = value);
-                },
-              ),
-              SwitchListTile(
                 title: const Text('Advanced Brewing'),
-                subtitle: const Text('Pre-infusion, pressure, TDS, extraction'),
+                subtitle: const Text('Pre-infusion, pressure, TDS, extraction yield'),
                 value: _includeAdvancedBrewing,
                 onChanged: (value) {
                   setDialogState(() => _includeAdvancedBrewing = value);
@@ -393,8 +388,8 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
                 },
               ),
               SwitchListTile(
-                title: const Text('Environmental Data'),
-                subtitle: const Text('Room temp, humidity, altitude'),
+                title: const Text('Environmental'),
+                subtitle: const Text('Room temp, humidity, altitude, time of day'),
                 value: _includeEnvironmental,
                 onChanged: (value) {
                   setDialogState(() => _includeEnvironmental = value);
@@ -402,8 +397,8 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
                 },
               ),
               SwitchListTile(
-                title: const Text('Cupping Scores'),
-                subtitle: const Text('SCA cupping protocol scores'),
+                title: const Text('SCA Cupping'),
+                subtitle: const Text('Professional cupping protocol scores'),
                 value: _includeCuppingScores,
                 onChanged: (value) {
                   setDialogState(() => _includeCuppingScores = value);
@@ -417,7 +412,6 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
           TextButton(
             onPressed: () {
               setState(() {
-                _includeTimingDetails = true;
                 _includeAdvancedBrewing = true;
                 _includeEnvironmental = true;
                 _includeCuppingScores = true;
