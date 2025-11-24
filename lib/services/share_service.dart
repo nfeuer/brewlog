@@ -94,9 +94,9 @@ class ShareService {
     try {
       final Map<String, dynamic> shareData = jsonDecode(jsonString);
 
-      // Validate the data type
+      // Validate the data type - silently return null if wrong type
       if (shareData['type'] != 'drink_recipe') {
-        throw Exception('Invalid share data type: ${shareData['type']}');
+        return null; // Not a drink recipe, let other decoders try
       }
 
       // Check version compatibility (for future updates)
