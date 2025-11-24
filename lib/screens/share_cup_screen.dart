@@ -23,42 +23,103 @@ class ShareCupScreen extends ConsumerStatefulWidget {
 }
 
 class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
-  // Field visibility toggles for reducing QR code size
-  // Match the show/hide structure from cup screen
-  bool _includeAdvancedBrewing = false;
-  bool _includeEnvironmental = false;
-  bool _includeCuppingScores = false;
+  // Field visibility map for QR code sharing
+  // Default fields as specified: bag details and essential cup details
+  late Map<String, bool> _fieldVisibility;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with default fields checked (as specified by user)
+    _fieldVisibility = {
+      // Bag Details - default included (name, roaster, roast level, process, aroma)
+      'bagName': true,
+      'bagRoaster': true,
+      'bagRoastLevel': true,
+      'bagProcess': true,
+      'bagAroma': true,
+
+      // Brew Parameters - default included
+      'grindLevel': true,
+      'waterTemp': true,
+      'gramsUsed': true,
+      'finalVolume': true,
+      'brewTime': true,
+
+      // Advanced Brewing - default included
+      'bloomTime': true,
+      'bloomAmount': true,
+      'pourSchedule': true,
+
+      // Rating
+      'score1to100': true,
+      'tastingNotes': true,
+      'flavorTags': true,
+
+      // Advanced Brewing - optional
+      'preInfusionTime': false,
+      'pressureBars': false,
+      'yieldGrams': false,
+      'tds': false,
+      'extractionYield': false,
+
+      // Environmental - optional
+      'roomTemp': false,
+      'humidity': false,
+      'altitude': false,
+      'timeOfDay': false,
+
+      // SCA Cupping - optional
+      'cuppingFragrance': false,
+      'cuppingAroma': false,
+      'cuppingFlavor': false,
+      'cuppingAftertaste': false,
+      'cuppingAcidity': false,
+      'cuppingBody': false,
+      'cuppingBalance': false,
+      'cuppingSweetness': false,
+      'cuppingCleanCup': false,
+      'cuppingUniformity': false,
+      'cuppingOverall': false,
+      'cuppingTotal': false,
+      'cuppingDefects': false,
+    };
+  }
 
   Cup get _filteredCup {
     // Create a minimal copy of the cup for QR code sharing
-    // Include essential brewing data - null values will be auto-excluded by ShareService
+    // Only include fields that are checked in the field visibility map
     return Cup(
       id: widget.cup.id,
       bagId: widget.cup.bagId,
       userId: widget.cup.userId,
       brewType: widget.cup.brewType,
-      // Default cup details (always included)
-      grindLevel: widget.cup.grindLevel,
-      waterTempCelsius: widget.cup.waterTempCelsius,
-      gramsUsed: widget.cup.gramsUsed,
-      finalVolumeMl: widget.cup.finalVolumeMl,
-      ratio: widget.cup.ratio,
-      brewTimeSeconds: widget.cup.brewTimeSeconds,
-      bloomTimeSeconds: widget.cup.bloomTimeSeconds,
-      bloomAmountGrams: widget.cup.bloomAmountGrams,
-      pourSchedule: widget.cup.pourSchedule,
-      // Use score1to100 instead of score1to5 for better precision
+      // Brew Parameters
+      grindLevel: _fieldVisibility['grindLevel'] == true ? widget.cup.grindLevel : null,
+      waterTempCelsius: _fieldVisibility['waterTemp'] == true ? widget.cup.waterTempCelsius : null,
+      gramsUsed: _fieldVisibility['gramsUsed'] == true ? widget.cup.gramsUsed : null,
+      finalVolumeMl: _fieldVisibility['finalVolume'] == true ? widget.cup.finalVolumeMl : null,
+      ratio: widget.cup.ratio, // Auto-calculated, always include if components present
+      brewTimeSeconds: _fieldVisibility['brewTime'] == true ? widget.cup.brewTimeSeconds : null,
+      bloomTimeSeconds: _fieldVisibility['bloomTime'] == true ? widget.cup.bloomTimeSeconds : null,
+      bloomAmountGrams: _fieldVisibility['bloomAmount'] == true ? widget.cup.bloomAmountGrams : null,
+      pourSchedule: _fieldVisibility['pourSchedule'] == true ? widget.cup.pourSchedule : null,
+      // Rating - only include score1to100
       score1to5: null,
       score1to10: null,
-      score1to100: widget.cup.score1to100,
-      // Limit tasting notes to 500 characters
-      tastingNotes: widget.cup.tastingNotes != null && widget.cup.tastingNotes!.length > 500
-          ? widget.cup.tastingNotes!.substring(0, 500)
-          : widget.cup.tastingNotes,
-      // Limit flavor tags to first 10
-      flavorTags: widget.cup.flavorTags.length > 10
-          ? widget.cup.flavorTags.sublist(0, 10)
-          : widget.cup.flavorTags,
+      score1to100: _fieldVisibility['score1to100'] == true ? widget.cup.score1to100 : null,
+      // Tasting notes - limit to 500 characters
+      tastingNotes: _fieldVisibility['tastingNotes'] == true
+          ? (widget.cup.tastingNotes != null && widget.cup.tastingNotes!.length > 500
+              ? widget.cup.tastingNotes!.substring(0, 500)
+              : widget.cup.tastingNotes)
+          : null,
+      // Flavor tags - limit to first 10
+      flavorTags: _fieldVisibility['flavorTags'] == true
+          ? (widget.cup.flavorTags.length > 10
+              ? widget.cup.flavorTags.sublist(0, 10)
+              : widget.cup.flavorTags)
+          : [],
       photoPaths: [], // Never include photos in QR
       isBest: widget.cup.isBest,
       shareCount: widget.cup.shareCount,
@@ -68,31 +129,31 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
       customTitle: null, // Exclude to reduce size
       equipmentSetupId: null, // Not useful for sharing
       adaptationNotes: null, // Exclude to reduce size
-      // Advanced brewing parameters (conditional)
-      preInfusionTimeSeconds: _includeAdvancedBrewing ? widget.cup.preInfusionTimeSeconds : null,
-      pressureBars: _includeAdvancedBrewing ? widget.cup.pressureBars : null,
-      yieldGrams: _includeAdvancedBrewing ? widget.cup.yieldGrams : null,
-      tds: _includeAdvancedBrewing ? widget.cup.tds : null,
-      extractionYield: _includeAdvancedBrewing ? widget.cup.extractionYield : null,
-      // Environmental conditions (conditional)
-      roomTempCelsius: _includeEnvironmental ? widget.cup.roomTempCelsius : null,
-      humidity: _includeEnvironmental ? widget.cup.humidity : null,
-      altitudeMeters: _includeEnvironmental ? widget.cup.altitudeMeters : null,
-      timeOfDay: _includeEnvironmental ? widget.cup.timeOfDay : null,
-      // Cupping scores (conditional)
-      cuppingFragrance: _includeCuppingScores ? widget.cup.cuppingFragrance : null,
-      cuppingAroma: _includeCuppingScores ? widget.cup.cuppingAroma : null,
-      cuppingFlavor: _includeCuppingScores ? widget.cup.cuppingFlavor : null,
-      cuppingAftertaste: _includeCuppingScores ? widget.cup.cuppingAftertaste : null,
-      cuppingAcidity: _includeCuppingScores ? widget.cup.cuppingAcidity : null,
-      cuppingBody: _includeCuppingScores ? widget.cup.cuppingBody : null,
-      cuppingBalance: _includeCuppingScores ? widget.cup.cuppingBalance : null,
-      cuppingSweetness: _includeCuppingScores ? widget.cup.cuppingSweetness : null,
-      cuppingCleanCup: _includeCuppingScores ? widget.cup.cuppingCleanCup : null,
-      cuppingUniformity: _includeCuppingScores ? widget.cup.cuppingUniformity : null,
-      cuppingOverall: _includeCuppingScores ? widget.cup.cuppingOverall : null,
-      cuppingTotal: _includeCuppingScores ? widget.cup.cuppingTotal : null,
-      cuppingDefects: _includeCuppingScores ? widget.cup.cuppingDefects : null,
+      // Advanced brewing parameters
+      preInfusionTimeSeconds: _fieldVisibility['preInfusionTime'] == true ? widget.cup.preInfusionTimeSeconds : null,
+      pressureBars: _fieldVisibility['pressureBars'] == true ? widget.cup.pressureBars : null,
+      yieldGrams: _fieldVisibility['yieldGrams'] == true ? widget.cup.yieldGrams : null,
+      tds: _fieldVisibility['tds'] == true ? widget.cup.tds : null,
+      extractionYield: _fieldVisibility['extractionYield'] == true ? widget.cup.extractionYield : null,
+      // Environmental conditions
+      roomTempCelsius: _fieldVisibility['roomTemp'] == true ? widget.cup.roomTempCelsius : null,
+      humidity: _fieldVisibility['humidity'] == true ? widget.cup.humidity : null,
+      altitudeMeters: _fieldVisibility['altitude'] == true ? widget.cup.altitudeMeters : null,
+      timeOfDay: _fieldVisibility['timeOfDay'] == true ? widget.cup.timeOfDay : null,
+      // Cupping scores
+      cuppingFragrance: _fieldVisibility['cuppingFragrance'] == true ? widget.cup.cuppingFragrance : null,
+      cuppingAroma: _fieldVisibility['cuppingAroma'] == true ? widget.cup.cuppingAroma : null,
+      cuppingFlavor: _fieldVisibility['cuppingFlavor'] == true ? widget.cup.cuppingFlavor : null,
+      cuppingAftertaste: _fieldVisibility['cuppingAftertaste'] == true ? widget.cup.cuppingAftertaste : null,
+      cuppingAcidity: _fieldVisibility['cuppingAcidity'] == true ? widget.cup.cuppingAcidity : null,
+      cuppingBody: _fieldVisibility['cuppingBody'] == true ? widget.cup.cuppingBody : null,
+      cuppingBalance: _fieldVisibility['cuppingBalance'] == true ? widget.cup.cuppingBalance : null,
+      cuppingSweetness: _fieldVisibility['cuppingSweetness'] == true ? widget.cup.cuppingSweetness : null,
+      cuppingCleanCup: _fieldVisibility['cuppingCleanCup'] == true ? widget.cup.cuppingCleanCup : null,
+      cuppingUniformity: _fieldVisibility['cuppingUniformity'] == true ? widget.cup.cuppingUniformity : null,
+      cuppingOverall: _fieldVisibility['cuppingOverall'] == true ? widget.cup.cuppingOverall : null,
+      cuppingTotal: _fieldVisibility['cuppingTotal'] == true ? widget.cup.cuppingTotal : null,
+      cuppingDefects: _fieldVisibility['cuppingDefects'] == true ? widget.cup.cuppingDefects : null,
       fieldVisibility: null, // Not needed for sharing
       drinkRecipeId: null, // Not transferable
       grinderMinSetting: null, // Exclude to reduce size
@@ -101,13 +162,41 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
     );
   }
 
+  CoffeeBag? _getFilteredBag(CoffeeBag? bag) {
+    if (bag == null) return null;
+    // Only include bag fields that are selected
+    final bool includeName = _fieldVisibility['bagName'] == true;
+    final bool includeRoaster = _fieldVisibility['bagRoaster'] == true;
+    final bool includeRoastLevel = _fieldVisibility['bagRoastLevel'] == true;
+    final bool includeProcess = _fieldVisibility['bagProcess'] == true;
+    final bool includeAroma = _fieldVisibility['bagAroma'] == true;
+
+    // If no bag fields are selected, return null
+    if (!includeName && !includeRoaster && !includeRoastLevel && !includeProcess && !includeAroma) {
+      return null;
+    }
+
+    // Create a filtered copy
+    return CoffeeBag(
+      id: bag.id,
+      userId: bag.userId,
+      customTitle: bag.customTitle,
+      coffeeName: includeName ? bag.coffeeName : '',
+      roaster: includeRoaster ? bag.roaster : '',
+      roastLevel: includeRoastLevel ? bag.roastLevel : null,
+      processingMethods: includeProcess ? bag.processingMethods : null,
+      beanAroma: includeAroma ? bag.beanAroma : null,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProfileProvider);
     final bag = ref.watch(bagProvider(widget.cup.bagId));
     final Cup cupToShare = _filteredCup;
-    final String qrData = ShareService.encodeCupWithBag(cupToShare, bag, sharerUsername: user?.username);
-    final String deepLink = ShareService.createCupWithBagDeepLink(cupToShare, bag, sharerUsername: user?.username);
+    final CoffeeBag? bagToShare = _getFilteredBag(bag);
+    final String qrData = ShareService.encodeCupWithBag(cupToShare, bagToShare, sharerUsername: user?.username);
+    final String deepLink = ShareService.createCupWithBagDeepLink(cupToShare, bagToShare, sharerUsername: user?.username);
     final int dataSize = ShareService.estimateDataSize(qrData);
 
     return Scaffold(
@@ -363,62 +452,120 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Customize QR Code'),
+        title: const Text('Select Fields to Share'),
         content: StatefulBuilder(
-          builder: (context, setDialogState) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Toggle optional fields to reduce QR code size for easier scanning:',
-                style: TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Default fields (grind size, water temp, amounts, timing) are always included.',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Advanced Brewing'),
-                subtitle: const Text('Pre-infusion, pressure, TDS, extraction yield'),
-                value: _includeAdvancedBrewing,
-                onChanged: (value) {
-                  setDialogState(() => _includeAdvancedBrewing = value);
-                  setState(() => _includeAdvancedBrewing = value);
-                },
-              ),
-              SwitchListTile(
-                title: const Text('Environmental'),
-                subtitle: const Text('Room temp, humidity, altitude, time of day'),
-                value: _includeEnvironmental,
-                onChanged: (value) {
-                  setDialogState(() => _includeEnvironmental = value);
-                  setState(() => _includeEnvironmental = value);
-                },
-              ),
-              SwitchListTile(
-                title: const Text('SCA Cupping'),
-                subtitle: const Text('Professional cupping protocol scores'),
-                value: _includeCuppingScores,
-                onChanged: (value) {
-                  setDialogState(() => _includeCuppingScores = value);
-                  setState(() => _includeCuppingScores = value);
-                },
-              ),
-            ],
+          builder: (context, setDialogState) => SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select which fields to include in the QR code:',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+                const SizedBox(height: 16),
+
+                // Bag Details
+                _buildSectionHeader('Coffee Bag Info'),
+                _buildFieldCheckbox('Coffee Name', 'bagName', setDialogState),
+                _buildFieldCheckbox('Roaster', 'bagRoaster', setDialogState),
+                _buildFieldCheckbox('Roast Level', 'bagRoastLevel', setDialogState),
+                _buildFieldCheckbox('Processing Method', 'bagProcess', setDialogState),
+                _buildFieldCheckbox('Bean Aroma', 'bagAroma', setDialogState),
+                const SizedBox(height: 12),
+
+                // Brew Parameters
+                _buildSectionHeader('Brew Parameters'),
+                _buildFieldCheckbox('Grind Level', 'grindLevel', setDialogState),
+                _buildFieldCheckbox('Water Temperature', 'waterTemp', setDialogState),
+                _buildFieldCheckbox('Coffee Amount (g)', 'gramsUsed', setDialogState),
+                _buildFieldCheckbox('Final Volume (ml)', 'finalVolume', setDialogState),
+                _buildFieldCheckbox('Brew Time', 'brewTime', setDialogState),
+                const SizedBox(height: 12),
+
+                // Advanced Brewing
+                _buildSectionHeader('Advanced Brewing'),
+                _buildFieldCheckbox('Bloom Time', 'bloomTime', setDialogState),
+                _buildFieldCheckbox('Bloom Amount', 'bloomAmount', setDialogState),
+                _buildFieldCheckbox('Pour Schedule', 'pourSchedule', setDialogState),
+                _buildFieldCheckbox('Pre-Infusion Time', 'preInfusionTime', setDialogState),
+                _buildFieldCheckbox('Pressure (bars)', 'pressureBars', setDialogState),
+                _buildFieldCheckbox('Yield Weight', 'yieldGrams', setDialogState),
+                _buildFieldCheckbox('TDS', 'tds', setDialogState),
+                _buildFieldCheckbox('Extraction Yield', 'extractionYield', setDialogState),
+                const SizedBox(height: 12),
+
+                // Rating & Tasting
+                _buildSectionHeader('Rating & Tasting'),
+                _buildFieldCheckbox('Rating (1-100)', 'score1to100', setDialogState),
+                _buildFieldCheckbox('Tasting Notes', 'tastingNotes', setDialogState),
+                _buildFieldCheckbox('Flavor Tags', 'flavorTags', setDialogState),
+                const SizedBox(height: 12),
+
+                // Environmental
+                _buildSectionHeader('Environmental'),
+                _buildFieldCheckbox('Room Temperature', 'roomTemp', setDialogState),
+                _buildFieldCheckbox('Humidity', 'humidity', setDialogState),
+                _buildFieldCheckbox('Altitude', 'altitude', setDialogState),
+                _buildFieldCheckbox('Time of Day', 'timeOfDay', setDialogState),
+                const SizedBox(height: 12),
+
+                // SCA Cupping
+                _buildSectionHeader('SCA Cupping Protocol'),
+                _buildFieldCheckbox('Fragrance/Aroma', 'cuppingFragrance', setDialogState),
+                _buildFieldCheckbox('Aroma (Wet)', 'cuppingAroma', setDialogState),
+                _buildFieldCheckbox('Flavor', 'cuppingFlavor', setDialogState),
+                _buildFieldCheckbox('Aftertaste', 'cuppingAftertaste', setDialogState),
+                _buildFieldCheckbox('Acidity', 'cuppingAcidity', setDialogState),
+                _buildFieldCheckbox('Body', 'cuppingBody', setDialogState),
+                _buildFieldCheckbox('Balance', 'cuppingBalance', setDialogState),
+                _buildFieldCheckbox('Sweetness', 'cuppingSweetness', setDialogState),
+                _buildFieldCheckbox('Clean Cup', 'cuppingCleanCup', setDialogState),
+                _buildFieldCheckbox('Uniformity', 'cuppingUniformity', setDialogState),
+                _buildFieldCheckbox('Overall', 'cuppingOverall', setDialogState),
+                _buildFieldCheckbox('Total Score', 'cuppingTotal', setDialogState),
+                _buildFieldCheckbox('Defects Notes', 'cuppingDefects', setDialogState),
+              ],
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () {
               setState(() {
-                _includeAdvancedBrewing = true;
-                _includeEnvironmental = true;
-                _includeCuppingScores = true;
+                // Select all fields
+                _fieldVisibility.updateAll((key, value) => true);
               });
               Navigator.pop(context);
             },
-            child: const Text('Include All'),
+            child: const Text('Select All'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                // Reset to defaults
+                _fieldVisibility.updateAll((key, value) => false);
+                // Re-enable default fields (bag details + essential cup details)
+                _fieldVisibility['bagName'] = true;
+                _fieldVisibility['bagRoaster'] = true;
+                _fieldVisibility['bagRoastLevel'] = true;
+                _fieldVisibility['bagProcess'] = true;
+                _fieldVisibility['bagAroma'] = true;
+                _fieldVisibility['grindLevel'] = true;
+                _fieldVisibility['waterTemp'] = true;
+                _fieldVisibility['gramsUsed'] = true;
+                _fieldVisibility['finalVolume'] = true;
+                _fieldVisibility['brewTime'] = true;
+                _fieldVisibility['bloomTime'] = true;
+                _fieldVisibility['bloomAmount'] = true;
+                _fieldVisibility['pourSchedule'] = true;
+                _fieldVisibility['score1to100'] = true;
+                _fieldVisibility['tastingNotes'] = true;
+                _fieldVisibility['flavorTags'] = true;
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Reset'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
@@ -426,6 +573,37 @@ class _ShareCupScreenState extends ConsumerState<ShareCupScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.primaryBrown,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFieldCheckbox(String label, String key, StateSetter setDialogState) {
+    return CheckboxListTile(
+      title: Text(label, style: const TextStyle(fontSize: 14)),
+      value: _fieldVisibility[key] ?? false,
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0),
+      onChanged: (value) {
+        setDialogState(() {
+          _fieldVisibility[key] = value ?? false;
+        });
+        setState(() {
+          _fieldVisibility[key] = value ?? false;
+        });
+      },
     );
   }
 
