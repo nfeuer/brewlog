@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/cup.dart';
+import '../models/coffee_bag.dart';
 import '../services/share_service.dart';
 import '../providers/user_provider.dart';
 import '../providers/bags_provider.dart';
