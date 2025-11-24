@@ -104,7 +104,7 @@ class SharedCup extends HiveObject {
       originalUserId: json['originalUserId'] as String,
       originalUsername: json['originalUsername'] as String,
       receivedByUserId: json['receivedByUserId'] as String,
-      cupData: Cup.fromJson(json['cupData'] as Map<String, dynamic>),
+      cupData: Cup.fromJson(Map<String, dynamic>.from(json['cupData'] as Map)),
       sharedAt: DateTime.parse(json['sharedAt'] as String),
     );
   }

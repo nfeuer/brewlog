@@ -542,7 +542,7 @@ class Cup extends HiveObject {
       cuppingTotal: json['cuppingTotal']?.toDouble(),
       cuppingDefects: json['cuppingDefects'] as String?,
       fieldVisibility: json['fieldVisibility'] != null
-          ? Map<String, bool>.from(json['fieldVisibility'] as Map)
+          ? Map<String, bool>.from(json['fieldVisibility'])
           : null,
       drinkRecipeId: json['drinkRecipeId'] as String?,
       grinderMinSetting: json['grinderMinSetting']?.toDouble(),
