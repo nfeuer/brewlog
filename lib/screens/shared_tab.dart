@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../providers/shared_cups_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/bags_provider.dart';
+import '../providers/cups_provider.dart';
+import '../models/cup.dart';
+import '../models/coffee_bag.dart';
 import '../utils/theme.dart';
 import '../utils/helpers.dart';
 
@@ -98,6 +102,11 @@ class SharedTab extends ConsumerWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline),
+                    tooltip: 'Copy Recipe',
+                    onPressed: () => _showCopyDialog(context, ref, sharedCup, bag),
+                  ),
                   PopupMenuButton(
                     itemBuilder: (context) => [
                       const PopupMenuItem(
@@ -271,5 +280,225 @@ class SharedTab extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showCopyDialog(BuildContext context, WidgetRef ref, dynamic sharedCup, dynamic bag) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Copy Recipe'),
+        content: const Text('Would you like to create a new bag or add to an existing bag?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showExistingBagsDialog(context, ref, sharedCup);
+            },
+            child: const Text('Existing Bag'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _copyToNewBag(context, ref, sharedCup, bag);
+            },
+            child: const Text('New Bag'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExistingBagsDialog(BuildContext context, WidgetRef ref, dynamic sharedCup) {
+    final bags = ref.read(activeBagsProvider);
+
+    if (bags.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('No Bags Available'),
+          content: const Text('You don\'t have any active bags. Create a new bag to copy this recipe.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Bag'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: bags.length,
+            itemBuilder: (context, index) {
+              final bag = bags[index];
+              return ListTile(
+                leading: const Icon(Icons.coffee),
+                title: Text(bag.displayTitle),
+                subtitle: Text(bag.roaster),
+                onTap: () {
+                  Navigator.pop(context);
+                  _copyToExistingBag(context, ref, sharedCup, bag);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _copyToNewBag(BuildContext context, WidgetRef ref, dynamic sharedCup, dynamic sourceBag) async {
+    try {
+      final user = ref.read(userProfileProvider);
+      if (user == null) {
+        if (context.mounted) {
+          showError(context, 'User not found');
+        }
+        return;
+      }
+
+      final uuid = const Uuid();
+      final cup = sharedCup.cupData;
+
+      // Create new bag based on shared bag data, or create a default bag
+      final newBag = CoffeeBag(
+        id: uuid.v4(),
+        userId: user.id,
+        customTitle: sourceBag?.customTitle ?? 'Shared: ${cup.brewType}',
+        coffeeName: sourceBag?.coffeeName ?? cup.brewType,
+        roaster: sourceBag?.roaster ?? 'Unknown Roaster',
+        farmer: sourceBag?.farmer,
+        variety: sourceBag?.variety,
+        elevation: sourceBag?.elevation,
+        beanAroma: sourceBag?.beanAroma,
+        datePurchased: DateTime.now(),
+        processingMethods: sourceBag?.processingMethods,
+        region: sourceBag?.region,
+        roastLevel: sourceBag?.roastLevel,
+      );
+
+      // Create the bag first
+      final bagId = await ref.read(bagsProvider.notifier).createBag(newBag);
+
+      // Create new cup linked to the new bag
+      final newCup = Cup(
+        id: uuid.v4(),
+        bagId: bagId,
+        userId: user.id,
+        brewType: cup.brewType,
+        grindLevel: cup.grindLevel,
+        waterTempCelsius: cup.waterTempCelsius,
+        gramsUsed: cup.gramsUsed,
+        finalVolumeMl: cup.finalVolumeMl,
+        ratio: cup.ratio,
+        brewTimeSeconds: cup.brewTimeSeconds,
+        bloomTimeSeconds: cup.bloomTimeSeconds,
+        score1to5: cup.score1to5,
+        score1to10: cup.score1to10,
+        score1to100: cup.score1to100,
+        tastingNotes: cup.tastingNotes,
+        flavorTags: cup.flavorTags != null ? List<String>.from(cup.flavorTags!) : null,
+        preInfusionTimeSeconds: cup.preInfusionTimeSeconds,
+        pressureBars: cup.pressureBars,
+        yieldGrams: cup.yieldGrams,
+        bloomAmountGrams: cup.bloomAmountGrams,
+        pourSchedule: cup.pourSchedule,
+        tds: cup.tds,
+        extractionYield: cup.extractionYield,
+        roomTempCelsius: cup.roomTempCelsius,
+        humidity: cup.humidity,
+        altitudeMeters: cup.altitudeMeters,
+        timeOfDay: cup.timeOfDay,
+        sharedByUserId: sharedCup.originalUserId,
+        sharedByUsername: sharedCup.originalUsername,
+      );
+
+      await ref.read(cupsNotifierProvider).createCup(newCup);
+
+      if (context.mounted) {
+        showSuccess(context, 'Recipe copied to new bag: ${newBag.displayTitle}');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showError(context, 'Failed to copy recipe: $e');
+      }
+    }
+  }
+
+  Future<void> _copyToExistingBag(BuildContext context, WidgetRef ref, dynamic sharedCup, CoffeeBag targetBag) async {
+    try {
+      final user = ref.read(userProfileProvider);
+      if (user == null) {
+        if (context.mounted) {
+          showError(context, 'User not found');
+        }
+        return;
+      }
+
+      final uuid = const Uuid();
+      final cup = sharedCup.cupData;
+
+      // Create new cup linked to the existing bag
+      // The cup will inherit bag details through the bagId relationship
+      final newCup = Cup(
+        id: uuid.v4(),
+        bagId: targetBag.id,
+        userId: user.id,
+        brewType: cup.brewType,
+        grindLevel: cup.grindLevel,
+        waterTempCelsius: cup.waterTempCelsius,
+        gramsUsed: cup.gramsUsed,
+        finalVolumeMl: cup.finalVolumeMl,
+        ratio: cup.ratio,
+        brewTimeSeconds: cup.brewTimeSeconds,
+        bloomTimeSeconds: cup.bloomTimeSeconds,
+        score1to5: cup.score1to5,
+        score1to10: cup.score1to10,
+        score1to100: cup.score1to100,
+        tastingNotes: cup.tastingNotes,
+        flavorTags: cup.flavorTags != null ? List<String>.from(cup.flavorTags!) : null,
+        preInfusionTimeSeconds: cup.preInfusionTimeSeconds,
+        pressureBars: cup.pressureBars,
+        yieldGrams: cup.yieldGrams,
+        bloomAmountGrams: cup.bloomAmountGrams,
+        pourSchedule: cup.pourSchedule,
+        tds: cup.tds,
+        extractionYield: cup.extractionYield,
+        roomTempCelsius: cup.roomTempCelsius,
+        humidity: cup.humidity,
+        altitudeMeters: cup.altitudeMeters,
+        timeOfDay: cup.timeOfDay,
+        sharedByUserId: sharedCup.originalUserId,
+        sharedByUsername: sharedCup.originalUsername,
+      );
+
+      await ref.read(cupsNotifierProvider).createCup(newCup);
+
+      if (context.mounted) {
+        showSuccess(context, 'Recipe copied to ${targetBag.displayTitle}');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showError(context, 'Failed to copy recipe: $e');
+      }
+    }
   }
 }
